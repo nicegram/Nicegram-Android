@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ShowMentionAll">Show «Mention all»</string>
+    <string name="MentionAllUsers">Mention all users</string>
+    <string name="For20OrLessChats">For chats with less than 20 people</string>
+    <string name="NicegramSettings">Nicegram settings</string>
+</resources>
