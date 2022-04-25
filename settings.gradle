@@ -1,1 +1,2 @@
 include ':TMessagesProj'
+include ':nicegram-features'

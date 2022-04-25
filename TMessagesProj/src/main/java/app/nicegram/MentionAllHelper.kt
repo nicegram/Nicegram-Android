@@ -4,18 +4,18 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.Spanned
+import com.appvillis.nicegram.NicegramPrefs
 import org.telegram.messenger.MessagesController
 import org.telegram.messenger.UserObject
 import org.telegram.tgnet.TLRPC
 import org.telegram.ui.Components.URLSpanUserMention
 
 object MentionAllHelper {
-    const val MENTION_ALL_PREF_NAME = "EnableMentionAll";
     private const val MAX_USER_COUNT = 20
 
     fun canUseMentionAll(chatUserCount: Int, currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(MENTION_ALL_PREF_NAME, true) && chatUserCount <= MAX_USER_COUNT
+            .getBoolean(NicegramPrefs.PREF_MENTION_ALL_ENABLED, NicegramPrefs.PREF_MENTION_ALL_ENABLED_DEFAULT) && chatUserCount <= MAX_USER_COUNT
     }
 
     fun buildMentionAllText(

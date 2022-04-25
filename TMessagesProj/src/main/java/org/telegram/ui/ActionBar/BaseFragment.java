@@ -15,9 +15,10 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MotionEvent;
@@ -27,6 +28,9 @@ import android.view.ViewParent;
 import android.view.Window;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.FrameLayout;
+
+import androidx.annotation.CallSuper;
+import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -53,7 +57,7 @@ import java.util.ArrayList;
 public abstract class BaseFragment {
 
     private boolean isFinished;
-    private boolean finishing;
+    protected boolean finishing;
     protected Dialog visibleDialog;
     protected int currentAccount = UserConfig.selectedAccount;
 
@@ -61,6 +65,7 @@ public abstract class BaseFragment {
     protected ActionBarLayout parentLayout;
     protected ActionBar actionBar;
     protected boolean inPreviewMode;
+    protected boolean inMenuMode;
     protected boolean inBubbleMode;
     protected int classGuid;
     protected Bundle arguments;
@@ -69,6 +74,7 @@ public abstract class BaseFragment {
     protected Dialog parentDialog;
     protected boolean inTransitionAnimation = false;
     protected boolean fragmentBeginToShow;
+    private boolean removingFromStack;
 
     public BaseFragment() {
         classGuid = ConnectionsManager.generateClassGuid();
@@ -122,6 +128,14 @@ public abstract class BaseFragment {
         return inBubbleMode;
     }
 
+    public boolean isInPreviewMode() {
+        return inPreviewMode;
+    }
+
+    public boolean getInPassivePreviewMode() {
+        return parentLayout != null && parentLayout.isInPassivePreviewMode();
+    }
+
     protected void setInPreviewMode(boolean value) {
         inPreviewMode = value;
         if (actionBar != null) {
@@ -131,6 +145,10 @@ public abstract class BaseFragment {
                 actionBar.setOccupyStatusBar(Build.VERSION.SDK_INT >= 21);
             }
         }
+    }
+
+    protected void setInMenuMode(boolean value) {
+        inMenuMode = value;
     }
 
     protected void onPreviewOpenAnimationEnd() {
@@ -273,12 +291,17 @@ public abstract class BaseFragment {
         return true;
     }
 
+    @CallSuper
     public void onFragmentDestroy() {
         getConnectionsManager().cancelRequestsForGuid(classGuid);
         getMessagesStorage().cancelTasksForGuid(classGuid);
         isFinished = true;
         if (actionBar != null) {
             actionBar.setEnabled(false);
+        }
+
+        if (hasForceLightStatusBar() && !AndroidUtilities.isTablet() && getParentLayout().getLastFragment() == this && getParentActivity() != null && !finishing) {
+            AndroidUtilities.setLightStatusBar(getParentActivity().getWindow(), Theme.getColor(Theme.key_actionBarDefault) == Color.WHITE);
         }
     }
 
@@ -292,10 +315,12 @@ public abstract class BaseFragment {
         }
     }
 
+    @CallSuper
     public void onResume() {
         isPaused = false;
     }
 
+    @CallSuper
     public void onPause() {
         if (actionBar != null) {
             actionBar.onPause();
@@ -361,19 +386,23 @@ public abstract class BaseFragment {
     }
 
     public boolean presentFragmentAsPreview(BaseFragment fragment) {
-        return parentLayout != null && parentLayout.presentFragmentAsPreview(fragment);
+        return allowPresentFragment() && parentLayout != null && parentLayout.presentFragmentAsPreview(fragment);
+    }
+
+    public boolean presentFragmentAsPreviewWithMenu(BaseFragment fragment, View menu) {
+        return allowPresentFragment() && parentLayout != null && parentLayout.presentFragmentAsPreviewWithMenu(fragment, menu);
     }
 
     public boolean presentFragment(BaseFragment fragment) {
-        return parentLayout != null && parentLayout.presentFragment(fragment);
+        return allowPresentFragment() && parentLayout != null && parentLayout.presentFragment(fragment);
     }
 
     public boolean presentFragment(BaseFragment fragment, boolean removeLast) {
-        return parentLayout != null && parentLayout.presentFragment(fragment, removeLast);
+        return allowPresentFragment() && parentLayout != null && parentLayout.presentFragment(fragment, removeLast);
     }
 
     public boolean presentFragment(BaseFragment fragment, boolean removeLast, boolean forceWithoutAnimation) {
-        return parentLayout != null && parentLayout.presentFragment(fragment, removeLast, forceWithoutAnimation, true, false);
+        return allowPresentFragment() && parentLayout != null && parentLayout.presentFragment(fragment, removeLast, forceWithoutAnimation, true, false, null);
     }
 
     public Activity getParentActivity() {
@@ -628,6 +657,10 @@ public abstract class BaseFragment {
         return null;
     }
 
+    protected boolean shouldOverrideSlideTransition(boolean topFragment, boolean backAnimation) {
+        return false;
+    }
+
     protected void prepareFragmentToSlide(boolean topFragment, boolean beginSlide) {
 
     }
@@ -679,11 +712,18 @@ public abstract class BaseFragment {
     }
 
     public int getThemedColor(String key) {
-        return Theme.getColor(key);
+        return Theme.getColor(key, getResourceProvider());
     }
 
     public Drawable getThemedDrawable(String key) {
         return Theme.getThemeDrawable(key);
+    }
+
+    /**
+     * @return If this fragment should have light status bar even if it's disabled in debug settings
+     */
+    public boolean hasForceLightStatusBar() {
+        return false;
     }
 
     public int getNavigationBarColor() {
@@ -712,5 +752,31 @@ public abstract class BaseFragment {
 
     public Theme.ResourcesProvider getResourceProvider() {
         return null;
+    }
+
+    protected boolean allowPresentFragment() {
+        return true;
+    }
+
+    public boolean isRemovingFromStack() {
+        return removingFromStack;
+    }
+
+    public void setRemovingFromStack(boolean b) {
+        removingFromStack = b;
+    }
+
+    public boolean isLightStatusBar() {
+        if (hasForceLightStatusBar() && !Theme.getCurrentTheme().isDark()) {
+            return true;
+        }
+        Theme.ResourcesProvider resourcesProvider = getResourceProvider();
+        int color;
+        if (resourcesProvider != null) {
+            color = resourcesProvider.getColorOrDefault(Theme.key_actionBarDefault);
+        } else {
+            color = Theme.getColor(Theme.key_actionBarDefault, null, true);
+        }
+        return ColorUtils.calculateLuminance(color) > 0.7f;
     }
 }

@@ -8,6 +8,11 @@
 
 package org.telegram.ui;
 
+import static org.telegram.messenger.MessageObject.POSITION_FLAG_BOTTOM;
+import static org.telegram.messenger.MessageObject.POSITION_FLAG_LEFT;
+import static org.telegram.messenger.MessageObject.POSITION_FLAG_RIGHT;
+import static org.telegram.messenger.MessageObject.POSITION_FLAG_TOP;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -158,6 +163,7 @@ import org.telegram.ui.Components.TextPaintMarkSpan;
 import org.telegram.ui.Components.TextPaintSpan;
 import org.telegram.ui.Components.TextPaintUrlSpan;
 import org.telegram.ui.Components.TextPaintWebpageUrlSpan;
+import org.telegram.ui.Components.TranslateAlert;
 import org.telegram.ui.Components.TypefaceSpan;
 import org.telegram.ui.Components.WebPlayerView;
 
@@ -168,11 +174,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-
-import static org.telegram.messenger.MessageObject.POSITION_FLAG_BOTTOM;
-import static org.telegram.messenger.MessageObject.POSITION_FLAG_LEFT;
-import static org.telegram.messenger.MessageObject.POSITION_FLAG_RIGHT;
-import static org.telegram.messenger.MessageObject.POSITION_FLAG_TOP;
 
 public class ArticleViewer implements NotificationCenter.NotificationCenterDelegate {
 
@@ -248,6 +249,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
     private Paint headerPaint = new Paint();
     private Paint statusBarPaint = new Paint();
+    private Paint navigationBarPaint = new Paint();
     private Paint headerProgressPaint = new Paint();
 
     private ActionBarPopupWindow popupWindow;
@@ -1008,12 +1010,14 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         @Override
         protected void dispatchDraw(Canvas canvas) {
             super.dispatchDraw(canvas);
-            if (bWidth != 0 && bHeight != 0) {
-                blackPaint.setAlpha((int) (255 * windowView.getAlpha()));
-                if (bX == 0 && bY == 0) {
-                    canvas.drawRect(bX, bY, bX + bWidth, bY + bHeight, blackPaint);
-                } else {
-                    canvas.drawRect(bX - getTranslationX(), bY, bX + bWidth - getTranslationX(), bY + bHeight, blackPaint);
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP || lastInsets == null) {
+                if (bWidth != 0 && bHeight != 0) {
+                    blackPaint.setAlpha((int) (255 * windowView.getAlpha()));
+                    if (bX == 0 && bY == 0) {
+                        canvas.drawRect(bX, bY, bX + bWidth, bY + bHeight, blackPaint);
+                    } else {
+                        canvas.drawRect(bX - getTranslationX(), bY, bX + bWidth - getTranslationX(), bY + bHeight, blackPaint);
+                    }
                 }
             }
         }
@@ -1033,9 +1037,10 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                     }
                     int right = insets.getSystemWindowInsetRight();
                     if (right != 0) {
-                        canvas.drawRect(getMeasuredWidth() - right, 0, getMeasuredWidth(), h, statusBarPaint);
+                        canvas.drawRect(w - right, 0, w, h, statusBarPaint);
                     }
                 }
+                canvas.drawRect(0, h - insets.getStableInsetBottom(), w, h, navigationBarPaint);
             }
         }
 
@@ -1145,13 +1150,16 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         float lightness = (0.2126f * Color.red(color2) + 0.7152f * Color.green(color2) + 0.0722f * Color.blue(color2)) / 255.0f;
         webpageSearchPaint.setColor(lightness <= 0.705f ? 0xffd1982e : 0xffffe669);
         webpageUrlPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteLinkSelection) & 0x33ffffff);
+        webpageUrlPaint.setPathEffect(LinkPath.roundedEffect);
         urlPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteLinkSelection) & 0x33ffffff);
+        urlPaint.setPathEffect(LinkPath.roundedEffect);
         tableHalfLinePaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteInputField));
         tableLinePaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteInputField));
 
         photoBackgroundPaint.setColor(0x0f000000);
         dividerPaint.setColor(Theme.getColor(Theme.key_divider));
         webpageMarkPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteLinkSelection) & 0x33ffffff);
+        webpageMarkPaint.setPathEffect(LinkPath.roundedEffect);
 
         int color = Theme.getColor(Theme.key_switchTrack);
         int r = Color.red(color);
@@ -1264,7 +1272,9 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             deleteView.setOnClickListener(v -> {
                 if (pressedLinkOwnerLayout != null) {
                     AndroidUtilities.addToClipboard(pressedLinkOwnerLayout.getText());
-                    Toast.makeText(parentActivity, LocaleController.getString("TextCopied", R.string.TextCopied), Toast.LENGTH_SHORT).show();
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                        Toast.makeText(parentActivity, LocaleController.getString("TextCopied", R.string.TextCopied), Toast.LENGTH_SHORT).show();
+                    }
                 }
                 if (popupWindow != null && popupWindow.isShowing()) {
                     popupWindow.dismiss(true);
@@ -2994,7 +3004,6 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         windowView.setWillNotDraw(false);
         windowView.setClipChildren(true);
         windowView.setFocusable(false);
-
         containerView = new FrameLayout(activity) {
             @Override
             protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
@@ -3245,6 +3254,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         headerPaint.setColor(0xff000000);
         statusBarPaint.setColor(0xff000000);
         headerProgressPaint.setColor(0xff242426);
+        navigationBarPaint.setColor(Color.BLACK);
         headerView = new FrameLayout(activity) {
             @Override
             protected void onDraw(Canvas canvas) {
@@ -3637,6 +3647,19 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         windowLayoutParams.type = WindowManager.LayoutParams.LAST_APPLICATION_WINDOW - 1;
         windowLayoutParams.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING;
         windowLayoutParams.flags = WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
+
+        int uiFlags = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+        int navigationColor = Theme.getColor(Theme.key_windowBackgroundGray, null, true);
+        float navigationBrightness = AndroidUtilities.computePerceivedBrightness(navigationColor);
+        boolean isLightNavigation = navigationBrightness >= 0.721f;
+        if (isLightNavigation && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            uiFlags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            navigationBarPaint.setColor(navigationColor);
+        } else if (!isLightNavigation) {
+            navigationBarPaint.setColor(navigationColor);
+        }
+        windowLayoutParams.systemUiVisibility = uiFlags;
+
         if (Build.VERSION.SDK_INT >= 21) {
             windowLayoutParams.flags |= WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
                     WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR |
@@ -3648,6 +3671,11 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
         textSelectionHelper = new TextSelectionHelper.ArticleTextSelectionHelper();
         textSelectionHelper.setParentView(listView[0]);
+        if (MessagesController.getGlobalMainSettings().getBoolean("translate_button", false)) {
+            textSelectionHelper.setOnTranslate((text, fromLang, toLang, onAlertDismiss) -> {
+                TranslateAlert.showAlert(parentActivity, parentFragment, fromLang, toLang, text, false, null, onAlertDismiss);
+            });
+        }
         textSelectionHelper.layoutManager = layoutManager[0];
         textSelectionHelper.setCallback(new TextSelectionHelper.Callback() {
             @Override
@@ -3659,7 +3687,9 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
             @Override
             public void onTextCopied() {
-                BulletinFactory.of(containerView, null).createCopyBulletin(LocaleController.getString("TextCopied", R.string.TextCopied)).show();
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                    BulletinFactory.of(containerView, null).createCopyBulletin(LocaleController.getString("TextCopied", R.string.TextCopied)).show();
+                }
             }
         });
         containerView.addView(textSelectionHelper.getOverlayView(activity));
@@ -4171,9 +4201,9 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             }
             try {
                 if (Build.VERSION.SDK_INT >= 21) {
-                    windowLayoutParams.flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
-                            WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR |
-                            WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS;
+                    windowLayoutParams.flags = WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR |
+                            WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS |
+                            WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
                     if (Build.VERSION.SDK_INT >= 28) {
                         windowLayoutParams.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
                     }
@@ -5954,7 +5984,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             currentBlock = block;
             parentBlock = null;
             currentDocument = parentAdapter.getDocumentWithId(currentBlock.video_id);
-            isGif = MessageObject.isGifDocument(currentDocument)/* && currentBlock.autoplay*/;
+            isGif = MessageObject.isVideoDocument(currentDocument) || MessageObject.isGifDocument(currentDocument)/* && currentBlock.autoplay*/;
             isFirst = first;
             channelCell.setVisibility(INVISIBLE);
             updateButtonState(false);
@@ -6090,7 +6120,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                         File path = FileLoader.getPathToAttach(currentDocument, true);
                         if (autoDownload || path.exists()) {
                             imageView.setStrippedLocation(null);
-                            imageView.setImage(ImageLocation.getForDocument(currentDocument), null, null, null, ImageLocation.getForDocument(thumb, currentDocument), "80_80_b", null, currentDocument.size, null, parentAdapter.currentPage, 1);
+                            imageView.setImage(ImageLocation.getForDocument(currentDocument), ImageLoader.AUTOPLAY_FILTER, null, null, ImageLocation.getForDocument(thumb, currentDocument), "80_80_b", null, currentDocument.size, null, parentAdapter.currentPage, 1);
                         } else {
                             imageView.setStrippedLocation(ImageLocation.getForDocument(currentDocument));
                             imageView.setImage(null, null, null, null, ImageLocation.getForDocument(thumb, currentDocument), "80_80_b", null, currentDocument.size, null, parentAdapter.currentPage, 1);

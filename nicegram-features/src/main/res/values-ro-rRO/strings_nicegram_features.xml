@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ShowMentionAll">Arată &lt;&lt;Menționează tot&gt;&gt;</string>
+    <string name="MentionAllUsers">Menționează toți utilizatorii</string>
+    <string name="For20OrLessChats">Pentru chaturi cu mai puțin de 20 de persoane </string>
+    <string name="NicegramSettings">Setări Nicegram</string>
+    <string name="NicegramRegistered">Înregistrat</string>
+    <string name="NicegramGetRegistrationDate">Data înregistrării</string>
+    <string name="NicegramGetIdCopied">ID copiat în clipboard</string>
+    <string name="NicegramLoading">Se încarcă...</string>
+    <string name="NicegramRegDateError">Ne pare rău, nu se poate obține data înregistrării</string>
+    <string name="NicegramUndoTranslate">Anulează traducere</string>
+    <string name="NicegramTranslationUnavailable">Ne pare rău, traducere indisponibilă</string>
+    <string name="NicegramForwardAsCopy">Redirecționează copie</string>
+    <string name="NicegramSkipReadHistory">Sari citire istorial</string>
+    <string name="NicegramOlderThan">Mai vechi de</string>
+    <string name="NicegramNewerThan">Mai noi de</string>
+    <string name="NicegramApproximately">Aproximativ</string>
+    <string name="NicegramShowProfileID">Arată profil ID</string>
+    <string name="NicegramShowRegistrationDate">Arată data înregistrării</string>
+    <string name="NicegramOpenLinksInBrowser">Deschideți în navigator</string>
+    <string name="NicegramDialogPolicy">Politica de Confidențialitate Nicegram</string>
+    <string name="NicegramDialogPolicyText">Nicegram este un client neoficial Telegram și multe din serviciile pe care le obțineți utilizând Nicegram sunt de fapt furnizate de către compania Telegram.\n\nVă rugăm să citiți Politica noastră de Confidențialitate înainte de a utiliza aplicația.\n\nAtingând Continuare confirmați că ați citit și sunteți de acord cu Politica de Confidențialitate Nicegram.</string>
+</resources>

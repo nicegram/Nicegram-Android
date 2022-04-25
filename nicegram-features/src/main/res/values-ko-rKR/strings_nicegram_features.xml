@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ShowMentionAll">«모두 언급하기»를 보여주기</string>
+    <string name="MentionAllUsers">모든 사용자 언급하기</string>
+    <string name="For20OrLessChats">20명 미만의 사람과 대화 용</string>
+    <string name="NicegramSettings">Nicegram 설정</string>
+    <string name="NicegramRegistered">등록 완료</string>
+    <string name="NicegramGetRegistrationDate">등록 날짜 확인</string>
+    <string name="NicegramGetIdCopied">클립보드에 복사된 Id</string>
+    <string name="NicegramLoading">로딩 중...</string>
+    <string name="NicegramRegDateError">죄송합니다, 등록 날짜를 확인할 수 없습니다.</string>
+    <string name="NicegramUndoTranslate">번역 취소</string>
+    <string name="NicegramTranslationUnavailable">죄송합니다, 번역이 가능하지 않습니다.</string>
+    <string name="NicegramForwardAsCopy">복사하며 전달하기</string>
+    <string name="NicegramSkipReadHistory">이력 확인 건너뛰기</string>
+    <string name="NicegramOlderThan">더 나이 많은</string>
+    <string name="NicegramNewerThan">더 새로운</string>
+    <string name="NicegramApproximately">대략</string>
+    <string name="NicegramShowProfileID">프로필 ID 보여주기</string>
+    <string name="NicegramShowRegistrationDate">등록일 보여주기</string>
+    <string name="NicegramOpenLinksInBrowser">브라우저에서 링크 열기</string>
+    <string name="NicegramDialogPolicy">Nicegram 개인정보보호정책</string>
+    <string name="NicegramDialogPolicyText">Nicegram은 비공식적인 텔레그램(Telegram)의 고객이며 귀하가 Nicegram을 사용하며 제공받는 많은 서비스는 실제로 텔레그램으로부터 제공됩니다.\n\n앱을 사용하기 전 당사의 개인 정보 보호 정책을 확인하여 주십시오.\n\n 계속하기를 클릭하면 Nicegram의 개인정보보호정책을 읽고 동의하신 것으로 간주됩니다.</string>
+</resources>

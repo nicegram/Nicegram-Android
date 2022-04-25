@@ -27,6 +27,9 @@
 -keep class com.google.android.exoplayer2.metadata.flac.PictureFrame { *; }
 -keep class com.google.android.exoplayer2.decoder.SimpleOutputBuffer { *; }
 
+# https://developers.google.com/ml-kit/known-issues#android_issues
+-keep class com.google.mlkit.nl.languageid.internal.LanguageIdentificationJni { *; }
+
 # Constant folding for resource integers may mean that a resource passed to this method appears to be unused. Keep the method to prevent this from happening.
 -keep class com.google.android.exoplayer2.upstream.RawResourceDataSource {
   public static android.net.Uri buildRawResourceUri(int);
@@ -89,8 +92,6 @@
 -keepclasseswithmembers class com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource$Factory {
   <init>(com.google.android.exoplayer2.upstream.DataSource$Factory);
 }
-
--keep class com.appsflyer.** { *; }
 
 # Don't warn about checkerframework and Kotlin annotations
 -dontwarn org.checkerframework.**

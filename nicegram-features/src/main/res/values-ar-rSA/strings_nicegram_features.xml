@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ShowMentionAll">إظهار «أذكر الجميع»</string>
+    <string name="MentionAllUsers">اذكر جميع المستخدمين</string>
+    <string name="For20OrLessChats">للمحادثات مع أقل من 20 شخصاً</string>
+    <string name="NicegramSettings">إعدادات Nicegram</string>
+    <string name="NicegramRegistered">مُسجَل</string>
+    <string name="NicegramGetRegistrationDate">الحصول على تاريخ التسجيل</string>
+    <string name="NicegramGetIdCopied">تم نسخ المعرف إلى الحافظة</string>
+    <string name="NicegramLoading">جار التحميل...</string>
+    <string name="NicegramRegDateError">عذراً، لا يمكن الحصول على تاريخ التسجيل</string>
+    <string name="NicegramUndoTranslate">التراجع عن الترجمة</string>
+    <string name="NicegramTranslationUnavailable">عذراً، الترجمة غير متوفرة</string>
+    <string name="NicegramForwardAsCopy">إعادة إرسال كنسخة</string>
+    <string name="NicegramSkipReadHistory">تخطي قراءة التاريخ</string>
+    <string name="NicegramOlderThan">أقدم من</string>
+    <string name="NicegramNewerThan">أحدث من</string>
+    <string name="NicegramApproximately">تقريباً</string>
+    <string name="NicegramShowProfileID">إظهار معرف الملف الشخصي</string>
+    <string name="NicegramShowRegistrationDate">إظهار تاريخ التسجيل</string>
+    <string name="NicegramOpenLinksInBrowser">فتح الروابط في المتصفح</string>
+    <string name="NicegramDialogPolicy">سياسة خصوصية Nicegram</string>
+    <string name="NicegramDialogPolicyText">Nicegram هو نسخة من تطبيق Telegram غير رسمي والعديد من الخدمات التي تحصل عليها باستخدام Nicegram، يتم توفيرها بالفعل من قبل شركة Telegram.\n\n يرجى قراءة سياسة الخصوصية الخاصة بنا قبل استخدام التطبيق. \n\n بالنقر فوق متابعة، فأنت تؤكد أنك قد قرأت وتوافق على سياسة خصوصية Nicegram.</string>
+</resources>

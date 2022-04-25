@@ -19,6 +19,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
 import android.text.TextUtils;
@@ -29,6 +30,10 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.LinearSmoothScroller;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -71,10 +76,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.StringTokenizer;
-
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.LinearSmoothScroller;
-import androidx.recyclerview.widget.RecyclerView;
 
 public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLayout {
 
@@ -251,7 +252,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
         emptyView.setOnTouchListener((v, event) -> true);
 
         listView = new RecyclerListView(context, resourcesProvider);
-        listView.setSectionsType(2);
+        listView.setSectionsType(RecyclerListView.SECTIONS_TYPE_DATE);
         listView.setVerticalScrollBarEnabled(false);
         listView.setLayoutManager(layoutManager = new FillLastLinearLayoutManager(context, LinearLayoutManager.VERTICAL, false, AndroidUtilities.dp(56), listView) {
             @Override
@@ -326,7 +327,13 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
             if (object instanceof ListItem) {
                 ListItem item = (ListItem) object;
                 File file = item.file;
-                if (file == null) {
+                boolean isExternalStorageManager = false;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    isExternalStorageManager = Environment.isExternalStorageManager();
+                }
+                if (!BuildVars.NO_SCOPED_STORAGE && (item.icon == R.drawable.files_storage || item.icon == R.drawable.files_internal) && !isExternalStorageManager) {
+                    delegate.startDocumentSelectActivity();
+                } else if (file == null) {
                     if (item.icon == R.drawable.files_gallery) {
                         HashMap<Object, Object> selectedPhotos = new HashMap<>();
                         ArrayList<Object> selectedPhotosOrder = new ArrayList<>();
@@ -369,8 +376,6 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
                         if (delegate != null) {
                             delegate.startMusicSelectActivity();
                         }
-                    } else if (!BuildVars.NO_SCOPED_STORAGE && item.icon == R.drawable.files_storage) {
-                        delegate.startDocumentSelectActivity();
                     } else {
                         int top = getTopForScroll();
                         HistoryEntry he = history.remove(history.size() - 1);
@@ -751,7 +756,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
     }
 
     @Override
-    void onShow() {
+    void onShow(ChatAttachAlert.AttachAlertLayout previousLayout) {
         selectedFiles.clear();
         selectedMessages.clear();
         searchAdapter.currentSearchFilters.clear();
@@ -942,13 +947,17 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
         items.clear();
 
         HashSet<String> paths = new HashSet<>();
-        if (!BuildVars.NO_SCOPED_STORAGE) {
-            ListItem ext = new ListItem();
-            ext.title = LocaleController.getString("InternalStorage", R.string.InternalStorage);
-            ext.icon = R.drawable.files_storage;
-            ext.subtitle = LocaleController.getString("InternalFolderInfo", R.string.InternalFolderInfo);
-            items.add(ext);
-        } else {
+        boolean isExternalStorageManager = false;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            isExternalStorageManager = Environment.isExternalStorageManager();
+        }
+//        if (!BuildVars.NO_SCOPED_STORAGE && !isExternalStorageManager) {
+//            ListItem ext = new ListItem();
+//            ext.title = LocaleController.getString("InternalStorage", R.string.InternalStorage);
+//            ext.icon = R.drawable.files_storage;
+//            ext.subtitle = LocaleController.getString("InternalFolderInfo", R.string.InternalFolderInfo);
+//            items.add(ext);
+//        } else {
             String defaultPath = Environment.getExternalStorageDirectory().getPath();
             String defaultPathState = Environment.getExternalStorageState();
             if (defaultPathState.equals(Environment.MEDIA_MOUNTED) || defaultPathState.equals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
@@ -1023,11 +1032,11 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
                     }
                 }
             }
-        }
+        //}
 
         ListItem fs;
         try {
-            File telegramPath = new File(Environment.getExternalStorageDirectory(), "Telegram");
+            File telegramPath = new File(ApplicationLoader.applicationContext.getExternalFilesDir(null), "Telegram");
             if (telegramPath.exists()) {
                 fs = new ListItem();
                 fs.title = "Telegram";

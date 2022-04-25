@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ShowMentionAll">Показать «Упоминание всех»</string>
+    <string name="MentionAllUsers">Упомянуть всех пользователей</string>
+    <string name="For20OrLessChats">Для чатов с участием менее 20 человек</string>
+    <string name="NicegramSettings">Настройки Nicegram</string>
+    <string name="NicegramRegistered">Зарегистрирован</string>
+    <string name="NicegramGetRegistrationDate">Узнать дату регистрации</string>
+    <string name="NicegramGetIdCopied">ID скопирован в буфер обмена</string>
+    <string name="NicegramLoading">Загрузка…</string>
+    <string name="NicegramRegDateError">Извините, не могу получить дату регистрации</string>
+    <string name="NicegramUndoTranslate">Отменить перевод</string>
+    <string name="NicegramTranslationUnavailable">Извините, перевод недоступен</string>
+    <string name="NicegramForwardAsCopy">Переслать как копию</string>
+    <string name="NicegramSkipReadHistory">Пропустить историю чтения</string>
+    <string name="NicegramOlderThan">Старше, чем</string>
+    <string name="NicegramNewerThan">Новее, чем</string>
+    <string name="NicegramApproximately">Примерно</string>
+    <string name="NicegramShowProfileID">Показать ID профиля</string>
+    <string name="NicegramShowRegistrationDate">Показать дату регистрации</string>
+    <string name="NicegramOpenLinksInBrowser">Открывать во внешнем браузере</string>
+    <string name="NicegramDialogPolicy">Политика конфиденциальности Nicegram</string>
+    <string name="NicegramDialogPolicyText">Nicegram является неофициальным клиентом Telegram, и многие услуги, которые вы получаете с помощью Nicegram, на самом деле предоставляются компанией Telegram.\n\nПожалуйста, ознакомьтесь с нашей Политикой конфиденциальности перед использованием приложения.\n\nНажав продолжить, вы подтверждаете, что прочитали и согласны с Политикой конфиденциальности Nicegram.</string>
+</resources>
