@@ -9,6 +9,7 @@ import android.view.TextureView;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.voip.VoIPService;
@@ -40,7 +41,7 @@ public class TextureViewRenderer extends TextureView
     private int surfaceHeight;
     private boolean isCamera;
     private boolean mirror;
-    private boolean rotateTextureWitchScreen;
+    private boolean rotateTextureWithScreen;
     private int screenRotation;
 
     private OrientationHelper orientationHelper;
@@ -52,8 +53,13 @@ public class TextureViewRenderer extends TextureView
 
     Runnable updateScreenRunnable;
 
-    public void setBackgroundRenderer(TextureView backgroundRenderer) {
+    public void setBackgroundRenderer(@Nullable TextureView backgroundRenderer) {
         this.backgroundRenderer = backgroundRenderer;
+        if (backgroundRenderer == null) {
+            ThreadUtils.checkIsOnMainThread();
+            eglRenderer.releaseEglSurface(null, true);
+            return;
+        }
         backgroundRenderer.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int i, int i1) {
@@ -335,7 +341,7 @@ public class TextureViewRenderer extends TextureView
         updateSurfaceSize();
     }
 
-    private void updateRotation() {
+    public void updateRotation() {
         if (orientationHelper == null || rotatedFrameWidth == 0 || rotatedFrameHeight == 0) {
             return;
         }
@@ -380,7 +386,7 @@ public class TextureViewRenderer extends TextureView
     public void setMirror(final boolean mirror) {
         if (this.mirror != mirror) {
             this.mirror = mirror;
-            if (rotateTextureWitchScreen) {
+            if (rotateTextureWithScreen) {
                 onRotationChanged();
             } else {
                 eglRenderer.setMirror(mirror);
@@ -434,7 +440,7 @@ public class TextureViewRenderer extends TextureView
     @Override
     protected void onMeasure(int widthSpec, int heightSpec) {
         ThreadUtils.checkIsOnMainThread();
-        if (!isCamera && rotateTextureWitchScreen) {
+        if (!isCamera && rotateTextureWithScreen) {
             updateVideoSizes();
         }
         Point size;
@@ -555,7 +561,7 @@ public class TextureViewRenderer extends TextureView
         textureRotation = rotation;
         int rotatedWidth, rotatedHeight;
 
-        if (rotateTextureWitchScreen) {
+        if (rotateTextureWithScreen) {
             if (isCamera) {
                 onRotationChanged();
             }
@@ -603,7 +609,7 @@ public class TextureViewRenderer extends TextureView
         if (videoHeight != 0 && videoWidth != 0) {
             int rotatedWidth;
             int rotatedHeight;
-            if (rotateTextureWitchScreen) {
+            if (rotateTextureWithScreen) {
                 if (useCameraRotation) {
                     rotatedWidth = screenRotation == 0 ? videoHeight : videoWidth;
                     rotatedHeight = screenRotation == 0 ? videoWidth : videoHeight;
@@ -616,7 +622,6 @@ public class TextureViewRenderer extends TextureView
                 rotation -= OrientationHelper.cameraOrientation;
                 rotatedWidth = rotation == 0 || rotation == 180 || rotation == -180 ? videoWidth : videoHeight;
                 rotatedHeight = rotation == 0 || rotation == 180 || rotation == -180 ? videoHeight : videoWidth;
-
             }
             if (rotatedFrameWidth != rotatedWidth || rotatedFrameHeight != rotatedHeight) {
                 synchronized (eglRenderer.layoutLock) {
@@ -637,9 +642,9 @@ public class TextureViewRenderer extends TextureView
         }
     }
 
-    public void setRotateTextureWitchScreen(boolean rotateTextureWitchScreen) {
-        if (this.rotateTextureWitchScreen != rotateTextureWitchScreen) {
-            this.rotateTextureWitchScreen = rotateTextureWitchScreen;
+    public void setRotateTextureWithScreen(boolean rotateTextureWithScreen) {
+        if (this.rotateTextureWithScreen != rotateTextureWithScreen) {
+            this.rotateTextureWithScreen = rotateTextureWithScreen;
             requestLayout();
         }
     }
@@ -669,6 +674,19 @@ public class TextureViewRenderer extends TextureView
 
         eglRenderer.setRotation(r);
         eglRenderer.setMirror(mirror);
+    }
+
+    @Override
+    public void setRotation(float rotation) {
+        super.setRotation(rotation);
+    }
+    @Override
+    public void setRotationY(float rotation) {
+        super.setRotationY(rotation);
+    }
+    @Override
+    public void setRotationX(float rotation) {
+        super.setRotationX(rotation);
     }
 
     private void postOrRun(Runnable r) {

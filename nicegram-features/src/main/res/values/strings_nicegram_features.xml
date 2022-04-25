@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ShowMentionAll">Show «Mention all»</string>
+    <string name="MentionAllUsers">Mention all users</string>
+    <string name="For20OrLessChats">For chats with less than 20 people</string>
+    <string name="NicegramSettings">Nicegram settings</string>
+    <string name="NicegramRegistered">Registered</string>
+    <string name="NicegramGetRegistrationDate">Get Registration Date</string>
+    <string name="NicegramGetIdCopied">Id copied to clipboard</string>
+    <string name="NicegramLoading">Loading…</string>
+    <string name="NicegramRegDateError">Sorry, can\'t get registration date</string>
+    <string name="NicegramUndoTranslate">Undo translate</string>
+    <string name="NicegramTranslationUnavailable">Sorry, translation unavailable</string>
+    <string name="NicegramForwardAsCopy">Forward as copy</string>
+    <string name="NicegramSkipReadHistory">Skip read history</string>
+    <string name="NicegramOlderThan">Older than</string>
+    <string name="NicegramNewerThan">Newer than</string>
+    <string name="NicegramApproximately">Approximately</string>
+    <string name="NicegramShowProfileID">Show profile ID</string>
+    <string name="NicegramShowRegistrationDate">Show registration date</string>
+    <string name="NicegramOpenLinksInBrowser">Open links in browser</string>
+
+    <string name="NicegramDialogPolicy">Nicegram Privacy Policy</string>
+    <string name="NicegramDialogPolicyText">Nicegram is an unofficial Telegram client and many of the services that you get by using Nicegram, is actually provided by Telegram company.\n\nPlease read our Privacy Policy before using the app.\n\nBy clicking continue you confirm that you have read and agree to Nicegram Privacy Policy.</string>
+</resources>

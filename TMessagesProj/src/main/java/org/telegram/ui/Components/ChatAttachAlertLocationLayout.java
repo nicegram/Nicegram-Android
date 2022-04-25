@@ -44,6 +44,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -93,7 +94,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
@@ -133,6 +133,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
     private boolean currentMapStyleDark;
 
     private boolean checkGpsEnabled = true;
+    private boolean locationDenied = false;
 
     private boolean isFirstLocation = true;
     private long dialogId;
@@ -382,6 +383,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
             locationType = LOCATION_TYPE_SEND;
         }
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.locationPermissionGranted);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.locationPermissionDenied);
 
         searchWas = false;
         searching = false;
@@ -393,6 +395,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
             searchAdapter.destroy();
         }
 
+        locationDenied = Build.VERSION.SDK_INT >= 23 && getParentActivity() != null && getParentActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED;
 
         ActionBarMenu menu = parentAlert.actionBar.createMenu();
 
@@ -411,6 +414,14 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                 searchWas = false;
                 searchAdapter.searchDelayed(null, null);
                 updateEmptyView();
+
+                if (otherItem != null) {
+                    otherItem.setVisibility(VISIBLE);
+                }
+                listView.setVisibility(VISIBLE);
+                mapViewClip.setVisibility(VISIBLE);
+                searchListView.setVisibility(GONE);
+                emptyView.setVisibility(GONE);
             }
 
             @Override
@@ -432,7 +443,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                         searchListView.setAdapter(searchAdapter);
                     }
                     searchListView.setVisibility(VISIBLE);
-                    searchInProgress = searchAdapter.getItemCount() == 0;
+                    searchInProgress = searchAdapter.isEmpty();
                     updateEmptyView();
                 } else {
                     if (otherItem != null) {
@@ -447,6 +458,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                 searchAdapter.searchDelayed(text, userLocation);
             }
         });
+        searchItem.setVisibility(locationDenied ? View.GONE : View.VISIBLE);
         searchItem.setSearchFieldHint(LocaleController.getString("Search", R.string.Search));
         searchItem.setContentDescription(LocaleController.getString("Search", R.string.Search));
         EditTextBoldCursor editText = searchItem.getSearchField();
@@ -620,7 +632,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                 Activity activity = getParentActivity();
                 if (activity != null) {
                     if (activity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                        showPermissionAlert(false);
+                        AlertsCreator.createLocationRequiredDialog(getParentActivity(), true).show();
                         return;
                     }
                 }
@@ -681,6 +693,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         listView.setClipToPadding(false);
         listView.setAdapter(adapter = new LocationActivityAdapter(context, locationType, dialogId, true, resourcesProvider));
         adapter.setUpdateRunnable(this::updateClipView);
+        adapter.setMyLocationDenied(locationDenied);
         listView.setVerticalScrollBarEnabled(false);
         listView.setLayoutManager(layoutManager = new FillLastLinearLayoutManager(context, LinearLayoutManager.VERTICAL, false, 0, listView) {
             @Override
@@ -733,7 +746,6 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                 parentAlert.updateLayout(ChatAttachAlertLocationLayout.this, true, dy);
             }
         });
-        ((DefaultItemAnimator) listView.getItemAnimator()).setDelayAnimations(false);
         listView.setOnItemClickListener((view, position) -> {
             if (position == 1) {
                 if (delegate != null && userLocation != null) {
@@ -754,13 +766,19 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                             parentAlert.dismiss();
                         }
                     }
+                } else if (locationDenied) {
+                    AlertsCreator.createLocationRequiredDialog(getParentActivity(), true).show();
                 }
-            } else if (position == 2 && locationType == 1) {
+            } else if (position == 2 && locationType == LOCATION_TYPE_SEND_WITH_LIVE) {
                 if (getLocationController().isSharingLocation(dialogId)) {
                     getLocationController().removeSharingLocation(dialogId);
                     parentAlert.dismiss();
                 } else {
-                    openShareLiveLocation();
+                    if (myLocation == null && locationDenied) {
+                        AlertsCreator.createLocationRequiredDialog(getParentActivity(), true).show();
+                    } else {
+                        openShareLiveLocation();
+                    }
                 }
             } else {
                 Object object = adapter.getItem(position);
@@ -898,6 +916,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
             searchInProgress = false;
             updateEmptyView();
         });
+        searchListView.setItemAnimator(null);
         addView(searchListView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP));
         searchListView.setOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -926,6 +945,11 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
     }
 
     @Override
+    boolean shouldHideBottomButtons() {
+        return !locationDenied;
+    }
+
+    @Override
     void onPause() {
         if (mapView != null && mapsInitialized) {
             try {
@@ -940,6 +964,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
     @Override
     void onDestroy() {
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.locationPermissionGranted);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.locationPermissionDenied);
         try {
             if (googleMap != null) {
                 googleMap.setMyLocationEnabled(false);
@@ -1091,7 +1116,6 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
             if (searchInProgress) {
                 searchListView.setEmptyView(null);
                 emptyView.setVisibility(GONE);
-                searchListView.setVisibility(GONE);
             } else {
                 searchListView.setEmptyView(emptyView);
             }
@@ -1296,7 +1320,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                 LocationManager lm = (LocationManager) ApplicationLoader.applicationContext.getSystemService(Context.LOCATION_SERVICE);
                 if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity(), resourcesProvider);
-                    builder.setTitle(LocaleController.getString("GpsDisabledAlertTitle", R.string.GpsDisabledAlertTitle));
+                    builder.setTopAnimation(R.raw.permission_request_location, AlertsCreator.PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, Theme.getColor(Theme.key_dialogTopBackground));
                     builder.setMessage(LocaleController.getString("GpsDisabledAlertText", R.string.GpsDisabledAlertText));
                     builder.setPositiveButton(LocaleController.getString("ConnectingToProxyEnable", R.string.ConnectingToProxyEnable), (dialog, id) -> {
                         if (getParentActivity() == null) {
@@ -1328,33 +1352,6 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         }
     }
 
-    private void showPermissionAlert(boolean byButton) {
-        if (getParentActivity() == null) {
-            return;
-        }
-        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity(), resourcesProvider);
-        builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
-        if (byButton) {
-            builder.setMessage(LocaleController.getString("PermissionNoLocationPosition", R.string.PermissionNoLocationPosition));
-        } else {
-            builder.setMessage(LocaleController.getString("PermissionNoLocation", R.string.PermissionNoLocation));
-        }
-        builder.setNegativeButton(LocaleController.getString("PermissionOpenSettings", R.string.PermissionOpenSettings), (dialog, which) -> {
-            if (getParentActivity() == null) {
-                return;
-            }
-            try {
-                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.setData(Uri.parse("package:" + ApplicationLoader.applicationContext.getPackageName()));
-                getParentActivity().startActivity(intent);
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        });
-        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
-        builder.show();
-    }
-
     private void showResults() {
         if (adapter.getItemCount() == 0) {
             return;
@@ -1379,7 +1376,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         int top;
         RecyclerView.ViewHolder holder = listView.findViewHolderForAdapterPosition(0);
         if (holder != null) {
-            top = (int) holder.itemView.getY();
+            top = (int) (holder.itemView.getY());
             height = overScrollHeight + Math.min(top, 0);
         } else {
             top = -mapViewClip.getMeasuredHeight();
@@ -1406,12 +1403,17 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                 }
             }
             int trY = Math.max(0, -(top - mapHeight + overScrollHeight) / 2);
-            mapView.setTranslationY(trY);
-            int totalToMove = listView.getPaddingTop() - (mapHeight - overScrollHeight);
+            int maxClipSize = mapHeight - overScrollHeight;
+            int totalToMove = listView.getPaddingTop() - maxClipSize;
             float moveProgress = 1.0f - (Math.max(0.0f, Math.min(1.0f, (listView.getPaddingTop() - top) / (float) totalToMove)));
             int prevClipSize = clipSize;
-            clipSize = (int) ((mapHeight - overScrollHeight) * moveProgress);
-            nonClipSize = mapHeight - overScrollHeight - clipSize;
+            if (locationDenied && isTypeSend()) {
+                maxClipSize += Math.min(top, listView.getPaddingTop());
+            }
+            clipSize = (int) (maxClipSize * moveProgress);
+
+            mapView.setTranslationY(trY);
+            nonClipSize = maxClipSize - clipSize;
             mapViewClip.invalidate();
 
             mapViewClip.setTranslationY(top - nonClipSize);
@@ -1441,7 +1443,30 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                     googleMap.moveCamera(CameraUpdateFactory.newLatLng(location));
                 }
             }
+
+            if (locationDenied && isTypeSend()) {
+//                adapter.setOverScrollHeight(overScrollHeight + top);
+//                // TODO(dkaraush): fix ripple effect on buttons
+                final int count = adapter.getItemCount();
+                for (int i = 1; i < count; ++i) {
+                    holder = listView.findViewHolderForAdapterPosition(i);
+                    if (holder != null) {
+                        holder.itemView.setTranslationY(listView.getPaddingTop() - top);
+                    }
+                }
+            }
         }
+    }
+
+    private boolean isTypeSend() {
+        return locationType == LOCATION_TYPE_SEND || locationType == LOCATION_TYPE_SEND_WITH_LIVE;
+    }
+
+    private int buttonsHeight() {
+        int buttonsHeight = AndroidUtilities.dp(66);
+        if (locationType == LOCATION_TYPE_SEND_WITH_LIVE)
+            buttonsHeight += AndroidUtilities.dp(66);
+        return buttonsHeight;
     }
 
     private void fixLayoutInternal(final boolean resume) {
@@ -1450,12 +1475,17 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
             return;
         }
         int height = ActionBar.getCurrentActionBarHeight();
+        int maxMapHeight = AndroidUtilities.displaySize.y - height - buttonsHeight() - AndroidUtilities.dp(90);
         overScrollHeight = AndroidUtilities.dp(189);
-        mapHeight = Math.max(overScrollHeight, Math.min(AndroidUtilities.dp(310), AndroidUtilities.displaySize.y - AndroidUtilities.dp(66) - height));
+        mapHeight = Math.max(overScrollHeight, locationDenied && isTypeSend() ? maxMapHeight : Math.min(AndroidUtilities.dp(310), maxMapHeight));
+        if (locationDenied && isTypeSend()) {
+            overScrollHeight = mapHeight;
+        }
 
         FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) listView.getLayoutParams();
         layoutParams.topMargin = height;
         listView.setLayoutParams(layoutParams);
+
         layoutParams = (FrameLayout.LayoutParams) mapViewClip.getLayoutParams();
         layoutParams.topMargin = height;
         layoutParams.height = mapHeight;
@@ -1465,7 +1495,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         layoutParams.topMargin = height;
         searchListView.setLayoutParams(layoutParams);
 
-        adapter.setOverScrollHeight(overScrollHeight);
+        adapter.setOverScrollHeight(locationDenied && isTypeSend() ? overScrollHeight - listView.getPaddingTop() : overScrollHeight);
         layoutParams = (FrameLayout.LayoutParams) mapView.getLayoutParams();
         if (layoutParams != null) {
             layoutParams.height = mapHeight + AndroidUtilities.dp(10);
@@ -1478,6 +1508,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                 overlayView.setLayoutParams(layoutParams);
             }
         }
+
         adapter.notifyDataSetChanged();
         updateClipView();
     }
@@ -1528,6 +1559,10 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.locationPermissionGranted) {
+            locationDenied = false;
+            if (adapter != null) {
+                adapter.setMyLocationDenied(locationDenied);
+            }
             if (googleMap != null) {
                 try {
                     googleMap.setMyLocationEnabled(true);
@@ -1535,7 +1570,14 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                     FileLog.e(e);
                 }
             }
+        } else if (id == NotificationCenter.locationPermissionDenied) {
+            locationDenied = true;
+            if (adapter != null) {
+                adapter.setMyLocationDenied(locationDenied);
+            }
         }
+        fixLayoutInternal(true);
+        searchItem.setVisibility(locationDenied ? View.GONE : View.VISIBLE);
     }
 
     @Override
@@ -1551,7 +1593,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
     }
 
     @Override
-    void onShow() {
+    void onShow(ChatAttachAlert.AttachAlertLayout previousLayout) {
         parentAlert.actionBar.setTitle(LocaleController.getString("ShareLocation", R.string.ShareLocation));
         if (mapView.getParent() == null) {
             mapViewClip.addView(mapView, 0, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, overScrollHeight + AndroidUtilities.dp(10), Gravity.TOP | Gravity.LEFT));

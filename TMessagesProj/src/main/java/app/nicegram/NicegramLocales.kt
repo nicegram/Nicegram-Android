@@ -22,7 +22,7 @@ object NicegramLocales {
         }
     )
 
-    private val forbiddenKeys = listOf("TelegramFeatures", "TelegramFeaturesUrl")
+    private val forbiddenKeys = listOf("TelegramFeatures", "TelegramFeaturesUrl", "NicegramDialogPolicyText")
 
     fun String.replaceTgTitle(key: String) =
         if (forbiddenKeys.contains(key)) this else this.replace("Telegram", "Nicegram")
