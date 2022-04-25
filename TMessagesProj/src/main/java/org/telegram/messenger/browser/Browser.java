@@ -50,6 +50,8 @@ import java.lang.ref.WeakReference;
 import java.net.URLEncoder;
 import java.util.List;
 
+import app.nicegram.PrefsHelper;
+
 public class Browser {
 
     private static WeakReference<CustomTabsSession> customTabsCurrentSession;
@@ -172,10 +174,21 @@ public class Browser {
     }
 
     public static boolean isTelegraphUrl(String url, boolean equals) {
+        return isTelegraphUrl(url, equals, false);
+    }
+    public static boolean isTelegraphUrl(String url, boolean equals, boolean forceHttps) {
         if (equals) {
             return url.equals("telegra.ph") || url.equals("te.legra.ph") || url.equals("graph.org");
         }
-        return url.contains("telegra.ph") || url.contains("te.legra.ph") || url.contains("graph.org");
+        return url.matches("^(https" + (forceHttps ? "" : "?") + "://)?(te\\.?legra\\.ph|graph\\.org).*"); // telegra.ph, te.legra.ph, graph.org
+    }
+
+    public static boolean urlMustNotHaveConfirmation(String url) {
+        return (
+            isTelegraphUrl(url, false, true) ||
+            url.matches("^(https://)?t\\.me/iv\\??.*") || // t.me/iv?
+            url.matches("^(https://)?telegram\\.org/(blog|tour)/?.*") // telegram.org/blog, telegram.org/tour
+        );
     }
 
     public static void openUrl(final Context context, Uri uri, final boolean allowCustom, boolean tryTelegraph) {
@@ -280,7 +293,7 @@ public class Browser {
                 try {
                     Intent viewIntent = new Intent(Intent.ACTION_VIEW, uri);
                     allActivities = context.getPackageManager().queryIntentActivities(viewIntent, 0);
-                    if (browserPackageNames != null) {
+                    if (browserPackageNames != null && !PrefsHelper.INSTANCE.openLinksInBrowser(currentAccount)) {
                         for (int a = 0; a < allActivities.size(); a++) {
                             for (int b = 0; b < browserPackageNames.length; b++) {
                                 if (browserPackageNames[b].equals(allActivities.get(a).activityInfo.packageName)) {
@@ -290,7 +303,7 @@ public class Browser {
                                 }
                             }
                         }
-                    } else {
+                    } else if (!PrefsHelper.INSTANCE.openLinksInBrowser(currentAccount)) {
                         for (int a = 0; a < allActivities.size(); a++) {
                             if (allActivities.get(a).activityInfo.packageName.toLowerCase().contains("browser") || allActivities.get(a).activityInfo.packageName.toLowerCase().contains("chrome")) {
                                 allActivities.remove(a);

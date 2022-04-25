@@ -53,6 +53,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -179,6 +180,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
     private boolean currentMapStyleDark;
 
     private boolean checkGpsEnabled = true;
+    private boolean locationDenied = false;
 
     private boolean isFirstLocation = true;
     private long dialogId;
@@ -440,6 +442,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         super.onFragmentCreate();
         getNotificationCenter().addObserver(this, NotificationCenter.closeChats);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.locationPermissionGranted);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.locationPermissionDenied);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.liveLocationsChanged);
         if (messageObject != null && messageObject.isLiveLocation()) {
             getNotificationCenter().addObserver(this, NotificationCenter.didReceiveNewMessages);
@@ -452,6 +455,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.locationPermissionGranted);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.locationPermissionDenied);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.liveLocationsChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.closeChats);
         getNotificationCenter().removeObserver(this, NotificationCenter.didReceiveNewMessages);
@@ -526,6 +530,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             userLocation.setLatitude(messageObject.messageOwner.media.geo.lat);
             userLocation.setLongitude(messageObject.messageOwner.media.geo._long);
         }
+        locationDenied = Build.VERSION.SDK_INT >= 23 && getParentActivity() != null && getParentActivity().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED;
 
         actionBar.setBackgroundColor(Theme.getColor(Theme.key_dialogBackground));
         actionBar.setTitleColor(Theme.getColor(Theme.key_dialogTextBlack));
@@ -983,6 +988,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                 }
             }
         });
+        adapter.setMyLocationDenied(locationDenied);
         adapter.setUpdateRunnable(() -> updateClipView(false));
         listView.setVerticalScrollBarEnabled(false);
         listView.setLayoutManager(layoutManager = new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false));
@@ -1740,7 +1746,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         try {
             googleMap.setMyLocationEnabled(true);
         } catch (Exception e) {
-            FileLog.e(e);
+            FileLog.e(e, false);
         }
         googleMap.getUiSettings().setMyLocationButtonEnabled(false);
         googleMap.getUiSettings().setZoomControlsEnabled(false);
@@ -1813,7 +1819,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             LocationManager lm = (LocationManager) ApplicationLoader.applicationContext.getSystemService(Context.LOCATION_SERVICE);
             if (!lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                builder.setTitle(LocaleController.getString("GpsDisabledAlertTitle", R.string.GpsDisabledAlertTitle));
+                builder.setTopAnimation(R.raw.permission_request_location, AlertsCreator.PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, Theme.getColor(Theme.key_dialogTopBackground));
                 builder.setMessage(LocaleController.getString("GpsDisabledAlertText", R.string.GpsDisabledAlertText));
                 builder.setPositiveButton(LocaleController.getString("ConnectingToProxyEnable", R.string.ConnectingToProxyEnable), (dialog, id) -> {
                     if (getParentActivity() == null) {
@@ -1871,11 +1877,11 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             return;
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-        builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
+        builder.setTopAnimation(R.raw.permission_request_location, AlertsCreator.PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, Theme.getColor(Theme.key_dialogTopBackground));
         if (byButton) {
-            builder.setMessage(LocaleController.getString("PermissionNoLocationPosition", R.string.PermissionNoLocationPosition));
+            builder.setMessage(LocaleController.getString("PermissionNoLocationNavigation", R.string.PermissionNoLocationNavigation));
         } else {
-            builder.setMessage(LocaleController.getString("PermissionNoLocation", R.string.PermissionNoLocation));
+            builder.setMessage(LocaleController.getString("PermissionNoLocationFriends", R.string.PermissionNoLocationFriends));
         }
         builder.setNegativeButton(LocaleController.getString("PermissionOpenSettings", R.string.PermissionOpenSettings), (dialog, which) -> {
             if (getParentActivity() == null) {
@@ -2381,12 +2387,21 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         if (id == NotificationCenter.closeChats) {
             removeSelfFromStack();
         } else if (id == NotificationCenter.locationPermissionGranted) {
+            locationDenied = false;
+            if (adapter != null) {
+                adapter.setMyLocationDenied(locationDenied);
+            }
             if (googleMap != null) {
                 try {
                     googleMap.setMyLocationEnabled(true);
                 } catch (Exception e) {
                     FileLog.e(e);
                 }
+            }
+        } else if (id == NotificationCenter.locationPermissionDenied) {
+            locationDenied = true;
+            if (adapter != null) {
+                adapter.setMyLocationDenied(locationDenied);
             }
         } else if (id == NotificationCenter.liveLocationsChanged) {
             if (adapter != null) {

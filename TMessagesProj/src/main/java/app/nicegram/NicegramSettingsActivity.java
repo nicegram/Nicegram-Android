@@ -17,6 +17,8 @@ import android.widget.FrameLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.nicegram.NicegramPrefs;
+
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
@@ -38,12 +40,20 @@ public class NicegramSettingsActivity extends BaseFragment {
 
     private int nicegramSectionRow;
     private int mentionAllRow;
+    private int skipReadHistoryRow;
+    private int showProfileIdRow;
+    private int showRegDateRow;
+    private int openLinksRow;
     private int rowCount = 0;
 
     @Override
     public boolean onFragmentCreate() {
         nicegramSectionRow = -1;
         mentionAllRow = rowCount++;
+        skipReadHistoryRow = rowCount++;
+        showProfileIdRow = rowCount++;
+        showRegDateRow = rowCount++;
+        openLinksRow = rowCount++;
 
         return super.onFragmentCreate();
     }
@@ -86,8 +96,32 @@ public class NicegramSettingsActivity extends BaseFragment {
             if (position == mentionAllRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(MentionAllHelper.MENTION_ALL_PREF_NAME, true);
-                editor.putBoolean(MentionAllHelper.MENTION_ALL_PREF_NAME, !enabled);
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_MENTION_ALL_ENABLED, NicegramPrefs.PREF_MENTION_ALL_ENABLED_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_MENTION_ALL_ENABLED, !enabled);
+                editor.apply();
+            } else if (position == skipReadHistoryRow) {
+                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_SKIP_READ_HISTORY, NicegramPrefs.PREF_SKIP_READ_HISTORY_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_SKIP_READ_HISTORY, !enabled);
+                editor.apply();
+            } else if (position == showProfileIdRow) {
+                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_PROFILE_ID, NicegramPrefs.PREF_SHOW_PROFILE_ID_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_SHOW_PROFILE_ID, !enabled);
+                editor.apply();
+            } else if (position == showRegDateRow) {
+                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, !enabled);
+                editor.apply();
+            } else if (position == openLinksRow) {
+                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER, NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER, !enabled);
                 editor.apply();
             }
             if (view instanceof TextCheckCell) {
@@ -156,7 +190,15 @@ public class NicegramSettingsActivity extends BaseFragment {
                     TextCheckCell checkCell = (TextCheckCell) holder.itemView;
                     SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                     if (position == mentionAllRow) {
-                        checkCell.setTextAndValueAndCheck(LocaleController.getString("ShowMentionAll"), LocaleController.getString("For20OrLessChats"), preferences.getBoolean(MentionAllHelper.MENTION_ALL_PREF_NAME, true), true, false);
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString("ShowMentionAll"), LocaleController.getString("For20OrLessChats"), preferences.getBoolean(NicegramPrefs.PREF_MENTION_ALL_ENABLED, NicegramPrefs.PREF_MENTION_ALL_ENABLED_DEFAULT), true, false);
+                    } else if (position == skipReadHistoryRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("NicegramSkipReadHistory"), preferences.getBoolean(NicegramPrefs.PREF_SKIP_READ_HISTORY, NicegramPrefs.PREF_SKIP_READ_HISTORY_DEFAULT), false);
+                    } else if (position == showProfileIdRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("NicegramShowProfileID"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_PROFILE_ID, NicegramPrefs.PREF_SHOW_PROFILE_ID_DEFAULT), false);
+                    } else if (position == showRegDateRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("NicegramShowRegistrationDate"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT), false);
+                    } else if (position == openLinksRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("NicegramOpenLinksInBrowser"), preferences.getBoolean(NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER, NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER_DEFAULT), false);
                     }
                     break;
                 }
@@ -167,7 +209,8 @@ public class NicegramSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == nicegramSectionRow) {
                 return 0;
-            } else if (position == mentionAllRow) {
+            } else if (position == mentionAllRow || position == skipReadHistoryRow || position == openLinksRow ||
+                    position == showRegDateRow || position == showProfileIdRow) {
                 return 1;
             } else {
                 return 0;

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ShowMentionAll">显示“提到所有人”</string>
+    <string name="MentionAllUsers">提到所有用户</string>
+    <string name="For20OrLessChats">适合少于 20 人的聊天</string>
+    <string name="NicegramSettings">Nicegram 设置</string>
+    <string name="NicegramRegistered">已注册</string>
+    <string name="NicegramGetRegistrationDate">获取注册日期</string>
+    <string name="NicegramGetIdCopied">Id 已复制到剪贴板</string>
+    <string name="NicegramLoading">加载中……</string>
+    <string name="NicegramRegDateError">抱歉，无法获得注册日期</string>
+    <string name="NicegramUndoTranslate">撤销翻译</string>
+    <string name="NicegramTranslationUnavailable">抱歉，翻译不可用</string>
+    <string name="NicegramForwardAsCopy">作为副本转发</string>
+    <string name="NicegramSkipReadHistory">快速浏览历史</string>
+    <string name="NicegramOlderThan">早于</string>
+    <string name="NicegramNewerThan">晚于</string>
+    <string name="NicegramApproximately">大约</string>
+    <string name="NicegramShowProfileID">显示个人简介 ID</string>
+    <string name="NicegramShowRegistrationDate">显示注册日期</string>
+    <string name="NicegramOpenLinksInBrowser">在浏览器中打开链接</string>
+    <string name="NicegramDialogPolicy">Nicegram 的隐私政策</string>
+    <string name="NicegramDialogPolicyText">Nicegram 是一款非官方 Telegram 客户端，您所获得的很多 Nicegram 服务实际上是由 Telegram 公司所提供。\n\n 在使用本应用之前，请先阅读我们的隐私政策。\n\n 点击继续，即表示您确认已阅读并同意 Nicegram 的隐私政策。</string>
+</resources>

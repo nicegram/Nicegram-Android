@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ShowMentionAll">Zobraziť «Uviesť všetko»</string>
+    <string name="MentionAllUsers">Uviesť všetkých používateľov</string>
+    <string name="For20OrLessChats">Pre chaty s menej ako 20 ľuďmi</string>
+    <string name="NicegramSettings">Nastavenia Nicegram</string>
+    <string name="NicegramRegistered">Registrovaný</string>
+    <string name="NicegramGetRegistrationDate">Dátum registrácie</string>
+    <string name="NicegramGetIdCopied">ID bolo skopírované do schránky</string>
+    <string name="NicegramLoading">Načítava sa…</string>
+    <string name="NicegramRegDateError">Ľutujeme, nedá sa zistiť dátum registrácie</string>
+    <string name="NicegramUndoTranslate">Vrátiť späť preklad</string>
+    <string name="NicegramTranslationUnavailable">Ľutujeme, preklad nie je k dispozícii</string>
+    <string name="NicegramForwardAsCopy">Preposlať ako kópiu</string>
+    <string name="NicegramSkipReadHistory">Preskočiť históriu čítania</string>
+    <string name="NicegramOlderThan">Starší než</string>
+    <string name="NicegramNewerThan">Novší než</string>
+    <string name="NicegramApproximately">Približne</string>
+    <string name="NicegramShowProfileID">Zobraziť ID profilu</string>
+    <string name="NicegramShowRegistrationDate">Zobraziť dátum registrácie</string>
+    <string name="NicegramOpenLinksInBrowser">Otvoriť linku v prehliadači</string>
+    <string name="NicegramDialogPolicy">Zásady ochrany osobných údajov spoločnosti Nicegram</string>
+    <string name="NicegramDialogPolicyText">Nicegram je neoficiálny klient Telegramu a mnohé zo služieb, ktoré získate používaním Nicegramu, v skutočnosti poskytuje spoločnosť Telegram.\n\nPred použitím aplikácie si prečítajte naše Zásady ochrany osobných údajov.\n\nKliknutím na pokračovať potvrdzujete, že ste si prečítali a súhlasíte so Zásadami ochrany osobných údajov spoločnosti Nicegram.</string>
+</resources>

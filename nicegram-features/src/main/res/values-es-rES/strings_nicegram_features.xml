@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ShowMentionAll">Mostrar «Mencionar a todos»</string>
+    <string name="MentionAllUsers">Mencionar a todos los usuarios</string>
+    <string name="For20OrLessChats">Para chats con menos de 20 personas</string>
+    <string name="NicegramSettings">Configuración de Nicegram</string>
+    <string name="NicegramRegistered">Registrado</string>
+    <string name="NicegramGetRegistrationDate">Obtener fecha de registro</string>
+    <string name="NicegramGetIdCopied">Identificación copiada en el portapapeles</string>
+    <string name="NicegramLoading">Cargando…</string>
+    <string name="NicegramRegDateError">Lo sentimos, pero no hemos podido obtener la fecha de registro</string>
+    <string name="NicegramUndoTranslate">Deshacer traducción</string>
+    <string name="NicegramTranslationUnavailable">Lo sentimos, pero la traducción no está disponible</string>
+    <string name="NicegramForwardAsCopy">Reenviar como copia</string>
+    <string name="NicegramSkipReadHistory">Omitir historial de lectura</string>
+    <string name="NicegramOlderThan">Mayor que</string>
+    <string name="NicegramNewerThan">Mas reciente que</string>
+    <string name="NicegramApproximately">Aproximadamente</string>
+    <string name="NicegramShowProfileID">Mostrar identificación del perfil</string>
+    <string name="NicegramShowRegistrationDate">Mostrar fecha de registro</string>
+    <string name="NicegramOpenLinksInBrowser">Abrir enlaces en el navegador</string>
+    <string name="NicegramDialogPolicy">Política de privacidad de Nicegram</string>
+    <string name="NicegramDialogPolicyText">Nicegram es un cliente no oficial de Telegram y muchos de los servicios que obtienes al usar Nicegram, en realidad son proporcionados por la compañía Telegram.\n\nLee nuestra política de privacidad antes de usar la aplicación.\n\nAl hacer clic en continuar, confirmas que has leído y aceptado la política de privacidad de Nicegram.</string>
+</resources>
