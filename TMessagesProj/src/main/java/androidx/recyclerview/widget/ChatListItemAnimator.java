@@ -62,6 +62,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
         this.activity = activity;
         this.recyclerListView = listView;
         translationInterpolator = DEFAULT_INTERPOLATOR;
+        alwaysCreateMoveAnimationIfPossible = true;
         setSupportsChangeAnimations(false);
     }
 
@@ -690,7 +691,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
                 @Override
                 public void onAnimationUpdate(ValueAnimator valueAnimator) {
                     float v = (float) valueAnimator.getAnimatedValue();
-                    float top = recyclerListView.getMeasuredHeight() / 2f - botCell.getMeasuredHeight() / 2f + activity.getChatListViewPadding();
+                    float top = (recyclerListView.getMeasuredHeight() - activity.getChatListViewPadding() - activity.blurredViewBottomOffset) / 2f - botCell.getMeasuredHeight() / 2f + activity.getChatListViewPadding();
                     float animateTo = 0;
                     if (botCell.getTop() > top) {
                         animateTo = top - botCell.getTop();
@@ -760,6 +761,13 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
                 recyclerListView.invalidate();
 
                 ValueAnimator valueAnimator = ValueAnimator.ofFloat(1f, 0);
+                if (moveInfoExtended.animateBackgroundOnly) {
+                    params.toDeltaLeft = -moveInfoExtended.deltaLeft;
+                    params.toDeltaRight = -moveInfoExtended.deltaRight;
+                } else {
+                    params.toDeltaLeft = -moveInfoExtended.deltaLeft - chatMessageCell.getAnimationOffsetX();
+                    params.toDeltaRight = -moveInfoExtended.deltaRight - chatMessageCell.getAnimationOffsetX();
+                }
                 valueAnimator.addUpdateListener(animation -> {
                     float v = (float) animation.getAnimatedValue();
                     if (moveInfoExtended.animateBackgroundOnly) {
@@ -776,6 +784,9 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
                     chatMessageCell.invalidate();
                 });
                 animatorSet.playTogether(valueAnimator);
+            } else {
+                params.toDeltaLeft = 0;
+                params.toDeltaRight = 0;
             }
 
             MessageObject.GroupedMessages group = chatMessageCell.getCurrentMessagesGroup();

@@ -51,6 +51,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.graphics.ColorUtils;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
@@ -252,9 +254,6 @@ public class TwoStepVerificationSetupActivity extends BaseFragment {
         actionBar.setItemsBackgroundColor(Theme.getColor(Theme.key_actionBarWhiteSelector), false);
         actionBar.setCastShadows(false);
         actionBar.setAddToContainer(false);
-        if (!AndroidUtilities.isTablet()) {
-            actionBar.showActionModeTop();
-        }
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {
@@ -448,7 +447,7 @@ public class TwoStepVerificationSetupActivity extends BaseFragment {
         buttonTextView.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
         buttonTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
         buttonTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        buttonTextView.setBackground(Theme.createSimpleSelectorRoundRectDrawable(AndroidUtilities.dp(6), Theme.getColor(Theme.key_featuredStickers_addButton), Theme.getColor(Theme.key_featuredStickers_addButtonPressed)));
+        buttonTextView.setBackground(Theme.AdaptiveRipple.filledRect(Theme.key_featuredStickers_addButton, 6));
         buttonTextView.setOnClickListener(v -> processNext());
 
         switch (currentType) {
@@ -1245,12 +1244,16 @@ public class TwoStepVerificationSetupActivity extends BaseFragment {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        if (currentType == TYPE_ENTER_HINT && AndroidUtilities.isSmallScreen()) {
-            imageView.setVisibility(View.GONE);
-        } else if (!isIntro()) {
-            imageView.setVisibility(isLandscape() ? View.GONE : View.VISIBLE);
+        if (imageView != null) {
+            if (currentType == TYPE_ENTER_HINT && AndroidUtilities.isSmallScreen()) {
+                imageView.setVisibility(View.GONE);
+            } else if (!isIntro()) {
+                imageView.setVisibility(isLandscape() ? View.GONE : View.VISIBLE);
+            }
         }
-        keyboardView.setVisibility(isCustomKeyboardVisible() ? View.VISIBLE : View.GONE);
+        if (keyboardView != null) {
+            keyboardView.setVisibility(isCustomKeyboardVisible() ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void animateSuccess(Runnable callback) {
@@ -2185,5 +2188,11 @@ public class TwoStepVerificationSetupActivity extends BaseFragment {
         } else {
             super.finishFragment();
         }
+    }
+
+    @Override
+    public boolean isLightStatusBar() {
+        int color = Theme.getColor(Theme.key_windowBackgroundWhite, null, true);
+        return ColorUtils.calculateLuminance(color) > 0.7f;
     }
 }

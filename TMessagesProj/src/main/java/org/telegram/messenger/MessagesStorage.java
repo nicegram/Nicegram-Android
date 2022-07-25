@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class MessagesStorage extends BaseController {
 
-    private DispatchQueue storageQueue = new DispatchQueue("storageQueue");
+    private DispatchQueue storageQueue;
     private SQLiteDatabase database;
     private File cacheFile;
     private File walCacheFile;
@@ -82,18 +82,22 @@ public class MessagesStorage extends BaseController {
     private CountDownLatch openSync = new CountDownLatch(1);
 
     private static volatile MessagesStorage[] Instance = new MessagesStorage[UserConfig.MAX_ACCOUNT_COUNT];
-    private final static int LAST_DB_VERSION = 92;
+    private static final Object[] lockObjects = new Object[UserConfig.MAX_ACCOUNT_COUNT];
+    static {
+        for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
+            lockObjects[i] = new Object();
+        }
+    }
+
+    private final static int LAST_DB_VERSION = 98;
     private boolean databaseMigrationInProgress;
     public boolean showClearDatabaseAlert;
 
-    public ArrayList<MessageObject> downloadingFiles = new ArrayList<>();
-    public ArrayList<MessageObject> recentDownloadingFiles = new ArrayList<>();
-    public SparseArray<MessageObject> unviewedDownloads = new SparseArray<>();
 
     public static MessagesStorage getInstance(int num) {
         MessagesStorage localInstance = Instance[num];
         if (localInstance == null) {
-            synchronized (MessagesStorage.class) {
+            synchronized (lockObjects[num]) {
                 localInstance = Instance[num];
                 if (localInstance == null) {
                     Instance[num] = localInstance = new MessagesStorage(num);
@@ -191,6 +195,7 @@ public class MessagesStorage extends BaseController {
 
     public MessagesStorage(int instance) {
         super(instance);
+        storageQueue = new DispatchQueue("storageQueue_" + instance);
         //storageQueue.setPriority(Thread.MAX_PRIORITY);
         storageQueue.postRunnable(() -> openDatabase(1));
     }
@@ -288,7 +293,7 @@ public class MessagesStorage extends BaseController {
                 database.executeFast("CREATE INDEX IF NOT EXISTS uid_date_idx_scheduled_messages_v2 ON scheduled_messages_v2(uid, date);").stepThis().dispose();
                 database.executeFast("CREATE INDEX IF NOT EXISTS reply_to_idx_scheduled_messages_v2 ON scheduled_messages_v2(mid, reply_to_message_id);").stepThis().dispose();
 
-                database.executeFast("CREATE TABLE messages_v2(mid INTEGER, uid INTEGER, read_state INTEGER, send_state INTEGER, date INTEGER, data BLOB, out INTEGER, ttl INTEGER, media INTEGER, replydata BLOB, imp INTEGER, mention INTEGER, forwards INTEGER, replies_data BLOB, thread_reply_id INTEGER, is_channel INTEGER, reply_to_message_id INTEGER, PRIMARY KEY(mid, uid))").stepThis().dispose();
+                database.executeFast("CREATE TABLE messages_v2(mid INTEGER, uid INTEGER, read_state INTEGER, send_state INTEGER, date INTEGER, data BLOB, out INTEGER, ttl INTEGER, media INTEGER, replydata BLOB, imp INTEGER, mention INTEGER, forwards INTEGER, replies_data BLOB, thread_reply_id INTEGER, is_channel INTEGER, reply_to_message_id INTEGER, custom_params BLOB, PRIMARY KEY(mid, uid))").stepThis().dispose();
                 database.executeFast("CREATE INDEX IF NOT EXISTS uid_mid_read_out_idx_messages_v2 ON messages_v2(uid, mid, read_state, out);").stepThis().dispose();
                 database.executeFast("CREATE INDEX IF NOT EXISTS uid_date_mid_idx_messages_v2 ON messages_v2(uid, date, mid);").stepThis().dispose();
                 database.executeFast("CREATE INDEX IF NOT EXISTS mid_out_idx_messages_v2 ON messages_v2(mid, out);").stepThis().dispose();
@@ -362,7 +367,7 @@ public class MessagesStorage extends BaseController {
                 database.executeFast("CREATE TABLE dialog_settings(did INTEGER PRIMARY KEY, flags INTEGER);").stepThis().dispose();
                 database.executeFast("CREATE TABLE web_recent_v3(id TEXT, type INTEGER, image_url TEXT, thumb_url TEXT, local_url TEXT, width INTEGER, height INTEGER, size INTEGER, date INTEGER, document BLOB, PRIMARY KEY (id, type));").stepThis().dispose();
                 database.executeFast("CREATE TABLE stickers_v2(id INTEGER PRIMARY KEY, data BLOB, date INTEGER, hash INTEGER);").stepThis().dispose();
-                database.executeFast("CREATE TABLE stickers_featured(id INTEGER PRIMARY KEY, data BLOB, unread BLOB, date INTEGER, hash INTEGER);").stepThis().dispose();
+                database.executeFast("CREATE TABLE stickers_featured(id INTEGER PRIMARY KEY, data BLOB, unread BLOB, date INTEGER, hash INTEGER, premium INTEGER);").stepThis().dispose();
                 database.executeFast("CREATE TABLE stickers_dice(emoji TEXT PRIMARY KEY, data BLOB, date INTEGER);").stepThis().dispose();
                 database.executeFast("CREATE TABLE hashtag_recent_v2(id TEXT PRIMARY KEY, date INTEGER);").stepThis().dispose();
                 database.executeFast("CREATE TABLE webpage_pending_v2(id INTEGER, mid INTEGER, uid INTEGER, PRIMARY KEY (id, mid, uid));").stepThis().dispose();
@@ -397,6 +402,10 @@ public class MessagesStorage extends BaseController {
                 database.executeFast("CREATE INDEX IF NOT EXISTS reaction_mentions_did ON reaction_mentions(dialog_id);").stepThis().dispose();
 
                 database.executeFast("CREATE TABLE downloading_documents(data BLOB, hash INTEGER, id INTEGER, state INTEGER, date INTEGER, PRIMARY KEY(hash, id));").stepThis().dispose();
+
+                database.executeFast("CREATE TABLE attach_menu_bots(data BLOB, hash INTEGER, date INTEGER);").stepThis().dispose();
+
+                database.executeFast("CREATE TABLE premium_promo(data BLOB, date INTEGER);").stepThis().dispose();
                 //version
                 database.executeFast("PRAGMA user_version = " + LAST_DB_VERSION).stepThis().dispose();
             } else {
@@ -1563,6 +1572,33 @@ public class MessagesStorage extends BaseController {
             version = 92;
         }
 
+        if (version == 92) {
+            database.executeFast("CREATE TABLE IF NOT EXISTS attach_menu_bots(data BLOB, hash INTEGER, date INTEGER);").stepThis().dispose();
+            database.executeFast("PRAGMA user_version = 93").stepThis().dispose();
+            version = 95;
+        }
+
+        if (version == 95 || version == 93) {
+            executeNoException("ALTER TABLE messages_v2 ADD COLUMN custom_params BLOB default NULL");
+            database.executeFast("PRAGMA user_version = 96").stepThis().dispose();
+            version = 96;
+        }
+
+        // skip 94, 95. private beta db rollback
+        if (version == 96) {
+            database.executeFast("CREATE TABLE IF NOT EXISTS premium_promo(data BLOB, date INTEGER);").stepThis().dispose();
+            database.executeFast("UPDATE stickers_v2 SET date = 0");
+            database.executeFast("PRAGMA user_version = 97").stepThis().dispose();
+            version = 97;
+        }
+
+        if (version == 97) {
+            database.executeFast("DROP TABLE IF EXISTS stickers_featured;").stepThis().dispose();
+            database.executeFast("CREATE TABLE stickers_featured(id INTEGER PRIMARY KEY, data BLOB, unread BLOB, date INTEGER, hash INTEGER, premium INTEGER);").stepThis().dispose();
+            database.executeFast("PRAGMA user_version = 98").stepThis().dispose();
+            version = 98;
+        }
+
         FileLog.d("MessagesStorage db migration finished");
         AndroidUtilities.runOnUIThread(() -> {
             databaseMigrationInProgress = false;
@@ -2084,6 +2120,7 @@ public class MessagesStorage extends BaseController {
 
                 database.executeFast("DELETE FROM reaction_mentions").stepThis().dispose();
                 database.executeFast("DELETE FROM downloading_documents").stepThis().dispose();
+                database.executeFast("DELETE FROM attach_menu_bots").stepThis().dispose();
 
                 SQLiteCursor cursor = database.queryFinalized("SELECT did FROM dialogs WHERE 1");
                 StringBuilder ids = new StringBuilder();
@@ -2159,264 +2196,12 @@ public class MessagesStorage extends BaseController {
             } finally {
                 AndroidUtilities.runOnUIThread(() -> {
                     NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.didClearDatabase);
+                    getMediaDataController().loadAttachMenuBots(false, true);
                 });
             }
         });
     }
 
-    public void startDownloadFile(TLRPC.Document document, MessageObject parentObject) {
-        AndroidUtilities.runOnUIThread(() -> {
-            boolean contains = false;
-
-            for (int i = 0; i < recentDownloadingFiles.size(); i++) {
-                if (recentDownloadingFiles.get(i).getDocument().id == parentObject.getDocument().id) {
-                    recentDownloadingFiles.remove(i);
-                    break;
-                }
-            }
-
-            for (int i = 0; i < downloadingFiles.size(); i++) {
-                if (downloadingFiles.get(i).getDocument().id == parentObject.getDocument().id) {
-                    contains = true;
-                    break;
-                }
-            }
-            if (!contains) {
-                downloadingFiles.add(parentObject);
-            }
-            getNotificationCenter().postNotificationName(NotificationCenter.onDownloadingFilesChanged);
-        });
-        storageQueue.postRunnable(() -> {
-            NativeByteBuffer data = null;
-            try {
-                data = new NativeByteBuffer(parentObject.messageOwner.getObjectSize());
-                parentObject.messageOwner.serializeToStream(data);
-
-                SQLitePreparedStatement state = database.executeFast("REPLACE INTO downloading_documents VALUES(?, ?, ?, ?, ?)");
-                state.bindByteBuffer(1, data);
-                state.bindInteger(2, parentObject.getDocument().dc_id);
-                state.bindLong(3, parentObject.getDocument().id);
-                state.bindLong(4, System.currentTimeMillis());
-                state.bindInteger(4, 0);
-
-                state.step();
-                state.dispose();
-                data.reuse();
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        });
-    }
-
-    public void onDownloadComplete(MessageObject parentObject) {
-        AndroidUtilities.runOnUIThread(() -> {
-            boolean removed = false;
-            for (int i = 0; i < downloadingFiles.size(); i++) {
-                if (downloadingFiles.get(i).getDocument().id == parentObject.getDocument().id) {
-                    downloadingFiles.remove(i);
-                    removed = true;
-                    break;
-                }
-            }
-
-            if (removed) {
-                boolean contains = false;
-                for (int i = 0; i < recentDownloadingFiles.size(); i++) {
-                    if (recentDownloadingFiles.get(i).getDocument().id == parentObject.getDocument().id) {
-                        contains = true;
-                        break;
-                    }
-                }
-                if (!contains) {
-                    recentDownloadingFiles.add(0, parentObject);
-                    putToUnviewedDownloads(parentObject);
-                }
-                getNotificationCenter().postNotificationName(NotificationCenter.onDownloadingFilesChanged);
-            }
-        });
-
-        storageQueue.postRunnable(() -> {
-            try {
-                NativeByteBuffer data = new NativeByteBuffer(parentObject.messageOwner.getObjectSize());
-                parentObject.messageOwner.serializeToStream(data);
-
-                SQLitePreparedStatement state = database.executeFast("UPDATE downloading_documents SET state = 1, date = ? WHERE hash = ? AND id = ?");
-                state.bindLong(1, System.currentTimeMillis());
-                state.bindInteger(2, parentObject.getDocument().dc_id);
-                state.bindLong(3, parentObject.getDocument().id);
-                state.step();
-                state.dispose();
-                data.reuse();
-
-
-                SQLiteCursor cursor = database.queryFinalized("SELECT COUNT(*) FROM downloading_documents WHERE state = 1");
-                int count = 0;
-                if (cursor.next()) {
-                    count = cursor.intValue(0);
-                }
-
-                cursor.dispose();
-                int limitDownloadsDocuments = 100;
-                if (count > limitDownloadsDocuments) {
-                    cursor = database.queryFinalized("SELECT hash, id FROM downloading_documents WHERE state = 1 ORDER BY date ASC LIMIT " + (limitDownloadsDocuments - count));
-                    ArrayList<DownloadingDocumentEntry> entriesToRemove = new ArrayList<>();
-                    while (cursor.next()) {
-                        DownloadingDocumentEntry entry = new DownloadingDocumentEntry();
-                        entry.hash = cursor.intValue(0);
-                        entry.id = cursor.longValue(1);
-                        entriesToRemove.add(entry);
-                    }
-                    cursor.dispose();
-                    
-                    state = database.executeFast("DELETE FROM downloading_documents WHERE hash = ? AND id = ?");
-                    for (int i = 0; i < entriesToRemove.size(); i++) {
-                        state.bindInteger(1, entriesToRemove.get(i).hash);
-                        state.bindLong(2, entriesToRemove.get(i).id);
-                        state.step();
-                    }
-                    state.dispose();
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        });
-    }
-
-    Runnable clearUnviewedDownloadsRunnbale = new Runnable() {
-        @Override
-        public void run() {
-            clearUnviewedDownloads();
-            getNotificationCenter().postNotificationName(NotificationCenter.onDownloadingFilesChanged);
-        }
-    };
-    private void putToUnviewedDownloads(MessageObject parentObject) {
-        unviewedDownloads.put(parentObject.getId(), parentObject);
-        AndroidUtilities.cancelRunOnUIThread(clearUnviewedDownloadsRunnbale);
-        AndroidUtilities.runOnUIThread(clearUnviewedDownloadsRunnbale, 60000);
-    }
-
-    public void clearUnviewedDownloads() {
-        unviewedDownloads.clear();
-    }
-
-    public void checkUnviewedDownloads(int messageId, long dialogId) {
-        MessageObject messageObject = unviewedDownloads.get(messageId);
-        if (messageObject != null && messageObject.getDialogId() == dialogId) {
-            unviewedDownloads.remove(messageId);
-            if (unviewedDownloads.size() == 0) {
-                getNotificationCenter().postNotificationName(NotificationCenter.onDownloadingFilesChanged);
-            }
-        }
-    }
-
-    public boolean hasUnviewedDownloads() {
-        return unviewedDownloads.size() > 0;
-    }
-
-    private class DownloadingDocumentEntry {
-        long id;
-        int hash;
-    }
-
-    public void loadDownloadingFiles() {
-        storageQueue.postRunnable(() -> {
-
-            ArrayList<MessageObject> downloadingMessages = new ArrayList<>();
-            ArrayList<MessageObject> recentlyDownloadedMessages = new ArrayList<>();
-
-            try {
-                SQLiteCursor cursor2 = database.queryFinalized("SELECT data, state FROM downloading_documents ORDER BY date DESC");
-                while (cursor2.next()) {
-                    NativeByteBuffer data = cursor2.byteBufferValue(0);
-                    int state = cursor2.intValue(1);
-                    if (data != null) {
-                        TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                        if (message != null) {
-                            message.readAttachPath(data, UserConfig.getInstance(currentAccount).clientUserId);
-                            MessageObject messageObject = new MessageObject(currentAccount, message, false, true);
-                            if (state == 0) {
-                                downloadingMessages.add(messageObject);
-                            } else if (messageObject.mediaExists) {
-                                recentlyDownloadedMessages.add(messageObject);
-                            }
-                        }
-                        data.reuse();
-                    }
-                }
-                cursor2.dispose();
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-
-            AndroidUtilities.runOnUIThread(() -> {
-                downloadingFiles.clear();
-                downloadingFiles.addAll(downloadingMessages);
-
-                recentDownloadingFiles.clear();
-                recentDownloadingFiles.addAll(recentlyDownloadedMessages);
-            });
-        });
-    }
-
-    public void clearRecentDownloadedFiles() {
-        recentDownloadingFiles.clear();
-        getNotificationCenter().postNotificationName(NotificationCenter.onDownloadingFilesChanged);
-
-        storageQueue.postRunnable(() -> {
-            try {
-                database.executeFast("DELETE FROM downloading_documents WHERE state = 1").stepThis().dispose();
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        });
-    }
-
-    public void deleteRecentFiles(ArrayList<MessageObject> messageObjects) {
-        for (int i = 0; i < messageObjects.size(); i++) {
-            boolean found = false;
-            for (int j = 0; j < recentDownloadingFiles.size(); j++) {
-                if (messageObjects.get(i).getId() == recentDownloadingFiles.get(j).getId()) {
-                    recentDownloadingFiles.remove(j);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                for (int j = 0; j < downloadingFiles.size(); j++) {
-                    if (messageObjects.get(i).getId() == downloadingFiles.get(j).getId()) {
-                        downloadingFiles.remove(j);
-                        found = true;
-                        break;
-                    }
-                }
-            }
-            messageObjects.get(i).putInDownloadsStore = false;
-            FileLoader.getInstance(currentAccount).loadFile(messageObjects.get(i).getDocument(), messageObjects.get(i), 0, 0);
-            FileLoader.getInstance(currentAccount).cancelLoadFile(messageObjects.get(i).getDocument(), true);
-        }
-        getNotificationCenter().postNotificationName(NotificationCenter.onDownloadingFilesChanged);
-        storageQueue.postRunnable(() -> {
-            try {
-                SQLitePreparedStatement state = database.executeFast("DELETE FROM downloading_documents WHERE hash = ? AND id = ?");
-                for (int i = 0; i < messageObjects.size(); i++) {
-                    state.bindInteger(1, messageObjects.get(i).getDocument().dc_id);
-                    state.bindLong(2, messageObjects.get(i).getDocument().id);
-                    state.step();
-
-                    try {
-                        File file = FileLoader.getPathToMessage(messageObjects.get(i).messageOwner);
-                        file.delete();
-                    } catch (Exception e) {
-                        FileLog.e(e);
-                    }
-                }
-                state.dispose();
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        });
-
-    }
 
     private static class ReadDialog {
         public int lastMid;
@@ -2575,6 +2360,11 @@ public class MessagesStorage extends BaseController {
                     data.reuse();
                 }
             }
+            if (!DialogObject.isEncryptedDialog(dialogId)) {
+                if (dialog.read_inbox_max_id > dialog.top_message) {
+                    dialog.read_inbox_max_id = 0;
+                }
+            }
             if (DialogObject.isEncryptedDialog(dialogId)) {
                 int encryptedChatId = DialogObject.getEncryptedChatId(dialogId);
                 if (!encryptedToLoad.contains(encryptedChatId)) {
@@ -2633,6 +2423,7 @@ public class MessagesStorage extends BaseController {
                 SQLiteCursor filtersCursor = database.queryFinalized("SELECT id, ord, unread_count, flags, title FROM dialog_filter WHERE 1");
 
                 boolean updateCounters = false;
+                boolean hasDefaultFilter = false;
                 while (filtersCursor.next()) {
                     MessagesController.DialogFilter filter = new MessagesController.DialogFilter();
                     filter.id = filtersCursor.intValue(0);
@@ -2689,8 +2480,32 @@ public class MessagesStorage extends BaseController {
                         }
                         cursor2.dispose();
                     }
+                    if (filter.id == 0) {
+                        hasDefaultFilter = true;
+                    }
                 }
                 filtersCursor.dispose();
+
+                if (!hasDefaultFilter) {
+                    MessagesController.DialogFilter filter = new MessagesController.DialogFilter();
+                    filter.id = 0;
+                    filter.order = 0;
+                    filter.name = "ALL_CHATS";
+                    for (int i = 0; i < dialogFilters.size(); i++) {
+                        dialogFilters.get(i).order++;
+                    }
+                    dialogFilters.add(filter);
+                    dialogFiltersMap.put(filter.id, filter);
+                    filtersById.put(filter.id, filter);
+
+                    SQLitePreparedStatement state = database.executeFast("REPLACE INTO dialog_filter VALUES(?, ?, ?, ?, ?)");
+                    state.bindInteger(1, filter.id);
+                    state.bindInteger(2, filter.order);
+                    state.bindInteger(3, filter.unreadCount);
+                    state.bindInteger(4, filter.flags);
+                    state.bindString(5, filter.name);
+                    state.stepThis().dispose();
+                }
 
                 Collections.sort(dialogFilters, (o1, o2) -> {
                     if (o1.order > o2.order) {
@@ -3128,7 +2943,7 @@ public class MessagesStorage extends BaseController {
             state.bindInteger(2, filter.order);
             state.bindInteger(3, filter.unreadCount);
             state.bindInteger(4, filter.flags);
-            state.bindString(5, filter.name);
+            state.bindString(5, filter.id == 0 ? "ALL_CHATS" : filter.name);
             state.step();
             state.dispose();
             if (peers) {
@@ -3192,7 +3007,7 @@ public class MessagesStorage extends BaseController {
                 HashMap<Integer, HashSet<Long>> filterDialogRemovals = new HashMap<>();
                 HashSet<Integer> filtersUnreadCounterReset = new HashSet<>();
                 for (int a = 0, N = vector.objects.size(); a < N; a++) {
-                    TLRPC.TL_dialogFilter newFilter = (TLRPC.TL_dialogFilter) vector.objects.get(a);
+                    TLRPC.DialogFilter newFilter = (TLRPC.DialogFilter) vector.objects.get(a);
                     filtersOrder.add(newFilter.id);
                     int newFlags = 0;
                     if (newFilter.contacts) {
@@ -3582,7 +3397,17 @@ public class MessagesStorage extends BaseController {
     }
 
     public void saveDialogFiltersOrder() {
-        storageQueue.postRunnable(this::saveDialogFiltersOrderInternal);
+        ArrayList<MessagesController.DialogFilter> filtersFinal = new ArrayList<>(getMessagesController().dialogFilters);
+        storageQueue.postRunnable(() -> {
+            dialogFilters.clear();
+            dialogFiltersMap.clear();
+            dialogFilters.addAll(filtersFinal);
+            for (int i = 0; i < filtersFinal.size(); i++) {
+                filtersFinal.get(i).order = i;
+                dialogFiltersMap.put(filtersFinal.get(i).id, filtersFinal.get(i));
+            }
+            saveDialogFiltersOrderInternal();
+        });
     }
 
     protected static void addReplyMessages(TLRPC.Message message, LongSparseArray<SparseArray<ArrayList<TLRPC.Message>>> replyMessageOwners, LongSparseArray<ArrayList<Integer>> dialogReplyMessagesIds) {
@@ -3609,7 +3434,7 @@ public class MessagesStorage extends BaseController {
         arrayList.add(message);
     }
 
-    protected void loadReplyMessages(LongSparseArray<SparseArray<ArrayList<TLRPC.Message>>> replyMessageOwners, LongSparseArray<ArrayList<Integer>> dialogReplyMessagesIds, ArrayList<Long> usersToLoad, ArrayList<Long> chatsToLoad) throws SQLiteException {
+    protected void loadReplyMessages(LongSparseArray<SparseArray<ArrayList<TLRPC.Message>>> replyMessageOwners, LongSparseArray<ArrayList<Integer>> dialogReplyMessagesIds, ArrayList<Long> usersToLoad, ArrayList<Long> chatsToLoad, boolean scheduled) throws SQLiteException {
         if (replyMessageOwners.isEmpty()) {
             return;
         }
@@ -3621,7 +3446,12 @@ public class MessagesStorage extends BaseController {
             if (ids == null) {
                 continue;
             }
-            SQLiteCursor cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid, date, uid FROM messages_v2 WHERE mid IN(%s) AND uid = %d", TextUtils.join(",", ids), dialogId));
+            SQLiteCursor cursor;
+            if (scheduled) {
+                cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid, date, uid FROM scheduled_messages_v2 WHERE mid IN(%s) AND uid = %d", TextUtils.join(",", ids), dialogId));
+            } else {
+                cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid, date, uid FROM messages_v2 WHERE mid IN(%s) AND uid = %d", TextUtils.join(",", ids), dialogId));
+            }
             while (cursor.next()) {
                 NativeByteBuffer data = cursor.byteBufferValue(0);
                 if (data != null) {
@@ -3788,7 +3618,7 @@ public class MessagesStorage extends BaseController {
                     }
                     cursor.dispose();
 
-                    loadReplyMessages(replyMessageOwners, dialogReplyMessagesIds, usersToLoad, chatsToLoad);
+                    loadReplyMessages(replyMessageOwners, dialogReplyMessagesIds, usersToLoad, chatsToLoad, false);
 
                     if (!encryptedChatIds.isEmpty()) {
                         getEncryptedChatsInternal(TextUtils.join(",", encryptedChatIds), encryptedChats, usersToLoad);
@@ -3992,6 +3822,9 @@ public class MessagesStorage extends BaseController {
             if (document == null) {
                 return false;
             }
+            if (getMediaDataController().ringtoneDataStore.contains(document.id)) {
+                return false;
+            }
             id = document.id;
             type = DownloadController.AUTODOWNLOAD_TYPE_AUDIO;
         } else if (MessageObject.isStickerMessage(message) || MessageObject.isAnimatedStickerMessage(message)) {
@@ -4007,6 +3840,9 @@ public class MessagesStorage extends BaseController {
             id = document.id;
             type = DownloadController.AUTODOWNLOAD_TYPE_VIDEO;
         } else if (document != null) {
+            if (getMediaDataController().ringtoneDataStore.contains(document.id)) {
+                return false;
+            }
             id = document.id;
             type = DownloadController.AUTODOWNLOAD_TYPE_DOCUMENT;
         } else if (photo != null) {
@@ -4026,7 +3862,7 @@ public class MessagesStorage extends BaseController {
                 if (!TextUtils.isEmpty(name)) {
                     namesToDelete.add(name);
                 }
-                File file = FileLoader.getPathToAttach(photoSize, forceCache);
+                File file = getFileLoader().getPathToAttach(photoSize, forceCache);
                 if (file.toString().length() > 0) {
                     filesToDelete.add(file);
                 }
@@ -4037,13 +3873,13 @@ public class MessagesStorage extends BaseController {
             if (!TextUtils.isEmpty(name)) {
                 namesToDelete.add(name);
             }
-            File file = FileLoader.getPathToAttach(document, forceCache);
+            File file = getFileLoader().getPathToAttach(document, forceCache);
             if (file.toString().length() > 0) {
                 filesToDelete.add(file);
             }
             for (int a = 0, N = document.thumbs.size(); a < N; a++) {
                 TLRPC.PhotoSize photoSize = document.thumbs.get(a);
-                file = FileLoader.getPathToAttach(photoSize);
+                file = getFileLoader().getPathToAttach(photoSize);
                 if (file.toString().length() > 0) {
                     filesToDelete.add(file);
                 }
@@ -4428,7 +4264,7 @@ public class MessagesStorage extends BaseController {
                 ArrayList<String> namesToDelete = new ArrayList<>();
                 ArrayList<Pair<Long, Integer>> idsToDelete = new ArrayList<>();
                 ArrayList<TLRPC.Message> messages = new ArrayList<>();
-                SQLiteCursor cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid, date, uid FROM messages_v2 WHERE mid IN (%s) AND uid = %d", TextUtils.join(",", mids), dialogId));
+                SQLiteCursor cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid, date, uid, custom_params FROM messages_v2 WHERE mid IN (%s) AND uid = %d", TextUtils.join(",", mids), dialogId));
                 while (cursor.next()) {
                     NativeByteBuffer data = cursor.byteBufferValue(0);
                     if (data != null) {
@@ -4449,6 +4285,11 @@ public class MessagesStorage extends BaseController {
                             message.id = cursor.intValue(1);
                             message.date = cursor.intValue(2);
                             message.dialog_id = cursor.longValue(3);
+                            NativeByteBuffer customParams = cursor.byteBufferValue(4);
+                            if (customParams != null) {
+                                MessageCustomParamsHelper.readLocalParams(message, customParams);
+                                customParams.reuse();
+                            }
                             messages.add(message);
                         }
                     }
@@ -4456,7 +4297,8 @@ public class MessagesStorage extends BaseController {
                 cursor.dispose();
                 deleteFromDownloadQueue(idsToDelete, true);
                 if (!messages.isEmpty()) {
-                    SQLitePreparedStatement state = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0)");
+                    SQLitePreparedStatement state = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0, ?)");
+
                     for (int a = 0; a < messages.size(); a++) {
                         TLRPC.Message message = messages.get(a);
 
@@ -4500,11 +4342,19 @@ public class MessagesStorage extends BaseController {
                             state.bindInteger(14, 0);
                         }
                         state.bindLong(15, MessageObject.getChannelId(message));
+                        NativeByteBuffer customParams = MessageCustomParamsHelper.writeLocalParams(message);
+                        if (customParams != null) {
+                            state.bindByteBuffer(16, customParams);
+                        } else {
+                            state.bindNull(16);
+                        }
                         state.step();
-
                         data.reuse();
                         if (repliesData != null) {
                             repliesData.reuse();
+                        }
+                        if (customParams != null) {
+                            customParams.reuse();
                         }
                     }
                     state.dispose();
@@ -4623,6 +4473,145 @@ public class MessagesStorage extends BaseController {
                 FileLog.e(e);
             }
         });
+    }
+
+    public void updateMessageVoiceTranscriptionOpen(long dialogId, int msgId, TLRPC.Message saveFromMessage) {
+        storageQueue.postRunnable(() -> {
+            try {
+                database.beginTransaction();
+                TLRPC.Message message = getMessageWithCustomParamsOnly(msgId, dialogId);
+                message.voiceTranscriptionOpen = saveFromMessage.voiceTranscriptionOpen;
+                message.voiceTranscriptionRated = saveFromMessage.voiceTranscriptionRated;
+                message.voiceTranscriptionFinal = saveFromMessage.voiceTranscriptionFinal;
+                message.voiceTranscriptionId = saveFromMessage.voiceTranscriptionId;
+
+                SQLitePreparedStatement state = database.executeFast("UPDATE messages_v2 SET custom_params = ? WHERE mid = ? AND uid = ?");
+                state.requery();
+                NativeByteBuffer nativeByteBuffer = MessageCustomParamsHelper.writeLocalParams(message);
+                if (nativeByteBuffer != null) {
+                    state.bindByteBuffer(1, nativeByteBuffer);
+                } else {
+                    state.bindNull(1);
+                }
+                state.bindInteger(2, msgId);
+                state.bindLong(3, dialogId);
+                state.step();
+                state.dispose();
+                if (nativeByteBuffer != null) {
+                    nativeByteBuffer.reuse();
+                }
+                database.commitTransaction();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public void updateMessageVoiceTranscription(long dialogId, int messageId, String text, long transcriptionId, boolean isFinal) {
+        storageQueue.postRunnable(() -> {
+            try {
+                database.beginTransaction();
+                TLRPC.Message message = getMessageWithCustomParamsOnly(messageId, dialogId);
+                message.voiceTranscriptionFinal = isFinal;
+                message.voiceTranscriptionId = transcriptionId;
+                message.voiceTranscription = text;
+
+                SQLitePreparedStatement state = database.executeFast("UPDATE messages_v2 SET custom_params = ? WHERE mid = ? AND uid = ?");
+                state.requery();
+                NativeByteBuffer nativeByteBuffer = MessageCustomParamsHelper.writeLocalParams(message);
+                if (nativeByteBuffer != null) {
+                    state.bindByteBuffer(1, nativeByteBuffer);
+                } else {
+                    state.bindNull(1);
+                }
+                state.bindInteger(2, messageId);
+                state.bindLong(3, dialogId);
+                state.step();
+                state.dispose();
+                database.commitTransaction();
+                if (nativeByteBuffer != null) {
+                    nativeByteBuffer.reuse();
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public void updateMessageVoiceTranscription(long dialogId, int messageId, String text, TLRPC.Message saveFromMessage) {
+        storageQueue.postRunnable(() -> {
+            try {
+                database.beginTransaction();
+                TLRPC.Message message = getMessageWithCustomParamsOnly(messageId, dialogId);
+                message.voiceTranscriptionOpen = saveFromMessage.voiceTranscriptionOpen;
+                message.voiceTranscriptionRated = saveFromMessage.voiceTranscriptionRated;
+                message.voiceTranscriptionFinal = saveFromMessage.voiceTranscriptionFinal;
+                message.voiceTranscriptionId = saveFromMessage.voiceTranscriptionId;
+                message.voiceTranscription = text;
+
+                SQLitePreparedStatement state = database.executeFast("UPDATE messages_v2 SET custom_params = ? WHERE mid = ? AND uid = ?");
+                state.requery();
+                NativeByteBuffer nativeByteBuffer = MessageCustomParamsHelper.writeLocalParams(message);
+                if (nativeByteBuffer != null) {
+                    state.bindByteBuffer(1, nativeByteBuffer);
+                } else {
+                    state.bindNull(1);
+                }
+                state.bindInteger(2, messageId);
+                state.bindLong(3, dialogId);
+                state.step();
+                state.dispose();
+                database.commitTransaction();
+                if (nativeByteBuffer != null) {
+                    nativeByteBuffer.reuse();
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public void updateMessageCustomParams(long dialogId, TLRPC.Message saveFromMessage) {
+        storageQueue.postRunnable(() -> {
+            try {
+                database.beginTransaction();
+                TLRPC.Message message = getMessageWithCustomParamsOnly(saveFromMessage.id, dialogId);
+                MessageCustomParamsHelper.copyParams(saveFromMessage, message);
+
+                SQLitePreparedStatement state = database.executeFast("UPDATE messages_v2 SET custom_params = ? WHERE mid = ? AND uid = ?");
+                state.requery();
+                NativeByteBuffer nativeByteBuffer = MessageCustomParamsHelper.writeLocalParams(message);
+                if (nativeByteBuffer != null) {
+                    state.bindByteBuffer(1, nativeByteBuffer);
+                } else {
+                    state.bindNull(1);
+                }
+                state.bindInteger(2, saveFromMessage.id);
+                state.bindLong(3, dialogId);
+                state.step();
+                state.dispose();
+                database.commitTransaction();
+                if (nativeByteBuffer != null) {
+                    nativeByteBuffer.reuse();
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    private TLRPC.Message getMessageWithCustomParamsOnly(int messageId, long dialogId) {
+        TLRPC.Message message = new TLRPC.TL_message();
+        try {
+            SQLiteCursor cursor = database.queryFinalized("SELECT custom_params FROM messages_v2 WHERE mid = " + messageId + " AND uid = " + dialogId);
+            if (cursor.next()) {
+                MessageCustomParamsHelper.readLocalParams(message, cursor.byteBufferValue(0));
+            }
+            cursor.dispose();
+        } catch (SQLiteException e) {
+            FileLog.e(e);
+        }
+        return message;
     }
 
     public void getNewTask(LongSparseArray<ArrayList<Integer>> oldTask, LongSparseArray<ArrayList<Integer>> oldTaskMedia) {
@@ -7109,7 +7098,7 @@ public class MessagesStorage extends BaseController {
             LongSparseArray<ArrayList<TLRPC.Message>> replyMessageRandomOwners = new LongSparseArray<>();
             ArrayList<Long> replyMessageRandomIds = new ArrayList<>();
             SQLiteCursor cursor;
-            String messageSelect = "SELECT m.read_state, m.data, m.send_state, m.mid, m.date, r.random_id, m.replydata, m.media, m.ttl, m.mention, m.imp, m.forwards, m.replies_data FROM messages_v2 as m LEFT JOIN randoms_v2 as r ON r.mid = m.mid AND r.uid = m.uid";
+            String messageSelect = "SELECT m.read_state, m.data, m.send_state, m.mid, m.date, r.random_id, m.replydata, m.media, m.ttl, m.mention, m.imp, m.forwards, m.replies_data, m.custom_params FROM messages_v2 as m LEFT JOIN randoms_v2 as r ON r.mid = m.mid AND r.uid = m.uid";
 
             if (scheduled) {
                 isEnd = true;
@@ -7563,6 +7552,11 @@ public class MessagesStorage extends BaseController {
                             } else if ((flags & 2) != 0) {
                                 message.stickerVerified = 2;
                             }
+                            NativeByteBuffer customParams = cursor.byteBufferValue(13);
+                            if (customParams != null) {
+                                MessageCustomParamsHelper.readLocalParams(message, customParams);
+                                customParams.reuse();
+                            }
                             res.messages.add(message);
 
                             addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad);
@@ -7701,7 +7695,7 @@ public class MessagesStorage extends BaseController {
                     }
                 }
             } else {
-                loadReplyMessages(replyMessageOwners, dialogReplyMessagesIds, usersToLoad, chatsToLoad);
+                loadReplyMessages(replyMessageOwners, dialogReplyMessagesIds, usersToLoad, chatsToLoad, scheduled);
             }
             if (!usersToLoad.isEmpty()) {
                 getUsersInternal(TextUtils.join(",", usersToLoad), res.users);
@@ -9276,7 +9270,7 @@ public class MessagesStorage extends BaseController {
                 LongSparseArray<ArrayList<Integer>> dialogMessagesIdsMap = new LongSparseArray<>();
                 LongSparseArray<ArrayList<Integer>> dialogMentionsIdsMap = new LongSparseArray<>();
 
-                SQLitePreparedStatement state_messages = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0)");
+                SQLitePreparedStatement state_messages = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0, ?)");
                 SQLitePreparedStatement state_media = null;
                 SQLitePreparedStatement state_randoms = database.executeFast("REPLACE INTO randoms_v2 VALUES(?, ?, ?)");
                 SQLitePreparedStatement state_download = database.executeFast("REPLACE INTO download_queue VALUES(?, ?, ?, ?, ?)");
@@ -9302,15 +9296,22 @@ public class MessagesStorage extends BaseController {
                     if (!(message.action instanceof TLRPC.TL_messageActionHistoryClear) && (!MessageObject.isOut(message) || message.from_scheduled) && (message.id > 0 || MessageObject.isUnread(message))) {
                         int currentMaxId = dialogsReadMax.get(message.dialog_id, -1);
                         if (currentMaxId == -1) {
-                            SQLiteCursor cursor = database.queryFinalized("SELECT inbox_max FROM dialogs WHERE did = " + message.dialog_id);
+                            SQLiteCursor cursor = database.queryFinalized("SELECT last_mid, inbox_max FROM dialogs WHERE did = " + message.dialog_id);
                             if (cursor.next()) {
-                                currentMaxId = cursor.intValue(0);
+                                int lastMessageId = cursor.intValue(0);
+                                int inboxMax = cursor.intValue(1);
+                                if (inboxMax > lastMessageId) {
+                                    currentMaxId = 0;
+                                } else {
+                                    currentMaxId = inboxMax;
+                                }
                             } else {
                                 currentMaxId = 0;
                             }
                             cursor.dispose();
                             dialogsReadMax.put(message.dialog_id, currentMaxId);
                         }
+                        FileLog.d("update messageRead currentMaxId = " + currentMaxId);
                         if (message.id < 0 || currentMaxId < message.id) {
                             StringBuilder messageIds = messageIdsMap.get(message.dialog_id);
                             if (messageIds == null) {
@@ -9328,6 +9329,7 @@ public class MessagesStorage extends BaseController {
                                 dialogMessagesIdsMap.put(message.dialog_id, ids);
                             }
                             ids.add(messageId);
+                            FileLog.d("addMessage = " + messageId);
                         }
                     }
                     if (MediaDataController.canAddMessageToMedia(message)) {
@@ -9549,6 +9551,12 @@ public class MessagesStorage extends BaseController {
                         state_messages.bindInteger(14, 0);
                     }
                     state_messages.bindLong(15, MessageObject.getChannelId(message));
+                    NativeByteBuffer customParams = MessageCustomParamsHelper.writeLocalParams(message);
+                    if (customParams != null) {
+                        state_messages.bindByteBuffer(16, customParams);
+                    } else {
+                        state_messages.bindNull(16);
+                    }
                     state_messages.step();
 
                     if (message.random_id != 0) {
@@ -9605,6 +9613,9 @@ public class MessagesStorage extends BaseController {
 
                     if (repliesData != null) {
                         repliesData.reuse();
+                    }
+                    if (customParams != null) {
+                        customParams.reuse();
                     }
                     data.reuse();
 
@@ -10419,6 +10430,7 @@ public class MessagesStorage extends BaseController {
                     state.step();
                     state.dispose();
                     getMessagesStorage().getDatabase().commitTransaction();
+                    data.reuse();
                 }
 
                 deleteFromDownloadQueue(idsToDelete, true);
@@ -10665,6 +10677,11 @@ public class MessagesStorage extends BaseController {
                     dialogs.messages.add(message);
 
                     addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad);
+                }
+                if (!DialogObject.isEncryptedDialog(dialogId)) {
+                    if (dialog.read_inbox_max_id > dialog.top_message) {
+                        dialog.read_inbox_max_id = 0;
+                    }
                 }
                 if (DialogObject.isEncryptedDialog(dialogId)) {
                     int encryptedChatId = DialogObject.getEncryptedChatId(dialogId);
@@ -11060,12 +11077,14 @@ public class MessagesStorage extends BaseController {
             try {
                 SQLiteCursor cursor = null;
                 int readState = 0;
+                NativeByteBuffer customParams = null;
                 try {
-                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT uid, read_state FROM messages_v2 WHERE mid = %d AND uid = %d LIMIT 1", message.id, MessageObject.getDialogId(message)));
+                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT uid, read_state, custom_params FROM messages_v2 WHERE mid = %d AND uid = %d LIMIT 1", message.id, MessageObject.getDialogId(message)));
                     if (!cursor.next()) {
                         return;
                     }
                     readState = cursor.intValue(1);
+                    customParams = cursor.byteBufferValue(2);
                 } catch (Exception e) {
                     FileLog.e(e);
                 } finally {
@@ -11076,7 +11095,7 @@ public class MessagesStorage extends BaseController {
 
                 database.beginTransaction();
 
-                SQLitePreparedStatement state = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0)");
+                SQLitePreparedStatement state = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0, ?)");
                 SQLitePreparedStatement state2 = database.executeFast("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
                 if (message.dialog_id == 0) {
                     MessageObject.getDialogId(message);
@@ -11122,6 +11141,11 @@ public class MessagesStorage extends BaseController {
                     state.bindInteger(14, 0);
                 }
                 state.bindLong(15, MessageObject.getChannelId(message));
+                if (customParams != null) {
+                    state.bindByteBuffer(16, customParams);
+                } else {
+                    state.bindNull(16);
+                }
                 state.step();
 
                 if (MediaDataController.canAddMessageToMedia(message)) {
@@ -11135,6 +11159,9 @@ public class MessagesStorage extends BaseController {
                 }
                 if (repliesData != null) {
                     repliesData.reuse();
+                }
+                if (customParams != null) {
+                    customParams.reuse();
                 }
                 data.reuse();
 
@@ -11234,7 +11261,7 @@ public class MessagesStorage extends BaseController {
                     ArrayList<String> namesToDelete = new ArrayList<>();
                     ArrayList<Pair<Long, Integer>> idsToDelete = new ArrayList<>();
 
-                    SQLitePreparedStatement state_messages = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0)");
+                    SQLitePreparedStatement state_messages = database.executeFast("REPLACE INTO messages_v2  VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0, ?)");
                     SQLitePreparedStatement state_media = database.executeFast("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
                     SQLitePreparedStatement state_polls = null;
                     SQLitePreparedStatement state_webpage = null;
@@ -11250,7 +11277,7 @@ public class MessagesStorage extends BaseController {
                         }
 
                         if (load_type == -2) {
-                            SQLiteCursor cursor = database.queryFinalized(String.format(Locale.US, "SELECT mid, data, ttl, mention, read_state, send_state FROM messages_v2 WHERE mid = %d AND uid = %d", message.id, MessageObject.getDialogId(message)));
+                            SQLiteCursor cursor = database.queryFinalized(String.format(Locale.US, "SELECT mid, data, ttl, mention, read_state, send_state, custom_params FROM messages_v2 WHERE mid = %d AND uid = %d", message.id, MessageObject.getDialogId(message)));
                             boolean exist;
                             if (exist = cursor.next()) {
                                 NativeByteBuffer data = cursor.byteBufferValue(1);
@@ -11273,6 +11300,11 @@ public class MessagesStorage extends BaseController {
                                     }
                                     if (!sameMedia) {
                                         addFilesToDelete(oldMessage, filesToDelete, idsToDelete, namesToDelete, false);
+                                    }
+                                    NativeByteBuffer customParams = cursor.byteBufferValue(6);
+                                    MessageCustomParamsHelper.readLocalParams(message, customParams);
+                                    if (customParams != null) {
+                                        customParams.reuse();
                                     }
                                 }
                                 boolean oldMention = cursor.intValue(3) != 0;
@@ -11388,6 +11420,12 @@ public class MessagesStorage extends BaseController {
                             state_messages.bindInteger(14, 0);
                         }
                         state_messages.bindLong(15, MessageObject.getChannelId(message));
+                        NativeByteBuffer customParams = MessageCustomParamsHelper.writeLocalParams(message);
+                        if (customParams == null) {
+                            state_messages.bindNull(16);
+                        } else {
+                            state_messages.bindByteBuffer(16, customParams);
+                        }
                         state_messages.step();
 
                         if (MediaDataController.canAddMessageToMedia(message)) {
@@ -11408,6 +11446,9 @@ public class MessagesStorage extends BaseController {
                         }
                         if (repliesData != null) {
                             repliesData.reuse();
+                        }
+                        if (customParams != null) {
+                            customParams.reuse();
                         }
                         data.reuse();
 
@@ -11777,6 +11818,12 @@ public class MessagesStorage extends BaseController {
                             }
                         }
 
+                        if (!DialogObject.isEncryptedDialog(dialogId)) {
+                            if (dialog.read_inbox_max_id > dialog.top_message) {
+                                dialog.read_inbox_max_id = 0;
+                            }
+                        }
+
                         if (DialogObject.isEncryptedDialog(dialogId)) {
                             int encryptedChatId = DialogObject.getEncryptedChatId(dialogId);
                             if (!encryptedToLoad.contains(encryptedChatId)) {
@@ -11795,7 +11842,7 @@ public class MessagesStorage extends BaseController {
                     cursor.dispose();
                 }
 
-                loadReplyMessages(replyMessageOwners, dialogReplyMessagesIds, usersToLoad, chatsToLoad);
+                loadReplyMessages(replyMessageOwners, dialogReplyMessagesIds, usersToLoad, chatsToLoad, false);
 
                 if (draftsDialogIds != null) {
                     ArrayList<Long> unloadedDialogs = new ArrayList<>();
@@ -11891,7 +11938,7 @@ public class MessagesStorage extends BaseController {
             }
 
             if (!dialogs.dialogs.isEmpty()) {
-                SQLitePreparedStatement state_messages = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0)");
+                SQLitePreparedStatement state_messages = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, 0, NULL)");
                 SQLitePreparedStatement state_dialogs = database.executeFast("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 SQLitePreparedStatement state_media = database.executeFast("REPLACE INTO media_v4 VALUES(?, ?, ?, ?, ?)");
                 SQLitePreparedStatement state_settings = database.executeFast("REPLACE INTO dialog_settings VALUES(?, ?)");
@@ -12358,11 +12405,20 @@ public class MessagesStorage extends BaseController {
             try {
                 if (outbox) {
                     cursor = database.queryFinalized("SELECT outbox_max FROM dialogs WHERE did = " + dialog_id);
+                    if (cursor.next()) {
+                        max[0] = cursor.intValue(0);
+                    }
                 } else {
-                    cursor = database.queryFinalized("SELECT inbox_max FROM dialogs WHERE did = " + dialog_id);
-                }
-                if (cursor.next()) {
-                    max[0] = cursor.intValue(0);
+                    cursor = database.queryFinalized("SELECT last_mid, inbox_max FROM dialogs WHERE did = " + dialog_id);
+                    if (cursor.next()) {
+                        int lastMid = cursor.intValue(0);
+                        int inboxMax = cursor.intValue(1);
+                        if (inboxMax > lastMid) {
+                            max[0] = 0;
+                        } else {
+                            max[0] = inboxMax;
+                        }
+                    }
                 }
             } catch (Exception e) {
                 FileLog.e(e);
@@ -12505,6 +12561,8 @@ public class MessagesStorage extends BaseController {
             }
             String savedMessages = LocaleController.getString("SavedMessages", R.string.SavedMessages).toLowerCase();
             String savedMessages2 = "saved messages";
+            String replies = LocaleController.getString("RepliesTitle", R.string.RepliesTitle).toLowerCase();
+            String replies2 = "replies";
             String search2 = LocaleController.getInstance().getTranslitString(search1);
             if (search1.equals(search2) || search2.length() == 0) {
                 search2 = null;
@@ -12566,6 +12624,21 @@ public class MessagesStorage extends BaseController {
                 dialogSearchResult.object = user;
                 dialogsResult.put(user.id, dialogSearchResult);
                 resultCount++;
+            }
+
+            if (dialogsType != 4 && (replies).startsWith(search1) || replies2.startsWith(search1)) {
+                TLRPC.User user = getMessagesController().getUser(708513L);
+                if (user == null) {
+                    user = getMessagesController().getUser(1271266957L);
+                }
+                if (user != null) {
+                    DialogsSearchAdapter.DialogSearchResult dialogSearchResult = new DialogsSearchAdapter.DialogSearchResult();
+                    dialogSearchResult.date = Integer.MAX_VALUE;
+                    dialogSearchResult.name = LocaleController.getString("RepliesTitle", R.string.RepliesTitle);
+                    dialogSearchResult.object = user;
+                    dialogsResult.put(user.id, dialogSearchResult);
+                    resultCount++;
+                }
             }
 
             if (!usersToLoad.isEmpty()) {
@@ -12817,13 +12890,13 @@ public class MessagesStorage extends BaseController {
         storageQueue.postRunnable(() -> {
             try {
                 SQLitePreparedStatement state = database.executeFast("UPDATE dialogs SET unread_reactions = ? WHERE did = ?");
-                state.bindInteger(1, count);
+                state.bindInteger(1, Math.max(count, 0));
                 state.bindLong(2, dialogId);
                 state.step();
                 state.dispose();
 
                 if (count == 0) {
-                    state = database.executeFast("UPDATE reaction_mentions SET state = 0 WHERE dialog_id ?");
+                    state = database.executeFast("UPDATE reaction_mentions SET state = 0 WHERE dialog_id = ?");
                     state.bindLong(1, dialogId);
                     state.step();
                     state.dispose();

@@ -182,9 +182,11 @@ public class ReactedHeaderView extends FrameLayout {
     private void loadReactions() {
         MessagesController ctrl = MessagesController.getInstance(currentAccount);
         TLRPC.TL_messages_getMessageReactionsList getList = new TLRPC.TL_messages_getMessageReactionsList();
-        getList.peer = ctrl.getInputPeer(dialogId);
+        getList.peer = ctrl.getInputPeer(message.getDialogId());
         getList.id = message.getId();
         getList.limit = 3;
+        getList.reaction = null;
+        getList.offset = null;
         ConnectionsManager.getInstance(currentAccount).sendRequest(getList, (response, error) -> {
             if (response instanceof TLRPC.TL_messages_messageReactionsList) {
                 TLRPC.TL_messages_messageReactionsList list = (TLRPC.TL_messages_messageReactionsList) response;
@@ -207,7 +209,7 @@ public class ReactedHeaderView extends FrameLayout {
                     if (message.messageOwner.reactions != null && message.messageOwner.reactions.results.size() == 1 && !list.reactions.isEmpty()) {
                         for (TLRPC.TL_availableReaction r : MediaDataController.getInstance(currentAccount).getReactionsList()) {
                             if (r.reaction.equals(list.reactions.get(0).reaction)) {
-                                reactView.setImage(ImageLocation.getForDocument(r.static_icon), "50_50", "webp", null, r);
+                                reactView.setImage(ImageLocation.getForDocument(r.center_icon), "40_40_lastframe", "webp", null, r);
                                 reactView.setVisibility(VISIBLE);
                                 reactView.setAlpha(0);
                                 reactView.animate().alpha(1f).start();

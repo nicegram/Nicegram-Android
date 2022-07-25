@@ -22,11 +22,13 @@ import com.appvillis.nicegram.NicegramPrefs;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.browser.Browser;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.HeaderCell;
+import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
@@ -39,6 +41,7 @@ public class NicegramSettingsActivity extends BaseFragment {
     private ListAdapter adapter;
 
     private int nicegramSectionRow;
+    private int unblockGuideRow;
     private int mentionAllRow;
     private int skipReadHistoryRow;
     private int showProfileIdRow;
@@ -49,6 +52,7 @@ public class NicegramSettingsActivity extends BaseFragment {
     @Override
     public boolean onFragmentCreate() {
         nicegramSectionRow = -1;
+        unblockGuideRow = rowCount++;
         mentionAllRow = rowCount++;
         skipReadHistoryRow = rowCount++;
         showProfileIdRow = rowCount++;
@@ -123,6 +127,8 @@ public class NicegramSettingsActivity extends BaseFragment {
                 enabled = preferences.getBoolean(NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER, NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER_DEFAULT);
                 editor.putBoolean(NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER, !enabled);
                 editor.apply();
+            } else if (position == unblockGuideRow) {
+                Browser.openUrl(getParentActivity(), NicegramConsts.UNBLOCK_URL);
             }
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(!enabled);
@@ -163,6 +169,10 @@ public class NicegramSettingsActivity extends BaseFragment {
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view;
             switch (viewType) {
+                case 2:
+                    view = new TextCell(mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
                 case 1:
                     view = new TextCheckCell(mContext);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
@@ -202,6 +212,11 @@ public class NicegramSettingsActivity extends BaseFragment {
                     }
                     break;
                 }
+                case 2: {
+                    TextCell textCell = (TextCell) holder.itemView;
+                    textCell.setText(LocaleController.getString("NicegramUnblockGuide"), false);
+                    break;
+                }
             }
         }
 
@@ -212,6 +227,8 @@ public class NicegramSettingsActivity extends BaseFragment {
             } else if (position == mentionAllRow || position == skipReadHistoryRow || position == openLinksRow ||
                     position == showRegDateRow || position == showProfileIdRow) {
                 return 1;
+            } else if (position == unblockGuideRow) {
+                return 2;
             } else {
                 return 0;
             }

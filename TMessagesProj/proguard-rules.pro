@@ -100,3 +100,33 @@
 # Use -keep to explicitly keep any other classes shrinking would remove
 -dontoptimize
 -dontobfuscate
+
+-keepnames class androidx.navigation.fragment.NavHostFragment
+-keep class * extends androidx.fragment.app.Fragment{}
+
+-keep,allowoptimization class * implements androidx.viewbinding.ViewBinding {
+    public static *** bind(android.view.View);
+    public static *** inflate(...);
+}
+
+-keep class com.blongho.** {*;}
+-keep interface com.blongho.**
+# If you keep the line number information, uncomment this to
+# hide the original source file name.
+#-renamesourcefileattribute SourceFile
+-keeppackagenames com.blongho.country_data
+-keepclassmembers class com.blongho.country_data.* {
+   public *;
+}
+-keep class com.blongho.country_data.R$*{
+    *;
+}
+
+-keep class com.appvillis.core_network.data.** { *; }
+
+-keepnames class * extends android.os.Parcelable
+-keepnames class * extends java.io.Serializable
+-keepattributes InnerClasses
+-keep class org.json.** { *; }
+
+-keep class com.ecommpay.** { *; }

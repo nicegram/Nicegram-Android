@@ -206,7 +206,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                 updateMediaCount();
             }
 
-        }, SharedMediaLayout.VIEW_TYPE_MEDIA_ACTIVITY) {
+        }, SharedMediaLayout.VIEW_TYPE_MEDIA_ACTIVITY, getResourceProvider()) {
             @Override
             protected void onSelectedTabChanged() {
                 updateMediaCount();
@@ -222,7 +222,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
 
             @Override
             protected void drawBackgroundWithBlur(Canvas canvas, float y, Rect rectTmp2, Paint backgroundPaint) {
-                fragmentView.drawBlur(canvas, getY() + y, rectTmp2, backgroundPaint, true);
+                fragmentView.drawBlurRect(canvas, getY() + y, rectTmp2, backgroundPaint, true);
             }
 
             @Override
@@ -237,7 +237,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         fragmentView.addView(sharedMediaLayout);
         fragmentView.addView(actionBar);
         fragmentView.addView(avatarContainer);
-        fragmentView.blurBehindViews.add(sharedMediaLayout.scrollSlidingTextTabStrip);
+        fragmentView.blurBehindViews.add(sharedMediaLayout);
 
         TLObject avatarObject = null;
         if (DialogObject.isEncryptedDialog(dialogId)) {

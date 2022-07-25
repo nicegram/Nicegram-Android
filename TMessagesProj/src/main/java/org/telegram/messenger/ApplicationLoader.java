@@ -31,9 +31,17 @@ import android.os.SystemClock;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 
+import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase;
+import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase;
+import com.appvillis.feature_nicegram_assistant.domain.SetNicegramOnboardingStatusUseCase;
+import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository;
+import com.appvillis.nicegram.NicegramAssistantHelper;
 import androidx.annotation.NonNull;
 import androidx.multidex.MultiDex;
 
+import com.appvillis.nicegram.network.NicegramNetwork;
+import com.appvillis.rep_user.domain.AppSessionControlUseCase;
+import com.appvillis.rep_user.domain.UserRepository;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -42,9 +50,17 @@ import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.Components.ForegroundDetector;
+import org.telegram.ui.LauncherIconController;
 
 import java.io.File;
 
+import androidx.multidex.MultiDex;
+
+import javax.inject.Inject;
+
+import dagger.hilt.android.HiltAndroidApp;
+
+@HiltAndroidApp
 public class ApplicationLoader extends Application {
 
     @SuppressLint("StaticFieldLeak")
@@ -69,6 +85,24 @@ public class ApplicationLoader extends Application {
     public static volatile long mainInterfacePausedStageQueueTime;
 
     public static boolean hasPlayServices;
+
+    @Inject
+    public GetNicegramOnboardingStatusUseCase getNicegramOnboardingStatusUseCase;
+    @Inject
+    public SetNicegramOnboardingStatusUseCase setNicegramOnboardingStatusUseCase;
+    @Inject
+    public AppSessionControlUseCase appSessionControlUseCase;
+    @Inject
+    public GetSpecialOfferUseCase getSpecialOfferUseCase;
+    @Inject
+    public UserRepository userRepository;
+    @Inject
+    public SpecialOffersRepository specialOffersRepository;
+
+    private static ApplicationLoader appInstance = null;
+    public static ApplicationLoader getInstance() {
+        return appInstance;
+    }
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -95,7 +129,7 @@ public class ApplicationLoader extends Application {
     }
 
     public static void postInitApplication() {
-        if (applicationInited) {
+        if (applicationInited || applicationContext == null) {
             return;
         }
         applicationInited = true;
@@ -150,6 +184,7 @@ public class ApplicationLoader extends Application {
         }
 
         SharedConfig.loadConfig();
+        SharedPrefsHelper.init(applicationContext);
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) { //TODO improve account
             UserConfig.getInstance(a).loadConfig();
             MessagesController.getInstance(a);
@@ -177,6 +212,7 @@ public class ApplicationLoader extends Application {
             DownloadController.getInstance(a);
         }
         ChatThemeController.init();
+        BillingController.getInstance().startConnection();
     }
 
     public ApplicationLoader() {
@@ -185,6 +221,8 @@ public class ApplicationLoader extends Application {
 
     @Override
     public void onCreate() {
+        appInstance = this;
+
         try {
             applicationContext = getApplicationContext();
         } catch (Throwable ignore) {
@@ -193,8 +231,11 @@ public class ApplicationLoader extends Application {
 
         super.onCreate();
 
+        initNicegram();
+
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("app start time = " + (startTime = SystemClock.elapsedRealtime()));
+            FileLog.d("buildVersion = " + BuildVars.BUILD_VERSION);
         }
         if (applicationContext == null) {
             applicationContext = getApplicationContext();
@@ -219,6 +260,8 @@ public class ApplicationLoader extends Application {
         applicationHandler = new Handler(applicationContext.getMainLooper());
 
         AndroidUtilities.runOnUIThread(ApplicationLoader::startPushService);
+
+        LauncherIconController.tryFixLauncherIconIfNeeded();
     }
 
     public static void startPushService() {
@@ -494,5 +537,18 @@ public class ApplicationLoader extends Application {
             }
         }
         return result;
+    }
+
+    private void initNicegram() {
+        userRepository.initialize();
+        specialOffersRepository.initialize();
+        appSessionControlUseCase.increaseSessionCount();
+
+        NicegramAssistantHelper.INSTANCE.setSetNicegramOnboardingStatusUseCase(setNicegramOnboardingStatusUseCase);
+        NicegramAssistantHelper.INSTANCE.setGetNicegramOnboardingStatusUseCase(getNicegramOnboardingStatusUseCase);
+        NicegramAssistantHelper.INSTANCE.setGetSpecialOfferUseCase(getSpecialOfferUseCase);
+        NicegramAssistantHelper.INSTANCE.setAppSessionControlUseCase(appSessionControlUseCase);
+
+        new Handler().postDelayed(() -> NicegramNetwork.INSTANCE.getSettings(UserConfig.getInstance(UserConfig.selectedAccount).clientUserId), 3000);
     }
 }
