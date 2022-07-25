@@ -19,6 +19,7 @@
     <string name="NicegramShowProfileID">Profilkennung zeigen</string>
     <string name="NicegramShowRegistrationDate">Registrierungsdatum zeigen</string>
     <string name="NicegramOpenLinksInBrowser">Im Browser öffnen</string>
+    <string name="NicegramUnblockGuide">Anleitung zum Aufheben einer Blockierung</string>
     <string name="NicegramDialogPolicy">Nicegram-Datenschutzrichtlinie</string>
     <string name="NicegramDialogPolicyText">Nicegram ist ein inoffizieller Telegram-Client und viele der Dienste, die Sie durch Nutzung von Nicegram erhalten, werden eigentlich vom Telegram-Unternehmen zur Verfügung gestellt.\n\nBitte lesen Sie unsere Datenschutzrichtlinie, ehe Sie die App verwenden.\n\nDurch Klicken auf „Weiter“ bestätigen Sie, dass Sie die Nicegram-Datenschutzrichtlinie gelesen haben und ihr zustimmen.</string>
 </resources>

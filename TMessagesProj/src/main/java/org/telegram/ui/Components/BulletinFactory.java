@@ -1,18 +1,30 @@
 package org.telegram.ui.Components;
 
+import android.app.DownloadManager;
 import android.content.Context;
-import android.os.Build;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Environment;
+import android.view.HapticFeedbackConstants;
 import android.widget.FrameLayout;
 
 import androidx.annotation.CheckResult;
+import androidx.core.content.FileProvider;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.BuildConfig;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
+
+import java.io.File;
 
 public final class BulletinFactory {
 
@@ -128,6 +140,14 @@ public final class BulletinFactory {
         return create(layout, Bulletin.DURATION_SHORT);
     }
 
+    public Bulletin createSimpleBulletin(int iconRawId, CharSequence text, CharSequence subtext) {
+        final Bulletin.TwoLineLottieLayout layout = new Bulletin.TwoLineLottieLayout(getContext(), resourcesProvider);
+        layout.setAnimation(iconRawId, 36, 36);
+        layout.titleTextView.setText(text);
+        layout.subtitleTextView.setText(subtext);
+        return create(layout, Bulletin.DURATION_SHORT);
+    }
+
     @CheckResult
     public Bulletin createDownloadBulletin(FileType fileType) {
         return createDownloadBulletin(fileType, resourcesProvider);
@@ -184,6 +204,14 @@ public final class BulletinFactory {
         return create(layout, Bulletin.DURATION_SHORT);
     }
 
+    public Bulletin createErrorBulletinSubtitle(CharSequence errorMessage, CharSequence errorDescription, Theme.ResourcesProvider resourcesProvider) {
+        Bulletin.TwoLineLottieLayout layout = new Bulletin.TwoLineLottieLayout(getContext(), resourcesProvider);
+        layout.setAnimation(R.raw.chats_infotip);
+        layout.titleTextView.setText(errorMessage);
+        layout.subtitleTextView.setText(errorDescription);
+        return create(layout, Bulletin.DURATION_SHORT);
+    }
+
     @CheckResult
     public Bulletin createCopyLinkBulletin() {
         return createCopyLinkBulletin(false, resourcesProvider);
@@ -191,7 +219,12 @@ public final class BulletinFactory {
 
     @CheckResult
     public Bulletin createCopyBulletin(String message) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        return createCopyBulletin(message, null);
+    }
+
+    @CheckResult
+    public Bulletin createCopyBulletin(String message, Theme.ResourcesProvider resourcesProvider) {
+        if (!AndroidUtilities.shouldShowClipboardToast()) {
             return new Bulletin.EmptyBulletin();
         }
         final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(getContext(), null);
@@ -202,7 +235,7 @@ public final class BulletinFactory {
 
     @CheckResult
     public Bulletin createCopyLinkBulletin(boolean isPrivate, Theme.ResourcesProvider resourcesProvider) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (!AndroidUtilities.shouldShowClipboardToast()) {
             return new Bulletin.EmptyBulletin();
         }
         if (isPrivate) {
@@ -217,6 +250,17 @@ public final class BulletinFactory {
             layout.textView.setText(LocaleController.getString("LinkCopied", R.string.LinkCopied));
             return create(layout, Bulletin.DURATION_SHORT);
         }
+    }
+
+    @CheckResult
+    public Bulletin createCopyLinkBulletin(String text, Theme.ResourcesProvider resourcesProvider) {
+        if (!AndroidUtilities.shouldShowClipboardToast()) {
+            return new Bulletin.EmptyBulletin();
+        }
+        final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(getContext(), resourcesProvider);
+        layout.setAnimation(R.raw.voip_invite, 36, 36, "Wibe", "Circle");
+        layout.textView.setText(text);
+        return create(layout, Bulletin.DURATION_SHORT);
     }
 
     private Bulletin create(Bulletin.Layout layout, int duration) {
@@ -235,17 +279,23 @@ public final class BulletinFactory {
 
     @CheckResult
     public static Bulletin createMuteBulletin(BaseFragment fragment, int setting) {
-        return createMuteBulletin(fragment, setting, null);
+        return createMuteBulletin(fragment, setting, 0, null);
     }
 
     @CheckResult
-    public static Bulletin createMuteBulletin(BaseFragment fragment, int setting, Theme.ResourcesProvider resourcesProvider) {
+    public static Bulletin createMuteBulletin(BaseFragment fragment, int setting, int timeInSeconds, Theme.ResourcesProvider resourcesProvider) {
         final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(fragment.getParentActivity(), resourcesProvider);
 
         final String text;
         final boolean mute;
+        boolean muteFor = false;
 
         switch (setting) {
+            case NotificationsController.SETTING_MUTE_CUSTOM:
+                text = LocaleController.formatString("NotificationsMutedForHint", R.string.NotificationsMutedForHint, LocaleController.formatTTLString(timeInSeconds));
+                mute = true;
+                muteFor = true;
+                break;
             case NotificationsController.SETTING_MUTE_HOUR:
                 text = LocaleController.formatString("NotificationsMutedForHint", R.string.NotificationsMutedForHint, LocaleController.formatPluralString("Hours", 1));
                 mute = true;
@@ -270,7 +320,9 @@ public final class BulletinFactory {
                 throw new IllegalArgumentException();
         }
 
-        if (mute) {
+        if (muteFor) {
+            layout.setAnimation(R.raw.mute_for);
+        } else if (mute) {
             layout.setAnimation(R.raw.ic_mute, "Body Main", "Body Top", "Line", "Curve Big", "Curve Small");
         } else {
             layout.setAnimation(R.raw.ic_unmute, "BODY", "Wibe Big", "Wibe Big 3", "Wibe Small");
@@ -282,7 +334,7 @@ public final class BulletinFactory {
 
     @CheckResult
     public static Bulletin createMuteBulletin(BaseFragment fragment, boolean muted, Theme.ResourcesProvider resourcesProvider) {
-        return createMuteBulletin(fragment, muted ? NotificationsController.SETTING_MUTE_FOREVER : NotificationsController.SETTING_MUTE_UNMUTE, resourcesProvider);
+        return createMuteBulletin(fragment, muted ? NotificationsController.SETTING_MUTE_FOREVER : NotificationsController.SETTING_MUTE_UNMUTE, 0, resourcesProvider);
     }
 
     @CheckResult
@@ -330,15 +382,73 @@ public final class BulletinFactory {
 
     @CheckResult
     public static Bulletin createPromoteToAdminBulletin(BaseFragment fragment, String userFirstName) {
-        final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(fragment.getParentActivity(), null);
+        final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(fragment.getParentActivity(), fragment.getResourceProvider());
         layout.setAnimation(R.raw.ic_admin, "Shield");
         layout.textView.setText(AndroidUtilities.replaceTags(LocaleController.formatString("UserSetAsAdminHint", R.string.UserSetAsAdminHint, userFirstName)));
         return Bulletin.make(fragment, layout, Bulletin.DURATION_SHORT);
     }
 
     @CheckResult
+    public static Bulletin createAddedAsAdminBulletin(BaseFragment fragment, String userFirstName) {
+        final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(fragment.getParentActivity(), fragment.getResourceProvider());
+        layout.setAnimation(R.raw.ic_admin, "Shield");
+        layout.textView.setText(AndroidUtilities.replaceTags(LocaleController.formatString("UserAddedAsAdminHint", R.string.UserAddedAsAdminHint, userFirstName)));
+        return Bulletin.make(fragment, layout, Bulletin.DURATION_SHORT);
+    }
+
+    @CheckResult
+    public static Bulletin createForwardedBulletin(Context context, FrameLayout containerLayout, int dialogsCount, long did, int messagesCount, int backgroundColor, int textColor) {
+        final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(context, null, backgroundColor, textColor);
+        CharSequence text;
+        int hapticDelay = -1;
+        if (dialogsCount <= 1) {
+            if (did == UserConfig.getInstance(UserConfig.selectedAccount).clientUserId) {
+                if (messagesCount <= 1) {
+                    text = AndroidUtilities.replaceTags(LocaleController.getString("FwdMessageToSavedMessages", R.string.FwdMessageToSavedMessages));
+                } else {
+                    text = AndroidUtilities.replaceTags(LocaleController.getString("FwdMessagesToSavedMessages", R.string.FwdMessagesToSavedMessages));
+                }
+                layout.setAnimation(R.raw.saved_messages, 30, 30);
+            } else {
+                if (DialogObject.isChatDialog(did)) {
+                    TLRPC.Chat chat = MessagesController.getInstance(UserConfig.selectedAccount).getChat(-did);
+                    if (messagesCount <= 1) {
+                        text = AndroidUtilities.replaceTags(LocaleController.formatString("FwdMessageToGroup", R.string.FwdMessageToGroup, chat.title));
+                    } else {
+                        text = AndroidUtilities.replaceTags(LocaleController.formatString("FwdMessagesToGroup", R.string.FwdMessagesToGroup, chat.title));
+                    }
+                } else {
+                    TLRPC.User user = MessagesController.getInstance(UserConfig.selectedAccount).getUser(did);
+                    if (messagesCount <= 1) {
+                        text = AndroidUtilities.replaceTags(LocaleController.formatString("FwdMessageToUser", R.string.FwdMessageToUser, UserObject.getFirstName(user)));
+                    } else {
+                        text = AndroidUtilities.replaceTags(LocaleController.formatString("FwdMessagesToUser", R.string.FwdMessagesToUser, UserObject.getFirstName(user)));
+                    }
+                }
+                layout.setAnimation(R.raw.forward, 30, 30);
+                hapticDelay = 300;
+            }
+        } else {
+            if (messagesCount <= 1) {
+                text = AndroidUtilities.replaceTags(LocaleController.formatString("FwdMessageToChats", R.string.FwdMessageToChats, LocaleController.formatPluralString("Chats", dialogsCount)));
+            } else {
+                text = AndroidUtilities.replaceTags(LocaleController.formatString("FwdMessagesToChats", R.string.FwdMessagesToChats, LocaleController.formatPluralString("Chats", dialogsCount)));
+            }
+            layout.setAnimation(R.raw.forward, 30, 30);
+            hapticDelay = 300;
+        }
+        layout.textView.setText(text);
+        if (hapticDelay > 0) {
+            layout.postDelayed(() -> {
+                layout.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+            }, hapticDelay);
+        }
+        return Bulletin.make(containerLayout, layout, Bulletin.DURATION_SHORT);
+    }
+
+    @CheckResult
     public static Bulletin createRemoveFromChatBulletin(BaseFragment fragment, TLRPC.User user, String chatName) {
-        final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(fragment.getParentActivity(), null);
+        final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(fragment.getParentActivity(), fragment.getResourceProvider());
         layout.setAnimation(R.raw.ic_ban, "Hand");
         String name;
         if (user.deleted) {
@@ -352,7 +462,7 @@ public final class BulletinFactory {
 
     @CheckResult
     public static Bulletin createBanBulletin(BaseFragment fragment, boolean banned) {
-        final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(fragment.getParentActivity(), null);
+        final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(fragment.getParentActivity(), fragment.getResourceProvider());
         final String text;
         if (banned) {
             layout.setAnimation(R.raw.ic_ban, "Hand");
@@ -394,6 +504,36 @@ public final class BulletinFactory {
             layout.setButton(new Bulletin.UndoButton(fragment.getParentActivity(), true, resourcesProvider).setUndoAction(undoAction).setDelayedAction(delayedAction));
         }
         return Bulletin.make(fragment, layout, pinned ? Bulletin.DURATION_SHORT : 5000);
+    }
+
+    @CheckResult
+    public static Bulletin createSoundEnabledBulletin(BaseFragment fragment, int setting, Theme.ResourcesProvider resourcesProvider) {
+        final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(fragment.getParentActivity(), resourcesProvider);
+
+        final String text;
+        final boolean soundOn;
+
+        switch (setting) {
+            case NotificationsController.SETTING_SOUND_ON:
+                text = LocaleController.getString("SoundOnHint", R.string.SoundOnHint);
+                soundOn = true;
+                break;
+            case NotificationsController.SETTING_SOUND_OFF:
+                text = LocaleController.getString("SoundOffHint", R.string.SoundOffHint);
+                soundOn = false;
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
+
+        if (soundOn) {
+            layout.setAnimation(R.raw.sound_on);
+        } else {
+            layout.setAnimation(R.raw.sound_off);
+        }
+
+        layout.textView.setText(text);
+        return Bulletin.make(fragment, layout, Bulletin.DURATION_SHORT);
     }
     //endregion
 }

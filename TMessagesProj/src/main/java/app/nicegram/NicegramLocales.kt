@@ -22,7 +22,35 @@ object NicegramLocales {
         }
     )
 
-    private val forbiddenKeys = listOf("TelegramFeatures", "TelegramFeaturesUrl", "NicegramDialogPolicyText")
+    private val forbiddenKeys = listOf(
+        "TelegramFeatures",
+        "TelegramFeaturesUrl",
+        "NicegramDialogPolicyText",
+        // region Telegram premium
+        "UnlockPremiumReactionsDescription",
+        "LimitReachedPublicLinks",
+        "LimitReachedFolders",
+        "LimitReachedChatInFolders",
+        "LimitReachedCommunities",
+        "SubscribeToPremiumOfficialAppNeededDescription",
+        "TelegramPremium",
+        "TelegramPremiumSubtitle",
+        "TelegramPremiumSubscribedSubtitle",
+        "LimitReachedFileSize",
+        "AboutPremiumTitle",
+        "AboutPremiumDescription",
+        "AboutPremiumDescription2",
+        "LimitReachedAccounts",
+        "TelegramPremiumUserDialogTitle",
+        "AboutTelegramPremium",
+        "AdditionalReactionsDescription",
+        "PremiumPreviewAppIconDescription2",
+        "UnlockPremiumStickersDescription",
+        "LimitReachedPinDialogs",
+        "TelegramPremiumUserDialogSubtitle",
+        "PremiumPreviewNoAdsDescription2",
+        // endregion
+    )
 
     fun String.replaceTgTitle(key: String) =
         if (forbiddenKeys.contains(key)) this else this.replace("Telegram", "Nicegram")

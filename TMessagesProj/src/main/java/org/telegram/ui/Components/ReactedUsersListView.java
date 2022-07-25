@@ -6,6 +6,7 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.LongSparseArray;
@@ -13,7 +14,9 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -23,10 +26,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DocumentObject;
 import org.telegram.messenger.ImageLocation;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.R;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.ConnectionsManager;
@@ -35,6 +40,7 @@ import org.telegram.ui.ActionBar.Theme;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class ReactedUsersListView extends FrameLayout {
@@ -46,15 +52,15 @@ public class ReactedUsersListView extends FrameLayout {
     private MessageObject message;
     private String filter;
 
-    private RecyclerListView listView;
+    public RecyclerListView listView;
     private RecyclerView.Adapter adapter;
 
     private FlickerLoadingView loadingView;
 
     private List<TLRPC.TL_messagePeerReaction> userReactions = new ArrayList<>();
-    private LongSparseArray<TLRPC.User> users = new LongSparseArray<>();
+    private LongSparseArray<TLRPC.TL_messagePeerReaction> peerReactionMap = new LongSparseArray<>();
     private String offset;
-    private boolean isLoading, isLoaded, canLoadMore = true;
+    public boolean isLoading, isLoaded, canLoadMore = true;
     private boolean onlySeenNow;
 
     private OnHeightChangedListener onHeightChangedListener;
@@ -119,7 +125,7 @@ public class ReactedUsersListView extends FrameLayout {
         loadingView = new FlickerLoadingView(context, resourcesProvider);
         loadingView.setViewType(FlickerLoadingView.REACTED_TYPE);
         loadingView.setIsSingleCell(true);
-        loadingView.setItemsCount(reactionCount == null ? VISIBLE_ITEMS : reactionCount.count);
+        loadingView.setItemsCount(predictiveCount);
         addView(loadingView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
     }
 
@@ -127,16 +133,19 @@ public class ReactedUsersListView extends FrameLayout {
     public ReactedUsersListView setSeenUsers(List<TLRPC.User> users) {
         List<TLRPC.TL_messagePeerReaction> nr = new ArrayList<>(users.size());
         for (TLRPC.User u : users) {
-            if (this.users.get(u.id) != null) continue;
-            this.users.put(u.id, u);
+            if (peerReactionMap.get(u.id) != null) {
+                continue;
+            }
             TLRPC.TL_messagePeerReaction r = new TLRPC.TL_messagePeerReaction();
             r.reaction = null;
             r.peer_id = new TLRPC.TL_peerUser();
             r.peer_id.user_id = u.id;
+            peerReactionMap.put(MessageObject.getPeerId(r.peer_id), r);
             nr.add(r);
         }
-        if (userReactions.isEmpty())
+        if (userReactions.isEmpty()) {
             onlySeenNow = true;
+        }
         userReactions.addAll(nr);
         adapter.notifyDataSetChanged();
         updateHeight();
@@ -167,30 +176,34 @@ public class ReactedUsersListView extends FrameLayout {
         if (offset != null)
             getList.flags |= 2;
         ConnectionsManager.getInstance(currentAccount).sendRequest(getList, (response, error) -> {
-            if (response instanceof TLRPC.TL_messages_messageReactionsList) {
-                TLRPC.TL_messages_messageReactionsList l = (TLRPC.TL_messages_messageReactionsList) response;
+            AndroidUtilities.runOnUIThread(() -> NotificationCenter.getInstance(currentAccount).doOnIdle(() -> {
+                if (response instanceof TLRPC.TL_messages_messageReactionsList) {
+                    TLRPC.TL_messages_messageReactionsList res = (TLRPC.TL_messages_messageReactionsList) response;
 
-                for (TLRPC.User u : l.users) {
-                    MessagesController.getInstance(currentAccount).putUser(u, false);
-                    users.put(u.id, u);
-                }
+                    for (TLRPC.User u : res.users) {
+                        MessagesController.getInstance(currentAccount).putUser(u, false);
+                    }
 
-                // It's safer to create a new list to prevent inconsistency
-                int prev = userReactions.size();
-                List<TLRPC.TL_messagePeerReaction> newReactions = new ArrayList<>(userReactions.size() + l.reactions.size());
-                newReactions.addAll(userReactions);
-                newReactions.addAll(l.reactions);
+                    for (int i = 0; i < res.reactions.size(); i++) {
+                        userReactions.add(res.reactions.get(i));
+                        long peerId = MessageObject.getPeerId(res.reactions.get(i).peer_id);
+                        TLRPC.TL_messagePeerReaction reaction = peerReactionMap.get(peerId);
+                        if (reaction != null) {
+                            userReactions.remove(reaction);
+                        }
+                        peerReactionMap.put(peerId, res.reactions.get(i));
 
-                if (onlySeenNow) {
-                    Collections.sort(newReactions, (o1, o2) -> Integer.compare(o1.reaction != null ? 1 : 0, o2.reaction != null ? 1 : 0));
-                }
+                    }
 
-                AndroidUtilities.runOnUIThread(() -> NotificationCenter.getInstance(currentAccount).doOnIdle(() -> {
-                    userReactions = newReactions;
+                    if (onlySeenNow) {
+                        Collections.sort(userReactions, Comparator.comparingInt(o -> o.reaction != null ? 0 : 1));
+                    }
+
                     if (onlySeenNow) {
                         onlySeenNow = false;
-                        adapter.notifyDataSetChanged();
-                    } else adapter.notifyItemRangeInserted(prev, l.reactions.size());
+                    }
+
+                    adapter.notifyDataSetChanged();
 
                     if (!isLoaded) {
                         ValueAnimator anim = ValueAnimator.ofFloat(0, 1).setDuration(150);
@@ -212,12 +225,14 @@ public class ReactedUsersListView extends FrameLayout {
 
                         isLoaded = true;
                     }
-                    offset = l.next_offset;
+                    offset = res.next_offset;
                     if (offset == null)
                         canLoadMore = false;
                     isLoading = false;
-                }));
-            } else isLoading = false;
+                } else {
+                    isLoading = false;
+                }
+            }));
         }, ConnectionsManager.RequestFlagInvokeAfter);
     }
 
@@ -261,6 +276,7 @@ public class ReactedUsersListView extends FrameLayout {
             titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
             titleView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem));
             titleView.setEllipsize(TextUtils.TruncateAt.END);
+            titleView.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
             addView(titleView, LayoutHelper.createFrameRelatively(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.START | Gravity.CENTER_VERTICAL, 58, 0, 44, 0));
 
             reactView = new BackupImageView(context);
@@ -272,27 +288,42 @@ public class ReactedUsersListView extends FrameLayout {
         }
 
         void setUserReaction(TLRPC.TL_messagePeerReaction reaction) {
-            TLRPC.User u = users.get(MessageObject.getPeerId(reaction.peer_id));
+            TLRPC.User u = MessagesController.getInstance(currentAccount).getUser(MessageObject.getPeerId(reaction.peer_id));
+            if (u == null) {
+                return;
+            }
             avatarDrawable.setInfo(u);
             titleView.setText(UserObject.getUserName(u));
-            avatarView.setImage(ImageLocation.getForUser(u, ImageLocation.TYPE_SMALL), "50_50", avatarDrawable, u);
+            Drawable thumb = avatarDrawable;
+            if (u.photo != null && u.photo.strippedBitmap != null) {
+                thumb = u.photo.strippedBitmap;
+            }
+            avatarView.setImage(ImageLocation.getForUser(u, ImageLocation.TYPE_SMALL), "50_50", thumb, u);
 
             if (reaction.reaction != null) {
                 TLRPC.TL_availableReaction r = MediaDataController.getInstance(currentAccount).getReactionsMap().get(reaction.reaction);
                 if (r != null) {
                     SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(r.static_icon.thumbs, Theme.key_windowBackgroundGray, 1.0f);
-                    reactView.setImage(ImageLocation.getForDocument(r.static_icon), "50_50", "webp", svgThumb, r);
+                    reactView.setImage(ImageLocation.getForDocument(r.center_icon), "40_40_lastframe", "webp", svgThumb, r);
                 } else {
                     reactView.setImageDrawable(null);
                 }
+                setContentDescription(LocaleController.formatString("AccDescrReactedWith", R.string.AccDescrReactedWith, UserObject.getUserName(u), reaction.reaction));
             } else {
                 reactView.setImageDrawable(null);
+                setContentDescription(LocaleController.formatString("AccDescrPersonHasSeen", R.string.AccDescrPersonHasSeen, UserObject.getUserName(u)));
             }
         }
 
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(ITEM_HEIGHT_DP), MeasureSpec.EXACTLY));
+        }
+
+        @Override
+        public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
+            super.onInitializeAccessibilityNodeInfo(info);
+            info.setEnabled(true);
         }
     }
 
@@ -312,5 +343,61 @@ public class ReactedUsersListView extends FrameLayout {
 
     public interface OnProfileSelectedListener {
         void onProfileSelected(ReactedUsersListView view, long userId);
+    }
+
+    public void setPredictiveCount(int predictiveCount) {
+        this.predictiveCount = predictiveCount;
+        loadingView.setItemsCount(predictiveCount);
+    }
+
+    public static class ContainerLinerLayout extends LinearLayout {
+
+        public boolean hasHeader;
+
+        public ContainerLinerLayout(Context context) {
+            super(context);
+        }
+
+        @Override
+        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            int maxWidth = 0;
+            RecyclerListView listView = null;
+            if (!hasHeader) {
+                for (int k = 0; k < getChildCount(); k++) {
+                    if (getChildAt(k) instanceof ReactedUsersListView) {
+                        listView = ((ReactedUsersListView) getChildAt(k)).listView;
+                        if (listView.getAdapter().getItemCount() == listView.getChildCount()) {
+                            int count = listView.getChildCount();
+                            for (int i = 0; i < count; i++) {
+                                listView.getChildAt(i).measure(MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(1000), MeasureSpec.UNSPECIFIED), heightMeasureSpec);
+                                if (listView.getChildAt(i).getMeasuredWidth() > maxWidth) {
+                                    maxWidth = listView.getChildAt(i).getMeasuredWidth();
+                                }
+                            }
+                            maxWidth += AndroidUtilities.dp(16);
+                        }
+                    }
+                }
+            }
+            int size = MeasureSpec.getSize(widthMeasureSpec);
+            if (size < AndroidUtilities.dp(240)) {
+                size = AndroidUtilities.dp(240);
+            }
+            if (size > AndroidUtilities.dp(280)) {
+                size = AndroidUtilities.dp(280);
+            }
+            if (size < 0) {
+                size = 0;
+            }
+            if (maxWidth != 0 && maxWidth < size) {
+                size = maxWidth;
+            }
+            if (listView != null) {
+                for (int i = 0; i < listView.getChildCount(); i++) {
+                    listView.getChildAt(i).measure(MeasureSpec.makeMeasureSpec(size, MeasureSpec.EXACTLY), heightMeasureSpec);
+                }
+            }
+            super.onMeasure(MeasureSpec.makeMeasureSpec(size, MeasureSpec.EXACTLY), heightMeasureSpec);
+        }
     }
 }

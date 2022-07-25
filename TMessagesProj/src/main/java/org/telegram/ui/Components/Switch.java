@@ -25,14 +25,22 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.RippleDrawable;
+import android.media.AudioManager;
 import android.os.Build;
 import androidx.annotation.Keep;
+
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.StateSet;
+import android.view.HapticFeedbackConstants;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.OneUIUtilities;
 import org.telegram.ui.ActionBar.Theme;
+
+import java.lang.reflect.Method;
 
 public class Switch extends View {
 
@@ -77,6 +85,8 @@ public class Switch extends View {
     private Paint overlayEraserPaint;
     private Paint overlayMaskPaint;
 
+    private Theme.ResourcesProvider resourcesProvider;
+
     private int overrideColorProgress;
 
     public interface OnCheckedChangeListener {
@@ -84,7 +94,12 @@ public class Switch extends View {
     }
 
     public Switch(Context context) {
+        this(context, null);
+    }
+
+    public Switch(Context context, Theme.ResourcesProvider resourcesProvider) {
         super(context);
+        this.resourcesProvider = resourcesProvider;
         rectF = new RectF();
 
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -92,6 +107,8 @@ public class Switch extends View {
         paint2.setStyle(Paint.Style.STROKE);
         paint2.setStrokeCap(Paint.Cap.ROUND);
         paint2.setStrokeWidth(AndroidUtilities.dp(2));
+
+        setHapticFeedbackEnabled(true);
     }
 
     @Keep
@@ -187,7 +204,7 @@ public class Switch extends View {
             rippleDrawable.setCallback(this);
         }
         if (isChecked && colorSet != 2 || !isChecked && colorSet != 1) {
-            int color = isChecked ? Theme.getColor(Theme.key_switchTrackBlueSelectorChecked) : Theme.getColor(Theme.key_switchTrackBlueSelector);
+            int color = isChecked ? Theme.getColor(Theme.key_switchTrackBlueSelectorChecked, resourcesProvider) : Theme.getColor(Theme.key_switchTrackBlueSelector, resourcesProvider);
             /*if (Build.VERSION.SDK_INT < 28) {
                 color = Color.argb(Color.alpha(color) * 2, Color.red(color), Color.green(color), Color.blue(color));
             }*/
@@ -219,7 +236,7 @@ public class Switch extends View {
 
     private void animateToCheckedState(boolean newCheckedState) {
         checkAnimator = ObjectAnimator.ofFloat(this, "progress", newCheckedState ? 1 : 0);
-        checkAnimator.setDuration(250);
+        checkAnimator.setDuration(semHaptics ? 150 : 250);
         checkAnimator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
@@ -231,7 +248,7 @@ public class Switch extends View {
 
     private void animateIcon(boolean newCheckedState) {
         iconAnimator = ObjectAnimator.ofFloat(this, "iconProgress", newCheckedState ? 1 : 0);
-        iconAnimator.setDuration(250);
+        iconAnimator.setDuration(semHaptics ? 150 : 250);
         iconAnimator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
@@ -265,6 +282,7 @@ public class Switch extends View {
         if (checked != isChecked) {
             isChecked = checked;
             if (attachedToWindow && animated) {
+                vibrateChecked(checked);
                 animateToCheckedState(checked);
             } else {
                 cancelCheckAnimator();
@@ -289,7 +307,7 @@ public class Switch extends View {
         if (icon != 0) {
             iconDrawable = getResources().getDrawable(icon).mutate();
             if (iconDrawable != null) {
-                iconDrawable.setColorFilter(new PorterDuffColorFilter(lastIconColor = Theme.getColor(isChecked ? trackCheckedColorKey : trackColorKey), PorterDuff.Mode.MULTIPLY));
+                iconDrawable.setColorFilter(new PorterDuffColorFilter(lastIconColor = Theme.getColor(isChecked ? trackCheckedColorKey : trackColorKey, resourcesProvider), PorterDuff.Mode.MULTIPLY));
             }
         } else {
             iconDrawable = null;
@@ -397,8 +415,8 @@ public class Switch extends View {
                 colorProgress = progress;
             }
 
-            color1 = Theme.getColor(trackColorKey);
-            color2 = Theme.getColor(trackCheckedColorKey);
+            color1 = Theme.getColor(trackColorKey, resourcesProvider);
+            color2 = Theme.getColor(trackCheckedColorKey, resourcesProvider);
             if (a == 0 && iconDrawable != null && lastIconColor != (isChecked ? color2 : color1)) {
                 iconDrawable.setColorFilter(new PorterDuffColorFilter(lastIconColor = (isChecked ? color2 : color1), PorterDuff.Mode.MULTIPLY));
             }
@@ -452,8 +470,8 @@ public class Switch extends View {
                 colorProgress = progress;
             }
 
-            color1 = Theme.getColor(thumbColorKey);
-            color2 = Theme.getColor(thumbCheckedColorKey);
+            color1 = Theme.getColor(thumbColorKey, resourcesProvider);
+            color2 = Theme.getColor(thumbCheckedColorKey, resourcesProvider);
             r1 = Color.red(color1);
             r2 = Color.red(color2);
             g1 = Color.green(color1);
@@ -524,5 +542,24 @@ public class Switch extends View {
         info.setCheckable(true);
         info.setChecked(isChecked);
         //info.setContentDescription(isChecked ? LocaleController.getString("NotificationsOn", R.string.NotificationsOn) : LocaleController.getString("NotificationsOff", R.string.NotificationsOff));
+    }
+
+    private boolean semHaptics = false;
+
+    private void vibrateChecked(boolean toCheck) {
+        try {
+            if (isHapticFeedbackEnabled() && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                final Vibrator vibrator = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+                int slightAmplitude = OneUIUtilities.isOneUI() ? 5 : 15;
+                VibrationEffect vibrationEffect = VibrationEffect.createWaveform(
+                        toCheck ? new long[] { 80, 25, 15 } : new long[] { 25, 80, 10 },
+                        toCheck ? new int[] { slightAmplitude, 0, 255 } : new int[] { 0, slightAmplitude, 140 },
+                        -1
+                );
+                vibrator.cancel();
+                vibrator.vibrate(vibrationEffect);
+                semHaptics = true;
+            }
+        } catch (Exception ignore) {}
     }
 }

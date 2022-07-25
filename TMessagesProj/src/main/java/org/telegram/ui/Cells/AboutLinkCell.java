@@ -27,8 +27,10 @@ import android.text.StaticLayout;
 import android.text.TextUtils;
 import android.text.style.ClickableSpan;
 import android.text.style.URLSpan;
+import android.text.util.Linkify;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -54,6 +56,7 @@ import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LinkPath;
+import org.telegram.ui.Components.LinkSpanDrawable;
 import org.telegram.ui.Components.StaticLayoutEx;
 import org.telegram.ui.Components.URLSpanNoUnderline;
 
@@ -72,18 +75,32 @@ public class AboutLinkCell extends FrameLayout {
     private FrameLayout bottomShadow;
     private Drawable showMoreBackgroundDrawable;
 
-    private ClickableSpan pressedLink;
+    private LinkSpanDrawable pressedLink;
+    private LinkSpanDrawable.LinkCollector links;
     private Point urlPathOffset = new Point();
     private LinkPath urlPath = new LinkPath(true);
 
     private BaseFragment parentFragment;
+    private Theme.ResourcesProvider resourcesProvider;
 
     private FrameLayout container;
     private Drawable rippleBackground;
 
+    private StaticLayout firstThreeLinesLayout;
+    private StaticLayout[] nextLinesLayouts = null;
+    private int lastInlineLine = -1;
+    private Point[] nextLinesLayoutsPositions;
+    private boolean needSpace = false;
+    private boolean moreButtonDisabled;
+
     public AboutLinkCell(Context context, BaseFragment fragment) {
+        this(context, fragment, null);
+    }
+
+    public AboutLinkCell(Context context, BaseFragment fragment, Theme.ResourcesProvider resourcesProvider) {
         super(context);
 
+        this.resourcesProvider = resourcesProvider;
         parentFragment = fragment;
 
         container = new FrameLayout(context) {
@@ -122,7 +139,7 @@ public class AboutLinkCell extends FrameLayout {
                             }
                         } else if (pressedLink != null) {
                             try {
-                                onLinkClick(pressedLink);
+                                onLinkClick((ClickableSpan) pressedLink.getSpan());
                             } catch (Exception e) {
                                 FileLog.e(e);
                             }
@@ -136,23 +153,26 @@ public class AboutLinkCell extends FrameLayout {
                 return result || super.onTouchEvent(event);
             }
         };
+        container.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        links = new LinkSpanDrawable.LinkCollector(container);
         container.setClickable(true);
-        rippleBackground = Theme.createRadSelectorDrawable(Theme.getColor(Theme.key_listSelector), 0, 0);
+        rippleBackground = Theme.createRadSelectorDrawable(Theme.getColor(Theme.key_listSelector, resourcesProvider), 0, 0);
 
         valueTextView = new TextView(context);
         valueTextView.setVisibility(GONE);
-        valueTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2));
+        valueTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2, resourcesProvider));
         valueTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
         valueTextView.setLines(1);
         valueTextView.setMaxLines(1);
         valueTextView.setSingleLine(true);
         valueTextView.setGravity(LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT);
         valueTextView.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+        valueTextView.setFocusable(false);
         container.addView(valueTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.BOTTOM, 23, 0, 23, 10));
 
         bottomShadow = new FrameLayout(context);
         Drawable shadowDrawable = context.getResources().getDrawable(R.drawable.gradient_bottom).mutate();
-        shadowDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhite), PorterDuff.Mode.SRC_ATOP));
+        shadowDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider), PorterDuff.Mode.SRC_ATOP));
         bottomShadow.setBackground(shadowDrawable);
         addView(bottomShadow, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 12, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL, 0, 0, 0, 0));
 
@@ -183,7 +203,7 @@ public class AboutLinkCell extends FrameLayout {
                 super.onDraw(canvas);
             }
         };
-        showMoreTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
+        showMoreTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText, resourcesProvider));
         showMoreTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
         showMoreTextView.setLines(1);
         showMoreTextView.setMaxLines(1);
@@ -195,7 +215,7 @@ public class AboutLinkCell extends FrameLayout {
         showMoreTextView.setPadding(AndroidUtilities.dp(2), 0, AndroidUtilities.dp(2), 0);
         showMoreTextBackgroundView = new FrameLayout(context);
         showMoreBackgroundDrawable = context.getResources().getDrawable(R.drawable.gradient_left).mutate();
-        showMoreBackgroundDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhite), PorterDuff.Mode.MULTIPLY));
+        showMoreBackgroundDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider), PorterDuff.Mode.MULTIPLY));
         showMoreTextBackgroundView.setBackground(showMoreBackgroundDrawable);
         showMoreTextBackgroundView.setPadding(
             showMoreTextBackgroundView.getPaddingLeft() + AndroidUtilities.dp(4),
@@ -205,7 +225,7 @@ public class AboutLinkCell extends FrameLayout {
         );
         showMoreTextBackgroundView.addView(showMoreTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT));
         addView(showMoreTextBackgroundView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.RIGHT | Gravity.BOTTOM, 22 - showMoreTextBackgroundView.getPaddingLeft() / AndroidUtilities.density, 0, 22 - showMoreTextBackgroundView.getPaddingRight() / AndroidUtilities.density, 6));
-        backgroundPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        backgroundPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider));
 
         setWillNotDraw(false);
     }
@@ -257,15 +277,12 @@ public class AboutLinkCell extends FrameLayout {
     final float SPACE = AndroidUtilities.dp(3f);
     private void drawText(Canvas canvas) {
         canvas.save();
-        AndroidUtilities.rectTmp.set(AndroidUtilities.dp(23 - 8), AndroidUtilities.dp(8), getWidth() - AndroidUtilities.dp(23), getHeight());
-        canvas.clipRect(AndroidUtilities.rectTmp);
-        if (pressedLink != null) {
-            canvas.save();
-            canvas.translate(urlPathOffset.x, urlPathOffset.y);
-            canvas.drawPath(urlPath, Theme.linkSelectionPaint);
-            canvas.restore();
+        canvas.clipRect(AndroidUtilities.dp(23 - 8), AndroidUtilities.dp(8), getWidth() - AndroidUtilities.dp(23), getHeight());
+        canvas.translate(textX = AndroidUtilities.dp(23), 0);
+        if (links != null && links.draw(canvas)) {
+            invalidate();
         }
-        canvas.translate(textX = AndroidUtilities.dp(23), textY = AndroidUtilities.dp(8));
+        canvas.translate(0, textY = AndroidUtilities.dp(8));
 
         try {
             if (firstThreeLinesLayout == null || !shouldExpand) {
@@ -324,10 +341,8 @@ public class AboutLinkCell extends FrameLayout {
     protected void didExtend() {}
 
     private void resetPressedLink() {
-        if (pressedLink != null) {
-            pressedLink = null;
-            container.invalidate();
-        }
+        links.clear();
+        pressedLink = null;
         AndroidUtilities.cancelRunOnUIThread(longPressedRunnable);
         invalidate();
     }
@@ -371,15 +386,19 @@ public class AboutLinkCell extends FrameLayout {
         public void run() {
             if (pressedLink != null) {
                 String url;
-                if (pressedLink instanceof URLSpanNoUnderline) {
-                    url = ((URLSpanNoUnderline) pressedLink).getURL();
-                } else if (pressedLink instanceof URLSpan) {
-                    url = ((URLSpan) pressedLink).getURL();
+                if (pressedLink.getSpan() instanceof URLSpanNoUnderline) {
+                    url = ((URLSpanNoUnderline) pressedLink.getSpan()).getURL();
+                } else if (pressedLink.getSpan() instanceof URLSpan) {
+                    url = ((URLSpan) pressedLink.getSpan()).getURL();
                 } else {
-                    url = pressedLink.toString();
+                    url = pressedLink.getSpan().toString();
                 }
 
-                ClickableSpan pressedLinkFinal = pressedLink;
+                try {
+                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
+                } catch (Exception ignore) {}
+
+                ClickableSpan pressedLinkFinal = (ClickableSpan) pressedLink.getSpan();
                 BottomSheet.Builder builder = new BottomSheet.Builder(parentFragment.getParentActivity());
                 builder.setTitle(url);
                 builder.setItems(new CharSequence[]{LocaleController.getString("Open", R.string.Open), LocaleController.getString("Copy", R.string.Copy)}, (dialog, which) -> {
@@ -398,8 +417,10 @@ public class AboutLinkCell extends FrameLayout {
                         }
                     }
                 });
+                builder.setOnPreDismissListener(di -> resetPressedLink());
                 builder.show();
-                resetPressedLink();
+
+                pressedLink = null;
             }
         }
     };
@@ -415,18 +436,15 @@ public class AboutLinkCell extends FrameLayout {
             if (left <= x && left + textLayout.getLineWidth(line) >= x && y >= 0 && y <= textLayout.getHeight()) {
                 Spannable buffer = (Spannable) textLayout.getText();
                 ClickableSpan[] link = buffer.getSpans(off, off, ClickableSpan.class);
-                if (link.length != 0) {
+                if (link.length != 0 && !AndroidUtilities.isAccessibilityScreenReaderEnabled()) {
                     resetPressedLink();
-                    pressedLink = link[0];
-                    try {
-                        int start = buffer.getSpanStart(pressedLink);
-                        urlPathOffset.set(textX, textY);
-                        urlPath.setCurrentLayout(textLayout, start, 0);
-                        textLayout.getSelectionPath(start, buffer.getSpanEnd(pressedLink), urlPath);
-                    } catch (Exception e) {
-                        FileLog.e(e);
-                    }
-                    container.invalidate();
+                    pressedLink = new LinkSpanDrawable(link[0], parentFragment.getResourceProvider(), ex, ey);
+                    links.addLink(pressedLink);
+                    int start = buffer.getSpanStart(pressedLink.getSpan());
+                    int end = buffer.getSpanEnd(pressedLink.getSpan());
+                    LinkPath path = pressedLink.obtainNewPath();
+                    path.setCurrentLayout(textLayout, start, textY);
+                    textLayout.getSelectionPath(start, end, path);
                     AndroidUtilities.runOnUIThread(longPressedRunnable, ViewConfiguration.getLongPressTimeout());
                     return true;
                 } else {
@@ -464,7 +482,7 @@ public class AboutLinkCell extends FrameLayout {
     private static final int COLLAPSED_HEIGHT = AndroidUtilities.dp(8 + 20 * 3 + 8);
     private static final int MAX_OPEN_HEIGHT = COLLAPSED_HEIGHT;// + AndroidUtilities.dp(20);
 
-    private class SpringInterpolator {
+    public class SpringInterpolator {
         public float tension;
         public float friction;
         public SpringInterpolator(float tension, float friction) {
@@ -599,7 +617,6 @@ public class AboutLinkCell extends FrameLayout {
         int height = updateHeight();
         super.onMeasure(
             widthMeasureSpec,
-//            heightMeasureSpec
             MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
         );
     }
@@ -616,12 +633,10 @@ public class AboutLinkCell extends FrameLayout {
         }
     }
 
-    private StaticLayout firstThreeLinesLayout;
-    private StaticLayout[] nextLinesLayouts = null;
-    private int lastInlineLine = -1;
-    private Point[] nextLinesLayoutsPositions;
-    private boolean needSpace = false;
     private void checkTextLayout(int maxWidth, boolean force) {
+        if (moreButtonDisabled) {
+            shouldExpand = false;
+        }
         if (stringBuilder != null && (maxWidth != lastMaxWidth || force)) {
             textLayout = makeTextLayout(stringBuilder, maxWidth);
             shouldExpand = textLayout.getLineCount() >= 4; // && valueTextView.getVisibility() != View.VISIBLE;
@@ -711,13 +726,18 @@ public class AboutLinkCell extends FrameLayout {
     public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
         super.onInitializeAccessibilityNodeInfo(info);
         if (textLayout != null) {
-            final CharSequence text = textLayout.getText();
+            final CharSequence text = stringBuilder;
             final CharSequence valueText = valueTextView.getText();
+            info.setClassName("android.widget.TextView");
             if (TextUtils.isEmpty(valueText)) {
                 info.setText(text);
             } else {
                 info.setText(valueText + ": " + text);
             }
         }
+    }
+
+    public void setMoreButtonDisabled(boolean moreButtonDisabled) {
+        this.moreButtonDisabled = moreButtonDisabled;
     }
 }

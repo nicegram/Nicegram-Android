@@ -15,7 +15,7 @@ import java.util.List;
 
 public final class Instance {
 
-    public static final List<String> AVAILABLE_VERSIONS = Build.VERSION.SDK_INT >= 18 ? Arrays.asList("3.0.0", "2.7.7", "2.4.4") : Arrays.asList("2.4.4");
+    public static final List<String> AVAILABLE_VERSIONS = Build.VERSION.SDK_INT >= 18 ? Arrays.asList("4.1.2", "4.0.2", "4.0.1", "4.0.0", "3.0.0", "2.7.7", "2.4.4") : Arrays.asList("2.4.4");
 
     public static final int AUDIO_STATE_MUTED = 0;
     public static final int AUDIO_STATE_ACTIVE = 1;
@@ -204,8 +204,9 @@ public final class Instance {
         public final boolean stun;
         public final String username;
         public final String password;
+        public final boolean tcp;
 
-        public Endpoint(boolean isRtc, long id, String ipv4, String ipv6, int port, int type, byte[] peerTag, boolean turn, boolean stun, String username, String password) {
+        public Endpoint(boolean isRtc, long id, String ipv4, String ipv6, int port, int type, byte[] peerTag, boolean turn, boolean stun, String username, String password, boolean tcp) {
             this.isRtc = isRtc;
             this.id = id;
             this.ipv4 = ipv4;
@@ -217,6 +218,7 @@ public final class Instance {
             this.stun = stun;
             this.username = username;
             this.password = password;
+            this.tcp = tcp;
         }
 
         @Override
@@ -232,6 +234,7 @@ public final class Instance {
                     ", stun=" + stun +
                     ", username=" + username +
                     ", password=" + password +
+                    ", tcp=" + tcp +
                     '}';
         }
     }
@@ -283,7 +286,7 @@ public final class Instance {
     public static final class FinalState {
 
         public final byte[] persistentState;
-        public final String debugLog;
+        public String debugLog;
         public final TrafficStats trafficStats;
         public final boolean isRatingSuggested;
 
