@@ -4,6 +4,7 @@ import org.telegram.PhoneFormat.PhoneFormat
 
 object NicegramConsts {
     const val PRIVACY_POLICY_URL = "https://appvillis.com/nicegram-privacy.html"
+    const val UNBLOCK_URL = "https://my.nicegram.app/#/"
 
     private const val TEST_BACKEND_NUMBER = "99966241"
     private const val TEST_BACKEND_START = "7999"

@@ -19,6 +19,7 @@
     <string name="NicegramShowProfileID">Показать ID профиля</string>
     <string name="NicegramShowRegistrationDate">Показать дату регистрации</string>
     <string name="NicegramOpenLinksInBrowser">Открывать во внешнем браузере</string>
+    <string name="NicegramUnblockGuide">Руководство по разблокировке</string>
     <string name="NicegramDialogPolicy">Политика конфиденциальности Nicegram</string>
     <string name="NicegramDialogPolicyText">Nicegram является неофициальным клиентом Telegram, и многие услуги, которые вы получаете с помощью Nicegram, на самом деле предоставляются компанией Telegram.\n\nПожалуйста, ознакомьтесь с нашей Политикой конфиденциальности перед использованием приложения.\n\nНажав продолжить, вы подтверждаете, что прочитали и согласны с Политикой конфиденциальности Nicegram.</string>
 </resources>

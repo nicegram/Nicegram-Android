@@ -14,11 +14,12 @@
     <string name="NicegramForwardAsCopy">Inoltra come copia</string>
     <string name="NicegramSkipReadHistory">Salta la cronologia di lettura</string>
     <string name="NicegramOlderThan">Più vecchio di</string>
-    <string name="NicegramNewerThan">Più recente di </string>
+    <string name="NicegramNewerThan">Più recente di</string>
     <string name="NicegramApproximately">Circa</string>
     <string name="NicegramShowProfileID">Mostra ID profilo</string>
     <string name="NicegramShowRegistrationDate">Mostra la data di iscrizione</string>
     <string name="NicegramOpenLinksInBrowser">Apri link nel browser</string>
+    <string name="NicegramUnblockGuide">Sblocca guida</string>
     <string name="NicegramDialogPolicy">Informativa sulla privacy di Nicegram</string>
     <string name="NicegramDialogPolicyText">Nicegram è un client Telegram non ufficiale, e molti dei servizi che ottieni utilizzando Nicegram sono in realtà forniti dalla società Telegram.\n\nLeggi la nostra Informativa sulla privacy prima di utilizzare l\'app.\n\nFacendo clic su continua confermi di aver letto e di accettare l\'Informativa sulla privacy di Nicegram.</string>
 </resources>

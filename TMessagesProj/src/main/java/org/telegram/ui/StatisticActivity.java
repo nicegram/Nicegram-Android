@@ -1,5 +1,8 @@
 package org.telegram.ui;
 
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
@@ -84,9 +87,6 @@ import org.telegram.ui.Components.RecyclerListView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
-
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 public class StatisticActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
@@ -499,7 +499,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
 
                 items.add(LocaleController.getString("ViewMessage", R.string.ViewMessage));
                 actions.add(1);
-                icons.add(R.drawable.menu_chats);
+                icons.add(R.drawable.msg_msgbubble3);
 
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
@@ -2564,10 +2564,10 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             }
 
             items.add(LocaleController.getString("StatisticOpenProfile", R.string.StatisticOpenProfile));
-            icons.add(R.drawable.menu_private);
+            icons.add(R.drawable.msg_openprofile);
             actions.add(2);
             items.add(LocaleController.getString("StatisticSearchUserHistory", R.string.StatisticSearchUserHistory));
-            icons.add(R.drawable.menu_chats);
+            icons.add(R.drawable.msg_msgbubble3);
             actions.add(1);
 
             if (userIsPracticant && currentParticipant == null) {
@@ -2643,7 +2643,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                 if (canEditAdmin) {
                     isAdmin = channelParticipant.admin_rights == null;
                     items.add(isAdmin ? LocaleController.getString("SetAsAdmin", R.string.SetAsAdmin) : LocaleController.getString("EditAdminRights", R.string.EditAdminRights));
-                    icons.add(isAdmin ? R.drawable.actions_addadmin : R.drawable.actions_permissions);
+                    icons.add(isAdmin ? R.drawable.msg_admins : R.drawable.msg_permissions);
                     actions.add(0);
                 }
             }
@@ -2654,7 +2654,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             builder.setItems(items.toArray(new CharSequence[actions.size()]), AndroidUtilities.toIntArray(icons), (dialogInterface, i) -> {
                 if (actions.get(i) == 0) {
                     boolean[] needShowBulletin = new boolean[1];
-                    ChatRightsEditActivity newFragment = new ChatRightsEditActivity(user.id, chat.id, finalCurrentParticipant.channelParticipant.admin_rights, null, finalCurrentParticipant.channelParticipant.banned_rights, finalCurrentParticipant.channelParticipant.rank, ChatRightsEditActivity.TYPE_ADMIN, true, finalIsAdmin) {
+                    ChatRightsEditActivity newFragment = new ChatRightsEditActivity(user.id, chat.id, finalCurrentParticipant.channelParticipant.admin_rights, null, finalCurrentParticipant.channelParticipant.banned_rights, finalCurrentParticipant.channelParticipant.rank, ChatRightsEditActivity.TYPE_ADMIN, true, finalIsAdmin, null) {
                         @Override
                         protected void onTransitionAnimationEnd(boolean isOpen, boolean backward) {
                             if (!isOpen && backward && needShowBulletin[0] && BulletinFactory.canShowBulletin(fragment)) {
@@ -2695,5 +2695,11 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             AlertDialog alertDialog = builder.create();
             fragment.showDialog(alertDialog);
         }
+    }
+
+    @Override
+    public boolean isLightStatusBar() {
+        int color = Theme.getColor(Theme.key_windowBackgroundWhite);
+        return ColorUtils.calculateLuminance(color) > 0.7f;
     }
 }

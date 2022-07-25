@@ -19,6 +19,7 @@
     <string name="NicegramShowProfileID">Profil ID\'sini göster</string>
     <string name="NicegramShowRegistrationDate">Kayıt tarihini göster</string>
     <string name="NicegramOpenLinksInBrowser">Bağlantıları tarayıcıda aç</string>
+    <string name="NicegramUnblockGuide">Rehberin Engelini Kaldır</string>
     <string name="NicegramDialogPolicy">Nicegram Gizlilik Politikası</string>
     <string name="NicegramDialogPolicyText">Nicegram, resmi olmayan bir Telegram istemcisidir ve Nicegram kullanarak faydalandığınız hizmetlerin çoğu aslında Telegram şirketi tarafından sağlanmaktadır.\n\nUygulamayı kullanmadan önce lütfen Gizlilik Politikamızı okuyun.\n\nDevam et butonuna tıklayarak, Nicegram Gizlilik Politikasını okuyup kabul ettiğinizi teyit etmiş olursunuz.</string>
 </resources>

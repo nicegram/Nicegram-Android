@@ -19,7 +19,16 @@
     <string name="NicegramShowProfileID">Show profile ID</string>
     <string name="NicegramShowRegistrationDate">Show registration date</string>
     <string name="NicegramOpenLinksInBrowser">Open links in browser</string>
+    <string name="NicegramUnblockGuide">Unblock guide</string>
 
     <string name="NicegramDialogPolicy">Nicegram Privacy Policy</string>
     <string name="NicegramDialogPolicyText">Nicegram is an unofficial Telegram client and many of the services that you get by using Nicegram, is actually provided by Telegram company.\n\nPlease read our Privacy Policy before using the app.\n\nBy clicking continue you confirm that you have read and agree to Nicegram Privacy Policy.</string>
+
+    <string name="NicegramIconDefault" translatable="false">Default</string>
+    <string name="NicegramIconMonoBlack" translatable="false">Mono Black</string>
+    <string name="NicegramIconFilled" translatable="false">Filled</string>
+    <string name="NicegramIconFilledBlack" translatable="false">Filled Black</string>
+    <string name="NicegramIconNicegram" translatable="false">Nicegram</string>
+    <string name="NicegramIconNicegramLight" translatable="false">Nicegram Light</string>
+    <string name="NicegramIconNicegramDark" translatable="false">Nicegram Dark</string>
 </resources>

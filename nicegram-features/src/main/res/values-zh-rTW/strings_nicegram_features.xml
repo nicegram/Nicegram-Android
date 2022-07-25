@@ -19,6 +19,7 @@
     <string name="NicegramShowProfileID">顯示個人檔案 ID</string>
     <string name="NicegramShowRegistrationDate">顯示註冊日期</string>
     <string name="NicegramOpenLinksInBrowser">在瀏覽器中開啟連結</string>
+    <string name="NicegramUnblockGuide">解除封鎖說明</string>
     <string name="NicegramDialogPolicy">Nicegram 隱私權政策</string>
     <string name="NicegramDialogPolicyText">Nicegram 是一個非官方的 Telegram 使用者端，而您使用 Nicegram 獲得的許多服務實際上是由 Telegram 公司所提供。\n\n請在使用本應用程式之前閱讀我們的隱私權政策。\n\n點選繼續即表示您確認您已閱讀並同意 Nicegram 隱私權政策。</string>
 </resources>

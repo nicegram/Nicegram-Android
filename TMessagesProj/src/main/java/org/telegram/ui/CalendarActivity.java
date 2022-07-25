@@ -32,7 +32,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DownloadController;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.ImageLocation;
@@ -53,7 +52,6 @@ import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Components.AlertsCreator;
-import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.Easings;
 import org.telegram.ui.Components.HideViewAfterAnimation;
@@ -61,11 +59,9 @@ import org.telegram.ui.Components.HintView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SharedMediaLayout;
-import org.telegram.ui.Components.Tooltip;
 
 import java.time.YearMonth;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 
 public class CalendarActivity extends BaseFragment {
@@ -312,7 +308,7 @@ public class CalendarActivity extends BaseFragment {
                     selectDaysHint.showForView(bottomBar, true);
                     return;
                 }
-                AlertsCreator.createClearDaysDialogAlert(this, lastDaysSelected, getMessagesController().getUser(dialogId), new MessagesStorage.BooleanCallback() {
+                AlertsCreator.createClearDaysDialogAlert(this, lastDaysSelected, getMessagesController().getUser(dialogId), null, false, new MessagesStorage.BooleanCallback() {
                     @Override
                     public void run(boolean forAll) {
                         finishFragment();
@@ -644,7 +640,7 @@ public class CalendarActivity extends BaseFragment {
                             }
                         } else {
                             PeriodDay day = getDayAtCoord(e.getX(), e.getY());
-                            if (parentLayout.fragmentsStack.size() >= 2) {
+                            if (day != null && parentLayout.fragmentsStack.size() >= 2) {
                                 BaseFragment fragment = parentLayout.fragmentsStack.get(parentLayout.fragmentsStack.size() - 2);
                                 if (fragment instanceof ChatActivity) {
                                     finishFragment();
@@ -747,7 +743,7 @@ public class CalendarActivity extends BaseFragment {
                                 if (parentLayout.fragmentsStack.size() >= 3) {
                                     BaseFragment fragment = parentLayout.fragmentsStack.get(parentLayout.fragmentsStack.size() - 3);
                                     if (fragment instanceof ChatActivity) {
-                                        AlertsCreator.createClearDaysDialogAlert(CalendarActivity.this, 1, getMessagesController().getUser(dialogId), new MessagesStorage.BooleanCallback() {
+                                        AlertsCreator.createClearDaysDialogAlert(CalendarActivity.this, 1, getMessagesController().getUser(dialogId), null, false, new MessagesStorage.BooleanCallback() {
                                             @Override
                                             public void run(boolean forAll) {
                                                 finishFragment();
@@ -781,7 +777,6 @@ public class CalendarActivity extends BaseFragment {
                         prepareBlurBitmap();
 
                         presentFragmentAsPreviewWithMenu(chatActivity, previewMenu);
-
                     }
                 }
             });
@@ -1420,5 +1415,11 @@ public class CalendarActivity extends BaseFragment {
             return false;
         }
         return super.onBackPressed();
+    }
+
+    @Override
+    public boolean isLightStatusBar() {
+        int color = Theme.getColor(Theme.key_windowBackgroundWhite, null, true);
+        return ColorUtils.calculateLuminance(color) > 0.7f;
     }
 }

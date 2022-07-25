@@ -13,6 +13,7 @@ import android.view.View;
 
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.Components.AnimatedFileDrawable;
 import org.telegram.ui.Components.PhotoFilterView;
 import org.telegram.ui.Components.Point;
 
@@ -53,6 +54,7 @@ public class VideoEditedInfo {
     public boolean canceled;
     public boolean videoConvertFirstWrite;
     public boolean needUpdateProgress = false;
+    public boolean shouldLimitFps = true;
 
     public static class MediaEntity {
         public byte type;
@@ -84,6 +86,7 @@ public class VideoEditedInfo {
         public Bitmap bitmap;
 
         public View view;
+        public AnimatedFileDrawable animatedFileDrawable;
 
         public MediaEntity() {
 

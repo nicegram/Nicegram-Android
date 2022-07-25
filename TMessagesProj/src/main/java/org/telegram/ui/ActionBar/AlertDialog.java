@@ -139,6 +139,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback {
     private ArrayList<AlertDialogCell> itemViews = new ArrayList<>();
     private float aspectRatio;
     private boolean dimEnabled = true;
+    private float dimAlpha = 0.6f;
     private final Theme.ResourcesProvider resourcesProvider;
     private boolean topAnimationAutoRepeat = true;
 
@@ -718,10 +719,10 @@ public class AlertDialog extends Dialog implements Drawable.Callback {
                         }
                         if (totalWidth > availableWidth) {
                             View negative = findViewWithTag(BUTTON_NEGATIVE);
-                            View neuntral = findViewWithTag(BUTTON_NEUTRAL);
-                            if (negative != null && neuntral != null) {
-                                if (negative.getMeasuredWidth() < neuntral.getMeasuredWidth()) {
-                                    neuntral.measure(MeasureSpec.makeMeasureSpec(neuntral.getMeasuredWidth() - (totalWidth - availableWidth), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(neuntral.getMeasuredHeight(), MeasureSpec.EXACTLY));
+                            View neutral = findViewWithTag(BUTTON_NEUTRAL);
+                            if (negative != null && neutral != null) {
+                                if (negative.getMeasuredWidth() < neutral.getMeasuredWidth()) {
+                                    neutral.measure(MeasureSpec.makeMeasureSpec(neutral.getMeasuredWidth() - (totalWidth - availableWidth), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(neutral.getMeasuredHeight(), MeasureSpec.EXACTLY));
                                 } else {
                                     negative.measure(MeasureSpec.makeMeasureSpec(negative.getMeasuredWidth() - (totalWidth - availableWidth), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(negative.getMeasuredHeight(), MeasureSpec.EXACTLY));
                                 }
@@ -836,7 +837,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback {
                 textView.setEllipsize(TextUtils.TruncateAt.END);
                 textView.setSingleLine(true);
                 textView.setText(neutralButtonText.toString().toUpperCase());
-                textView.setBackgroundDrawable(Theme.getRoundRectSelectorDrawable(getThemedColor(dialogButtonColorKey)));
+                textView.setBackground(Theme.getRoundRectSelectorDrawable(getThemedColor(dialogButtonColorKey)));
                 textView.setPadding(AndroidUtilities.dp(10), 0, AndroidUtilities.dp(10), 0);
                 if (verticalButtons) {
                     buttonsLayout.addView(textView, 1, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, 36, LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT));
@@ -867,7 +868,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback {
             params.width = WindowManager.LayoutParams.MATCH_PARENT;
         } else {
             if (dimEnabled) {
-                params.dimAmount = 0.6f;
+                params.dimAmount = dimAlpha;
                 params.flags |= WindowManager.LayoutParams.FLAG_DIM_BEHIND;
             } else {
                 params.dimAmount = 0f;
@@ -1205,6 +1206,10 @@ public class AlertDialog extends Dialog implements Drawable.Callback {
         return null;
     }
 
+    public ViewGroup getButtonsLayout() {
+        return buttonsLayout;
+    }
+
     public static class Builder {
 
         private AlertDialog alertDialog;
@@ -1372,6 +1377,11 @@ public class AlertDialog extends Dialog implements Drawable.Callback {
 
         public Builder setDimEnabled(boolean dimEnabled) {
             alertDialog.dimEnabled = dimEnabled;
+            return this;
+        }
+
+        public Builder setDimAlpha(float dimAlpha) {
+            alertDialog.dimAlpha = dimAlpha;
             return this;
         }
 

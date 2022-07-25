@@ -19,6 +19,7 @@
     <string name="NicegramShowProfileID">프로필 ID 보여주기</string>
     <string name="NicegramShowRegistrationDate">등록일 보여주기</string>
     <string name="NicegramOpenLinksInBrowser">브라우저에서 링크 열기</string>
+    <string name="NicegramUnblockGuide">차단해제 가이드</string>
     <string name="NicegramDialogPolicy">Nicegram 개인정보보호정책</string>
     <string name="NicegramDialogPolicyText">Nicegram은 비공식적인 텔레그램(Telegram)의 고객이며 귀하가 Nicegram을 사용하며 제공받는 많은 서비스는 실제로 텔레그램으로부터 제공됩니다.\n\n앱을 사용하기 전 당사의 개인 정보 보호 정책을 확인하여 주십시오.\n\n 계속하기를 클릭하면 Nicegram의 개인정보보호정책을 읽고 동의하신 것으로 간주됩니다.</string>
 </resources>

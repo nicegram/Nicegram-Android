@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ShowMentionAll">Afficher « Tout mentionner »</string>
+    <string name="MentionAllUsers">Mentionner tous les utilisateurs</string>
+    <string name="For20OrLessChats">Pour les chats comprenant moins de 20 personnes</string>
+    <string name="NicegramSettings">Paramètres de Nicegram</string>
+    <string name="NicegramRegistered">Inscrit</string>
+    <string name="NicegramGetRegistrationDate">Obtenir la date d\'inscription</string>
+    <string name="NicegramGetIdCopied">Identifiant copié dans le presse-papiers</string>
+    <string name="NicegramLoading">Chargement…</string>
+    <string name="NicegramRegDateError">Désolé, impossible d\'obtenir la date d\'inscription</string>
+    <string name="NicegramUndoTranslate">Annuler la traduction</string>
+    <string name="NicegramTranslationUnavailable">Désolé, traduction indisponible</string>
+    <string name="NicegramForwardAsCopy">Transférer en tant que copie</string>
+    <string name="NicegramSkipReadHistory">Ignorer l\'historique de lecture</string>
+    <string name="NicegramOlderThan">Plus vieux que</string>
+    <string name="NicegramNewerThan">Plus récent que</string>
+    <string name="NicegramApproximately">Approximativement</string>
+    <string name="NicegramShowProfileID">Afficher l\'identifiant du profil</string>
+    <string name="NicegramShowRegistrationDate">Afficher la date d\'inscription</string>
+    <string name="NicegramOpenLinksInBrowser">Ouvrir les liens dans le navigateur</string>
+    <string name="NicegramUnblockGuide">Guide de déblocage</string>
+    <string name="NicegramDialogPolicy">Politique de confidentialité de Nicegram</string>
+    <string name="NicegramDialogPolicyText">Nicegram est un client Telegram non officiel et de nombreux services que vous obtenez en utilisant Nicegram sont en fait fournis par la société Telegram.\n\nVeuillez lire notre politique de confidentialité avant d\'utiliser l\'application.\n\nEn cliquant sur « Continuer », vous confirmez que vous avez lu et que vous acceptez la politique de confidentialité de Nicegram.</string>
+</resources>

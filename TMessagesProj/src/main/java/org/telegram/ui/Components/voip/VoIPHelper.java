@@ -147,7 +147,8 @@ public class VoIPHelper {
 
 		if (Build.VERSION.SDK_INT >= 23) {
 			ArrayList<String> permissions = new ArrayList<>();
-			if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+			ChatObject.Call call = accountInstance.getMessagesController().getGroupCall(chat.id, false);
+			if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED && !(call != null && call.call.rtmp_stream)) {
 				permissions.add(Manifest.permission.RECORD_AUDIO);
 			}
 			if (permissions.isEmpty()) {
@@ -724,7 +725,11 @@ public class VoIPHelper {
 				}
 			}
 		}
-		return new File(logsDir, callId + ".log").getAbsolutePath();
+		if (stats) {
+			return new File(logsDir, callId + "_stats.log").getAbsolutePath();
+		} else {
+			return new File(logsDir, callId + ".log").getAbsolutePath();
+		}
 	}
 
     public static void showGroupCallAlert(BaseFragment fragment, TLRPC.Chat currentChat, TLRPC.InputPeer peer, boolean recreate, AccountInstance accountInstance) {

@@ -30,7 +30,7 @@
         android:largeHeap="true"
         android:supportsRtl="false"
         android:requestLegacyExternalStorage="true"
-        tools:replace="android:supportsRtl">
+        tools:replace="android:supportsRtl,android:allowBackup,android:label,android:name,android:theme">
 
         <meta-data android:name="com.google.android.maps.v2.API_KEY" android:value="AIzaSyA-t0jLPjUt2FxrA8VPK2EiYHcYcboIR6k" />
 
@@ -60,6 +60,9 @@
             android:name="com.google.android.gms.measurement.AppMeasurementService"
             android:enabled="false"
             android:exported="false" />
+
+        <activity android:name="com.appvillis.MainActivity" android:exported="false"
+            android:theme="@style/Theme.Nicegram.Transparent"/>
 
     </application>
 
