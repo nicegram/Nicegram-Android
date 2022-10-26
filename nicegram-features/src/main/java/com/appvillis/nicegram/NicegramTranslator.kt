@@ -1,9 +1,8 @@
 package com.appvillis.nicegram
 
-import android.util.Log
-import com.appvillis.nicegram.NicegramConstsAndKeys.TRANSLATE_URL
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import com.appvillis.nicegram.NicegramNetworkConsts.TRANSLATE_URL
+import com.appvillis.nicegram.NicegramScopes.ioScope
+import com.appvillis.nicegram.NicegramScopes.uiScope
 import kotlinx.coroutines.launch
 import org.jsoup.Jsoup
 import java.net.URLEncoder
@@ -25,7 +24,7 @@ object NicegramTranslator {
     fun translate(text: String, toLanguage: String, callback: (translatedText: String?) -> Unit) {
         var resultText = ""
         val chunks = text.chunked(MAX_TEXT_SIZE)
-        GlobalScope.launch(Dispatchers.IO) {
+        ioScope.launch {
             chunks.forEach { textChunk ->
                 val url = TRANSLATE_URL.format(toLanguage, URLEncoder.encode(textChunk.replace("\n", NEW_LINE_REPLACEMENT), "utf-8"))
 
@@ -49,7 +48,7 @@ object NicegramTranslator {
                 }
             }
 
-            GlobalScope.launch(Dispatchers.Main) { callback(if (resultText.isEmpty()) null else resultText) }
+            uiScope.launch { callback(if (resultText.isEmpty()) null else resultText) }
         }
     }
 }

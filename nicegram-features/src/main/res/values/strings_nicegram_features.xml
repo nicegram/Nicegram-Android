@@ -4,6 +4,7 @@
     <string name="MentionAllUsers">Mention all users</string>
     <string name="For20OrLessChats">For chats with less than 20 people</string>
     <string name="NicegramSettings">Nicegram settings</string>
+    <string name="NicegramReplyPrivately">Reply Privately</string>
     <string name="NicegramRegistered">Registered</string>
     <string name="NicegramGetRegistrationDate">Get Registration Date</string>
     <string name="NicegramGetIdCopied">Id copied to clipboard</string>
@@ -12,6 +13,7 @@
     <string name="NicegramUndoTranslate">Undo translate</string>
     <string name="NicegramTranslationUnavailable">Sorry, translation unavailable</string>
     <string name="NicegramForwardAsCopy">Forward as copy</string>
+    <string name="NicegramForwardToSave">Save to Cloud</string>
     <string name="NicegramSkipReadHistory">Skip read history</string>
     <string name="NicegramOlderThan">Older than</string>
     <string name="NicegramNewerThan">Newer than</string>
@@ -20,15 +22,50 @@
     <string name="NicegramShowRegistrationDate">Show registration date</string>
     <string name="NicegramOpenLinksInBrowser">Open links in browser</string>
     <string name="NicegramUnblockGuide">Unblock guide</string>
+    <string name="NicegramPremiumFeatures">Premium Features</string>
+    <string name="NicegramPrivacyPolicy">Privacy policy</string>
+    <string name="NicegramEULA">EULA</string>
+    <string name="NicegramSubRenews">Subscription Automatically Renews</string>
+    <string name="NicegramSubPerMonth"><![CDATA[<b>Subscribe for %s</b> per month]]></string>
+    <string name="NicegramBuildInTranslator">Built-in Translator</string>
+    <string name="NicegramBuildInTranslatorDesc">Instantly translate any message in the app without switching to 3rd-party translators</string>
+    <string name="NicegramSpeech2Text">Speech2Text</string>
+    <string name="NicegramSpeech2TextDesc">Get any voice message transcribed in seconds and save tons of your free time</string>
+    <string name="NicegramMentionAll">\@MentionAll</string>
+    <string name="NicegramMentionAllDesc">Quickly inform all group members and make sure everyone will read your message</string>
+    <string name="NicegramQuickTranslateButton">Quick Translate button</string>
+    <string name="NicegramStartWithRearCamera">Start with rear camera</string>
+    <string name="NicegramDownloadVideosToGallery">Download videos to Gallery</string>
+    <string name="NicegramHidePhoneNumber">Hide phone number</string>
 
     <string name="NicegramDialogPolicy">Nicegram Privacy Policy</string>
     <string name="NicegramDialogPolicyText">Nicegram is an unofficial Telegram client and many of the services that you get by using Nicegram, is actually provided by Telegram company.\n\nPlease read our Privacy Policy before using the app.\n\nBy clicking continue you confirm that you have read and agree to Nicegram Privacy Policy.</string>
+
+    <string name="NicegramContinue">Continue</string>
+    <string name="NicegramGetStarted">Get Started</string>
+
+    <string name="NicegramOnbroadingTitle1">№1 Client for Telegram Messenger</string>
+    <string name="NicegramOnbroadingText1">Join over 2 million Nicegram users and get access to the most powerful and secure Telegram client for business.</string>
+    <string name="NicegramOnbroadingTitle2">Advanced Messaging Experience</string>
+    <string name="NicegramOnbroadingText2">Speed up your communication with unique features like a Built-in Translator, Speech2Text, Forwarding messages without specifying the author and Quick saving to favorites.</string>
+    <string name="NicegramOnbroadingTitle3">Extended User Profile</string>
+    <string name="NicegramOnbroadingText3">Create as many Telegram accounts as you need for completely free, and view an extended user profile with ID, registration date, and clickable links.</string>
+    <string name="NicegramOnbroadingTitle4">Unique Business Extensions</string>
+    <string name="NicegramOnbroadingText4">Take advantage of the innovations from the Nicegram team and get an eSIM with Internet access in 133 countries. You can also register new Telegram accounts to the phone number of the eSIM data plan.</string>
+    <string name="NicegramOnbroadingTitle5">The Most Secure Messenger</string>
+    <string name="NicegramOnbroadingText5">Secure Messenger with Strong Encryption, Group Audio and Video Calls, Public Channels, Groups and Bots, Unlimited Cloud Storage for Chats, Media and Documents sharing.</string>
+
+    <string name="NicegramDoubleBottom">Double bottom</string>
+    <string name="NicegramDoubleBottomDesc">To enable this feature, you should have more than one account and switch on Passcode Lock (go to Settings → Privacy &amp; Security → Passcode Lock)</string>
+    <string name="NicegramDoubleBottomAnotherCode">Please set another passcode different from that you use for Passcode Lock</string>
 
     <string name="NicegramIconDefault" translatable="false">Default</string>
     <string name="NicegramIconMonoBlack" translatable="false">Mono Black</string>
     <string name="NicegramIconFilled" translatable="false">Filled</string>
     <string name="NicegramIconFilledBlack" translatable="false">Filled Black</string>
     <string name="NicegramIconNicegram" translatable="false">Nicegram</string>
-    <string name="NicegramIconNicegramLight" translatable="false">Nicegram Light</string>
-    <string name="NicegramIconNicegramDark" translatable="false">Nicegram Dark</string>
+    <string name="NicegramIconNicegramLight" translatable="false">Light</string>
+    <string name="NicegramIconNicegramClassic" translatable="false">Classic</string>
+
+    <string name="NicegramAppName" translatable="false">Nicegram</string>
 </resources>

@@ -4,6 +4,7 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.Spanned
+import com.appvillis.nicegram.NicegramBillingHelper
 import com.appvillis.nicegram.NicegramPrefs
 import org.telegram.messenger.MessagesController
 import org.telegram.messenger.UserObject
@@ -14,7 +15,7 @@ object MentionAllHelper {
     private const val MAX_USER_COUNT = 20
 
     fun canUseMentionAll(chatUserCount: Int, currentAccount: Int): Boolean {
-        return MessagesController.getNicegramSettings(currentAccount)
+        return NicegramBillingHelper.userHasNgPremiumSub && MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(NicegramPrefs.PREF_MENTION_ALL_ENABLED, NicegramPrefs.PREF_MENTION_ALL_ENABLED_DEFAULT) && chatUserCount <= MAX_USER_COUNT
     }
 

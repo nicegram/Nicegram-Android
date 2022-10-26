@@ -28,6 +28,18 @@ import java.util.zip.ZipException;
 
 public class FileLoadOperation {
 
+    FileLoadOperationStream stream;
+    boolean streamPriority;
+    long streamOffset;
+
+    public static volatile DispatchQueue filesQueue = new DispatchQueue("writeFileQueue");
+
+    public void setStream(FileLoadOperationStream stream, boolean streamPriority, long streamOffset) {
+        this.stream = stream;
+        this.streamOffset = streamOffset;
+        this.streamPriority = streamPriority;
+    }
+
     protected static class RequestInfo {
         private int requestToken;
         private long offset;
@@ -64,6 +76,7 @@ public class FileLoadOperation {
     private final static int stateDownloading = 1;
     private final static int stateFailed = 2;
     private final static int stateFinished = 3;
+    private final static int stateCanceled = 4;
 
     private int downloadChunkSize = 1024 * 32;
     private int downloadChunkSizeBig = 1024 * 128;
@@ -81,7 +94,6 @@ public class FileLoadOperation {
 
     private String fileName;
     private String storeFileName;
-    private int currentQueueType;
 
     private HashMap<Long, PreloadRange> preloadedBytesRanges;
     private HashMap<Long, Integer> requestedPreloadedBytesRanges;
@@ -179,6 +191,7 @@ public class FileLoadOperation {
     private int currentType;
     public FilePathDatabase.PathData pathSaveData;
     private long startTime;
+    private FileLoaderPriorityQueue priorityQueue;
 
     public interface FileLoadOperationDelegate {
         void didFinishLoadingFile(FileLoadOperation operation, File finalFile);
@@ -395,17 +408,17 @@ public class FileLoadOperation {
         return priority;
     }
 
-    public void setPaths(int instance, String name, int queueType, File store, File temp, String finalName) {
-        storePath = store;
-        tempPath = temp;
-        currentAccount = instance;
-        fileName = name;
-        storeFileName = finalName;
-        currentQueueType = queueType;
+    public void setPaths(int instance, String name, FileLoaderPriorityQueue priorityQueue, File store, File temp, String finalName) {
+        this.storePath = store;
+        this.tempPath = temp;
+        this.currentAccount = instance;
+        this.fileName = name;
+        this.storeFileName = finalName;
+        this.priorityQueue = priorityQueue;
     }
 
-    public int getQueueType() {
-        return currentQueueType;
+    public FileLoaderPriorityQueue getQueue() {
+        return priorityQueue;
     }
 
     public boolean wasStarted() {
@@ -457,6 +470,8 @@ public class FileLoadOperation {
         }
     }
 
+    long totalTime;
+
     private void addPart(ArrayList<Range> ranges, long start, long end, boolean save) {
         if (ranges == null || end < start) {
             return;
@@ -492,18 +507,28 @@ public class FileLoadOperation {
         }
         if (save) {
             if (modified) {
-                try {
-                    filePartsStream.seek(0);
-                    count = ranges.size();
-                    filePartsStream.writeInt(count);
-                    for (int a = 0; a < count; a++) {
-                        range = ranges.get(a);
-                        filePartsStream.writeLong(range.start);
-                        filePartsStream.writeLong(range.end);
+                ArrayList<FileLoadOperation.Range> rangesFinal = new ArrayList<>(ranges);
+                filesQueue.postRunnable(() -> {
+                    long time = System.currentTimeMillis();
+                    try {
+                        synchronized (FileLoadOperation.this) {
+                            if (filePartsStream == null) {
+                                return;
+                            }
+                            filePartsStream.seek(0);
+                            int countFinal = rangesFinal.size();
+                            filePartsStream.writeInt(countFinal);
+                            for (int a = 0; a < countFinal; a++) {
+                                Range rangeFinal = rangesFinal.get(a);
+                                filePartsStream.writeLong(rangeFinal.start);
+                                filePartsStream.writeLong(rangeFinal.end);
+                            }
+                        }
+                    } catch (Exception e) {
+                        FileLog.e(e);
                     }
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
+                    totalTime += System.currentTimeMillis() - time;
+                });
                 notifyStreamListeners();
             } else {
                 if (BuildVars.LOGS_ENABLED) {
@@ -588,7 +613,7 @@ public class FileLoadOperation {
         return progress + getDownloadedLengthFromOffsetInternal(ranges, (int) (totalBytesCount * progress), totalBytesCount) / (float) totalBytesCount;
     }
 
-    protected long[] getDownloadedLengthFromOffset(final int offset, final long length) {
+    protected long[] getDownloadedLengthFromOffset(final long offset, final long length) {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final long[] result = new long[2];
         Utilities.stageQueue.postRunnable(() -> {
@@ -634,7 +659,7 @@ public class FileLoadOperation {
     }
 
     public boolean start() {
-        return start(null, 0, false);
+        return start(stream, streamOffset, streamPriority);
     }
 
     public boolean start(final FileLoadOperationStream stream, final long streamOffset, final boolean steamPriority) {
@@ -1179,13 +1204,15 @@ public class FileLoadOperation {
         }
         try {
             if (filePartsStream != null) {
-                try {
-                    filePartsStream.getChannel().close();
-                } catch (Exception e) {
-                    FileLog.e(e);
+                synchronized (FileLoadOperation.this) {
+                    try {
+                        filePartsStream.getChannel().close();
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                    }
+                    filePartsStream.close();
+                    filePartsStream = null;
                 }
-                filePartsStream.close();
-                filePartsStream = null;
             }
         } catch (Exception e) {
             FileLog.e(e);
@@ -1445,8 +1472,8 @@ public class FileLoadOperation {
 
     protected boolean processRequestResult(RequestInfo requestInfo, TLRPC.TL_error error) {
         if (state != stateDownloading) {
-            if (BuildVars.DEBUG_VERSION) {
-                FileLog.e(new Exception("trying to write to finished file " + cacheFileFinal + " offset " + requestInfo.offset));
+            if (BuildVars.DEBUG_VERSION && state == stateFinished) {
+                FileLog.e(new Exception("trying to write to finished file " + fileName + " offset " + requestInfo.offset + " " + totalBytesCount));
             }
             return false;
         }
@@ -1568,7 +1595,7 @@ public class FileLoadOperation {
                     if (notLoadedBytesRanges != null) {
                         fileOutputStream.seek(requestInfo.offset);
                         if (BuildVars.DEBUG_VERSION) {
-                            FileLog.d("save file part " + cacheFileFinal + " offset " + requestInfo.offset);
+                            FileLog.d("save file part " + fileName + " offset=" + requestInfo.offset + " chunk_size=" + currentDownloadChunkSize + " isCdn=" + isCdn);
                         }
                     }
                     FileChannel channel = fileOutputStream.getChannel();
@@ -1661,7 +1688,7 @@ public class FileLoadOperation {
 
                 if (finishedDownloading) {
                     onFinishLoadingFile(true);
-                } else {
+                } else if (state != stateCanceled){
                     startDownloadRequest();
                 }
             } catch (Exception e) {
@@ -1715,7 +1742,7 @@ public class FileLoadOperation {
 
     protected void onFail(boolean thread, final int reason) {
         cleanup();
-        state = stateFailed;
+        state = reason == 1 ? stateCanceled : stateFailed;
         if (delegate != null) {
             if (thread) {
                 Utilities.stageQueue.postRunnable(() -> delegate.didFailedLoadingFile(FileLoadOperation.this, reason));

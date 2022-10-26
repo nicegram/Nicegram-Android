@@ -2,14 +2,16 @@ package com.appvillis.nicegram.network
 
 import android.content.Context
 import com.appvillis.nicegram.BuildConfig
-import com.appvillis.nicegram.NicegramConstsAndKeys.API_KEY
-import com.appvillis.nicegram.NicegramConstsAndKeys.BASE_URL
-import com.appvillis.nicegram.NicegramConstsAndKeys.BASE_URL_NG_APP
+import com.appvillis.nicegram.NicegramNetworkConsts
+import com.appvillis.nicegram.NicegramNetworkConsts.API_KEY
+import com.appvillis.nicegram.NicegramNetworkConsts.BASE_URL
+import com.appvillis.nicegram.NicegramNetworkConsts.BASE_URL_NG_APP
 import com.appvillis.nicegram.NicegramScopes.ioScope
 import com.appvillis.nicegram.NicegramScopes.uiScope
 import com.appvillis.nicegram.R
 import com.appvillis.nicegram.network.request.RegDateRequest
 import com.appvillis.nicegram.network.response.RegDateResponse
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -18,7 +20,17 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object NicegramNetwork {
-    private const val TIMEOUT = 30L
+    private const val TIMEOUT = 60L
+
+    val googleCloudApi by lazy {
+        val retrofit = Retrofit.Builder()
+            .baseUrl(NicegramNetworkConsts.GOOGLE_CLOUD_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        retrofit.create(GoogleCloudApi::class.java)
+    }
 
     private val nicegramApi by lazy {
         val retrofit = Retrofit.Builder()
@@ -56,6 +68,8 @@ object NicegramNetwork {
 
     fun getRegDate(context: Context?, userId: Long, callback: (regDate: String?) -> Unit) {
         if (context == null) {
+            FirebaseCrashlytics.getInstance().recordException(Throwable("reg date error context=null"))
+
             return callback("Error code: 1002")
         }
 
@@ -63,6 +77,7 @@ object NicegramNetwork {
             try {
                 val result = nicegramApi.getRegDate(RegDateRequest((userId)), API_KEY)
                 if (result.data == null) {
+                    FirebaseCrashlytics.getInstance().recordException(Throwable("reg date error data=null"))
                     uiScope.launch { callback(null) }
                     return@launch
                 }
@@ -86,12 +101,16 @@ object NicegramNetwork {
                         if (BuildConfig.DEBUG) e.printStackTrace()
 
                         uiScope.launch { callback(null) }
+
+                        FirebaseCrashlytics.getInstance().recordException(Throwable("reg date error 1", e))
                     }
                 }
             } catch (e: Exception) {
                 if (BuildConfig.DEBUG) e.printStackTrace()
 
                 uiScope.launch { callback(null) }
+
+                FirebaseCrashlytics.getInstance().recordException(Throwable("reg date error 0", e))
             }
         }
     }

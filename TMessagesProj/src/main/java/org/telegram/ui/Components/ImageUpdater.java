@@ -28,7 +28,7 @@ import androidx.core.content.FileProvider;
 import androidx.exifinterface.media.ExifInterface;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.BuildConfig;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.ImageLoader;
@@ -516,7 +516,7 @@ public class ImageUpdater implements NotificationCenter.NotificationCenterDelega
             File image = AndroidUtilities.generatePicturePath();
             if (image != null) {
                 if (Build.VERSION.SDK_INT >= 24) {
-                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(parentFragment.getParentActivity(), BuildConfig.APPLICATION_ID + ".provider", image));
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(parentFragment.getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", image));
                     takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                     takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 } else {
@@ -543,7 +543,7 @@ public class ImageUpdater implements NotificationCenter.NotificationCenterDelega
             File video = AndroidUtilities.generateVideoPath();
             if (video != null) {
                 if (Build.VERSION.SDK_INT >= 24) {
-                    takeVideoIntent.putExtra(MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(parentFragment.getParentActivity(), BuildConfig.APPLICATION_ID + ".provider", video));
+                    takeVideoIntent.putExtra(MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(parentFragment.getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", video));
                     takeVideoIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                     takeVideoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 } else if (Build.VERSION.SDK_INT >= 18) {
@@ -634,7 +634,7 @@ public class ImageUpdater implements NotificationCenter.NotificationCenterDelega
         photoEntry.isVideo = isVideo;
         photoEntry.thumbPath = thumb;
         arrayList.add(photoEntry);
-        PhotoViewer.getInstance().setParentActivity(parentFragment.getParentActivity());
+        PhotoViewer.getInstance().setParentActivity(parentFragment);
         PhotoViewer.getInstance().openPhotoForSelect(arrayList, 0, PhotoViewer.SELECT_TYPE_AVATAR, false, new PhotoViewer.EmptyPhotoViewerProvider() {
             @Override
             public void sendButtonPressed(int index, VideoEditedInfo videoEditedInfo, boolean notify, int scheduleDate, boolean forceDocument) {
@@ -686,7 +686,7 @@ public class ImageUpdater implements NotificationCenter.NotificationCenterDelega
                 currentPicturePath = null;
             } else if (requestCode == 13) {
                 parentFragment.getParentActivity().overridePendingTransition(R.anim.alpha_in, R.anim.alpha_out);
-                PhotoViewer.getInstance().setParentActivity(parentFragment.getParentActivity());
+                PhotoViewer.getInstance().setParentActivity(parentFragment);
                 int orientation = 0;
                 try {
                     ExifInterface ei = new ExifInterface(currentPicturePath);

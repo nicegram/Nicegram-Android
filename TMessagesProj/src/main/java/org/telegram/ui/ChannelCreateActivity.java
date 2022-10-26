@@ -272,8 +272,12 @@ public class ChannelCreateActivity extends BaseFragment implements NotificationC
         cancelDialog = builder.show();
     }
 
+    private Runnable enableDoneLoading = () -> updateDoneProgress(true);
     private ValueAnimator doneButtonDrawableAnimator;
     private void updateDoneProgress(boolean loading) {
+        if (!loading) {
+            AndroidUtilities.cancelRunOnUIThread(enableDoneLoading);
+        }
         if (doneButtonDrawable != null) {
             if (doneButtonDrawableAnimator != null) {
                 doneButtonDrawableAnimator.cancel();
@@ -325,7 +329,7 @@ public class ChannelCreateActivity extends BaseFragment implements NotificationC
                             return;
                         }
                         donePressed = true;
-                        updateDoneProgress(true);
+                        AndroidUtilities.runOnUIThread(enableDoneLoading, 200);
                         if (imageUpdater.isUploadingImage()) {
                             createAfterUpload = true;
                             return;
@@ -583,8 +587,8 @@ public class ChannelCreateActivity extends BaseFragment implements NotificationC
             avatarEditor.setAnimation(cameraDrawable);
             avatarEditor.setEnabled(false);
             avatarEditor.setClickable(false);
-            avatarEditor.setPadding(AndroidUtilities.dp(2), 0, 0, AndroidUtilities.dp(1));
-            frameLayout.addView(avatarEditor, LayoutHelper.createFrame(64, 64, Gravity.TOP | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), LocaleController.isRTL ? 0 : 16, 12, LocaleController.isRTL ? 16 : 0, 12));
+            avatarEditor.setPadding(AndroidUtilities.dp(0), 0, 0, AndroidUtilities.dp(1));
+            frameLayout.addView(avatarEditor, LayoutHelper.createFrame(64, 64, Gravity.TOP | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), LocaleController.isRTL ? 0 : 15, 12, LocaleController.isRTL ? 15 : 0, 12));
 
             avatarProgressView = new RadialProgressView(context);
             avatarProgressView.setSize(AndroidUtilities.dp(30));
@@ -594,7 +598,7 @@ public class ChannelCreateActivity extends BaseFragment implements NotificationC
 
             showAvatarProgress(false, false);
 
-            nameTextView = new EditTextEmoji(context, sizeNotifierFrameLayout, this, EditTextEmoji.STYLE_FRAGMENT);
+            nameTextView = new EditTextEmoji(context, sizeNotifierFrameLayout, this, EditTextEmoji.STYLE_FRAGMENT, false);
             nameTextView.setHint(LocaleController.getString("EnterChannelName", R.string.EnterChannelName));
             if (nameToSet != null) {
                 nameTextView.setText(nameToSet);

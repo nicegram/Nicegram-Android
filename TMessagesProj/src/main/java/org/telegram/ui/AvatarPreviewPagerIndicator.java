@@ -369,6 +369,10 @@ public class AvatarPreviewPagerIndicator extends View implements ProfileGalleryV
     @Override
     public void onPhotosLoaded() {
     }
+    // region ng share avatar
+    @Override
+    public void onLongClick() {
+    } // endregion ng share avatar
 
     @Override
     public void onVideoSet() {

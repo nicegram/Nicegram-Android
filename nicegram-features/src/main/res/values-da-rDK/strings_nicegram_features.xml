@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="NicegramGetRegistrationDate">Anmeldedatum</string>
+    <string name="NicegramOpenLinksInBrowser">Im Browser öffnen</string>
+    <string name="NicegramSpeech2Text">Sprache zu Text</string>
+    <string name="NicegramQuickTranslateButton">Schnellübersetzen-Schaltfläche</string>
+</resources>

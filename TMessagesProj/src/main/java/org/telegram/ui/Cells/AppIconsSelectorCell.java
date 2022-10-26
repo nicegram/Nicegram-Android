@@ -207,6 +207,7 @@ public class AppIconsSelectorCell extends RecyclerListView implements Notificati
 
     private final static class IconHolderView extends LinearLayout {
         private Paint outlinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
         private ImageView iconView;
         private TextView titleView;
@@ -220,8 +221,10 @@ public class AppIconsSelectorCell extends RecyclerListView implements Notificati
 
             setWillNotDraw(false);
             iconView = new ImageView(context);
-            iconView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            iconView.setPadding(AndroidUtilities.dp(2), AndroidUtilities.dp(2), AndroidUtilities.dp(2), AndroidUtilities.dp(2));
+            iconView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            iconView.setBackgroundResource(R.drawable.outline_rounded_20dp);
+            iconView.setClipToOutline(true);
+            //iconView.setPadding(AndroidUtilities.dp(2), AndroidUtilities.dp(2), AndroidUtilities.dp(2), AndroidUtilities.dp(2));
             addView(iconView, LayoutHelper.createLinear(58, 58, Gravity.CENTER_HORIZONTAL));
 
             titleView = new TextView(context);
@@ -232,14 +235,18 @@ public class AppIconsSelectorCell extends RecyclerListView implements Notificati
 
             outlinePaint.setStyle(Paint.Style.STROKE);
             outlinePaint.setStrokeWidth(Math.max(2, AndroidUtilities.dp(0.5f)));
+
+            fillPaint.setColor(Color.WHITE);
         }
 
         @Override
         public void draw(Canvas canvas) {
+            float stroke = outlinePaint.getStrokeWidth() / 2;
+            AndroidUtilities.rectTmp.set(iconView.getLeft() + stroke, iconView.getTop() + stroke, iconView.getRight() - stroke, iconView.getBottom() - stroke);
+            //canvas.drawRoundRect(AndroidUtilities.rectTmp, AndroidUtilities.dp(ICONS_ROUND_RADIUS), AndroidUtilities.dp(ICONS_ROUND_RADIUS), fillPaint); // ng
+
             super.draw(canvas);
 
-            float stroke = outlinePaint.getStrokeWidth();
-            AndroidUtilities.rectTmp.set(iconView.getLeft() + stroke, iconView.getTop() + stroke, iconView.getRight() - stroke, iconView.getBottom() - stroke);
             canvas.drawRoundRect(AndroidUtilities.rectTmp, AndroidUtilities.dp(ICONS_ROUND_RADIUS), AndroidUtilities.dp(ICONS_ROUND_RADIUS), outlinePaint);
         }
 
@@ -271,8 +278,8 @@ public class AppIconsSelectorCell extends RecyclerListView implements Notificati
         private void bind(LauncherIconController.LauncherIcon icon) {
             iconView.setImageResource(icon.background);
             int padding = AndroidUtilities.dp(2);
-            if (icon.name().contains("FILLED") || icon.name().contains("NICEGRAM")) padding = AndroidUtilities.dp(1);
-            iconView.setPadding(padding, padding, padding, padding);
+            if (icon.name().contains("FILLED") || icon.name().contains("DEFAULT")) padding = AndroidUtilities.dp(1);
+            //iconView.setPadding(padding, padding, padding, padding);
 
             MarginLayoutParams params = (MarginLayoutParams) titleView.getLayoutParams();
             if (icon.premium && !UserConfig.hasPremiumOnAccounts()) {

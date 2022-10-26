@@ -844,7 +844,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                 } else {
                     type = 0;
                 }
-                PhotoViewer.getInstance().setParentActivity(getParentActivity());
+                PhotoViewer.getInstance().setParentActivity(PhotoPickerActivity.this);
                 PhotoViewer.getInstance().setMaxSelectedPhotos(maxSelectedPhotos, allowOrder);
                 PhotoViewer.getInstance().openPhotoForSelect(arrayList, position, type, isDocumentsPicker, provider, chatActivity);
             }
@@ -985,7 +985,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
             if (commentTextView != null) {
                 commentTextView.onDestroy();
             }
-            commentTextView = new EditTextEmoji(context, sizeNotifierFrameLayout, null, EditTextEmoji.STYLE_DIALOG);
+            commentTextView = new EditTextEmoji(context, sizeNotifierFrameLayout, null, EditTextEmoji.STYLE_DIALOG, false);
             InputFilter[] inputFilters = new InputFilter[1];
             inputFilters[0] = new InputFilter.LengthFilter(MessagesController.getInstance(UserConfig.selectedAccount).maxCaptionLength);
             commentTextView.setFilters(inputFilters);

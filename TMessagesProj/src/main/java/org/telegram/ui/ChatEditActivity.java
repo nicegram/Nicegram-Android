@@ -73,8 +73,6 @@ import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.UndoView;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class ChatEditActivity extends BaseFragment implements ImageUpdater.ImageUpdaterDelegate, NotificationCenter.NotificationCenterDelegate {
@@ -135,7 +133,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
     private boolean isChannel;
 
     private boolean historyHidden;
-    private List<String> availableReactions = Collections.emptyList();
+    private TLRPC.ChatReactions availableReactions;
 
     private boolean createAfterUpload;
     private boolean donePressed;
@@ -527,7 +525,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 }
                 TLRPC.Chat chat = getMessagesController().getChat(chatId);
                 if (chat.photo != null && chat.photo.photo_big != null) {
-                    PhotoViewer.getInstance().setParentActivity(getParentActivity());
+                    PhotoViewer.getInstance().setParentActivity(ChatEditActivity.this);
                     if (chat.photo.dc_id != 0) {
                         chat.photo.photo_big.dc_id = chat.photo.dc_id;
                     }
@@ -544,7 +542,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             frameLayout.addView(avatarImage, LayoutHelper.createFrame(64, 64, Gravity.TOP | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), LocaleController.isRTL ? 0 : 16, 12, LocaleController.isRTL ? 16 : 0, 12));
         }
 
-        nameTextView = new EditTextEmoji(context, sizeNotifierFrameLayout, this, EditTextEmoji.STYLE_FRAGMENT);
+        nameTextView = new EditTextEmoji(context, sizeNotifierFrameLayout, this, EditTextEmoji.STYLE_FRAGMENT, false);
         if (isChannel) {
             nameTextView.setHint(LocaleController.getString("EnterChannelName", R.string.EnterChannelName));
         } else {
@@ -674,7 +672,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             locationCell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
             typeEditContainer.addView(locationCell, LayoutHelper.createLinear(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             locationCell.setOnClickListener(v -> {
-                if (!AndroidUtilities.isGoogleMapsInstalled(ChatEditActivity.this)) {
+                if (!AndroidUtilities.isMapsInstalled(ChatEditActivity.this)) {
                     return;
                 }
                 LocationActivity fragment = new LocationActivity(LocationActivity.LOCATION_TYPE_GROUP);
@@ -1477,16 +1475,31 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
     }
 
     private void updateReactionsCell() {
-        int count = 0;
-        for (int i = 0; i < availableReactions.size(); i++) {
-            TLRPC.TL_availableReaction reaction = getMediaDataController().getReactionsMap().get(availableReactions.get(i));
-            if (reaction != null && !reaction.inactive) {
-                 count++;
+        String finalString;
+        if (availableReactions == null || availableReactions instanceof TLRPC.TL_chatReactionsNone) {
+            finalString = LocaleController.getString("ReactionsOff", R.string.ReactionsOff);
+        } else if (availableReactions instanceof TLRPC.TL_chatReactionsSome) {
+            TLRPC.TL_chatReactionsSome someReactions = (TLRPC.TL_chatReactionsSome) availableReactions;
+            int count = 0;
+            for (int i = 0; i < someReactions.reactions.size(); i++) {
+                TLRPC.Reaction someReaction = someReactions.reactions.get(i);
+                if (someReaction instanceof TLRPC.TL_reactionEmoji) {
+                    TLRPC.TL_reactionEmoji tl_reactionEmoji = (TLRPC.TL_reactionEmoji) someReaction;
+                    TLRPC.TL_availableReaction reaction = getMediaDataController().getReactionsMap().get(tl_reactionEmoji.emoticon);
+                    if (reaction != null && !reaction.inactive) {
+                        count++;
+                    }
+                }
             }
+            int reacts = Math.min(getMediaDataController().getEnabledReactionsList().size(), count);
+            finalString = reacts == 0 ? LocaleController.getString("ReactionsOff", R.string.ReactionsOff) :
+                    LocaleController.formatString("ReactionsCount", R.string.ReactionsCount, reacts, getMediaDataController().getEnabledReactionsList().size());
+        } else {
+            finalString = LocaleController.getString("ReactionsAll", R.string.ReactionsAll);
         }
-        int reacts = Math.min(getMediaDataController().getEnabledReactionsList().size(), count);
-        reactionsCell.setTextAndValueAndIcon(LocaleController.getString("Reactions", R.string.Reactions), reacts == 0 ? LocaleController.getString("ReactionsOff", R.string.ReactionsOff) :
-                LocaleController.formatString("ReactionsCount", R.string.ReactionsCount, reacts, getMediaDataController().getEnabledReactionsList().size()), R.drawable.msg_reactions2, true);
+
+
+        reactionsCell.setTextAndValueAndIcon(LocaleController.getString("Reactions", R.string.Reactions), finalString, R.drawable.msg_reactions2, true);
     }
 
     @Override

@@ -27,7 +27,6 @@ import androidx.core.content.FileProvider;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
@@ -151,7 +150,7 @@ public class BlockingUpdateView extends FrameLayout implements NotificationCente
             }
             if (appUpdate.document instanceof TLRPC.TL_document) {
                 if (!openApkInstall((Activity) getContext(), appUpdate.document)) {
-                    FileLoader.getInstance(accountNum).loadFile(appUpdate.document, "update", 2, 1);
+                    FileLoader.getInstance(accountNum).loadFile(appUpdate.document, "update", FileLoader.PRIORITY_HIGH, 1);
                     showProgress(true);
                 }
             } else if (appUpdate.url != null) {
@@ -246,7 +245,7 @@ public class BlockingUpdateView extends FrameLayout implements NotificationCente
                 intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
                 if (Build.VERSION.SDK_INT >= 24) {
-                    intent.setDataAndType(FileProvider.getUriForFile(activity, BuildConfig.APPLICATION_ID + ".provider", f), "application/vnd.android.package-archive");
+                    intent.setDataAndType(FileProvider.getUriForFile(activity, ApplicationLoader.getApplicationId() + ".provider", f), "application/vnd.android.package-archive");
                 } else {
                     intent.setDataAndType(Uri.fromFile(f), "application/vnd.android.package-archive");
                 }
