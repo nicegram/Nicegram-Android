@@ -87,3 +87,14 @@ lint/tmp/
 
 # Android Profiling
 *.hprof
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google Services (e.g. APIs or Firebase)
+google-services.json
+agconnect-services.json
+output.json
+
+NicegramNetworkConsts.kt
