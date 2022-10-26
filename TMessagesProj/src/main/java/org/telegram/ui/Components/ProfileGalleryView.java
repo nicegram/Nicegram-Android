@@ -38,6 +38,8 @@ import org.telegram.ui.ProfileActivity;
 
 import java.util.ArrayList;
 
+import app.nicegram.NicegramSecondTapHelper;
+
 public class ProfileGalleryView extends CircularViewPager implements NotificationCenter.NotificationCenterDelegate {
 
     private final PointF downPoint = new PointF();
@@ -118,6 +120,8 @@ public class ProfileGalleryView extends CircularViewPager implements Notificatio
         void onPhotosLoaded();
 
         void onVideoSet();
+
+        void onLongClick(); // ng share avatar
     }
 
     private int roundTopRadius;
@@ -368,7 +372,9 @@ public class ProfileGalleryView extends CircularViewPager implements Notificatio
             }
             isDownReleased = false;
         } else if (action == MotionEvent.ACTION_UP) {
-            if (!isDownReleased) {
+            if (NicegramSecondTapHelper.INSTANCE.isLongClick(ev)) {
+                callback.onLongClick(); // ng share avatar
+            } else if (!isDownReleased) {
                 final int itemsCount = adapter.getCount();
                 int currentItem = getCurrentItem();
                 if (itemsCount > 1) {
@@ -727,7 +733,7 @@ public class ProfileGalleryView extends CircularViewPager implements Notificatio
         if (locationsCount > 1) {
             for (int i = 0; i < (locationsCount > 2 ? 2 : 1); i++) {
                 final int pos = i == 0 ? 1 : locationsCount - 1;
-                FileLoader.getInstance(currentAccount).loadFile(thumbsLocations.get(pos), null, null, 0, 1);
+                FileLoader.getInstance(currentAccount).loadFile(thumbsLocations.get(pos), null, null, FileLoader.PRIORITY_LOW, 1);
             }
         }
     }

@@ -14,6 +14,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
+import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.View;
@@ -52,6 +53,7 @@ import org.telegram.ui.Cells.ContextLinkCell;
 import org.telegram.ui.Cells.MentionCell;
 import org.telegram.ui.Cells.StickerCell;
 import org.telegram.ui.ChatActivity;
+import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.EmojiView;
 import org.telegram.ui.Components.RecyclerListView;
 
@@ -275,7 +277,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 File f = FileLoader.getInstance(currentAccount).getPathToAttach(thumb, "webp", true);
                 if (!f.exists()) {
                     stickersToLoad.add(FileLoader.getAttachFileName(thumb, "webp"));
-                    FileLoader.getInstance(currentAccount).loadFile(ImageLocation.getForDocument(thumb, result.sticker), result.parent, "webp", 1, 1);
+                    FileLoader.getInstance(currentAccount).loadFile(ImageLocation.getForDocument(thumb, result.sticker), result.parent, "webp", FileLoader.PRIORITY_NORMAL, 1);
                 }
             }
         }
@@ -795,7 +797,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         }
     }
 
-    public void searchUsernameOrHashtag(String text, int position, ArrayList<MessageObject> messageObjects, boolean usernameOnly, boolean forSearch) {
+    public void searchUsernameOrHashtag(CharSequence charSequence, int position, ArrayList<MessageObject> messageObjects, boolean usernameOnly, boolean forSearch) {
+        final String text = charSequence == null ? null : charSequence.toString();
         if (cancelDelayRunnable != null) {
             AndroidUtilities.cancelRunOnUIThread(cancelDelayRunnable);
             cancelDelayRunnable = null;
@@ -846,6 +849,10 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             lastSticker = emoji.toString().trim();
         }
         boolean isValidEmoji = searchEmoji && (Emoji.isValidEmoji(originalEmoji) || Emoji.isValidEmoji(lastSticker));
+        if (isValidEmoji && charSequence instanceof Spanned) {
+            AnimatedEmojiSpan[] spans = ((Spanned) charSequence).getSpans(0, charSequence.length(), AnimatedEmojiSpan.class);
+            isValidEmoji = spans == null || spans.length == 0;
+        }
 
         if (isValidEmoji && parentFragment != null && (parentFragment.getCurrentChat() == null || ChatObject.canSendStickers(parentFragment.getCurrentChat()))) {
             stickersToLoad.clear();
@@ -1311,7 +1318,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 searchResultCommandsUsers = null;
                 notifyDataSetChanged();
                 delegate.needChangePanelVisibility(searchResultSuggestions != null && !searchResultSuggestions.isEmpty());
-            });
+            }, true);
         } else if (foundType == 4) {
             searchResultHashtags = null;
             searchResultUsernames = null;

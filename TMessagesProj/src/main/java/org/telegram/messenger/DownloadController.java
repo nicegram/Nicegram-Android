@@ -31,6 +31,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
+import app.nicegram.NicegramSaveToGallery;
+import app.nicegram.PrefsHelper;
+
 public class DownloadController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
 
     public interface FileDownloadProgressListener {
@@ -838,10 +841,10 @@ public class DownloadController extends BaseController implements NotificationCe
                 } else {
                     cacheType = 0;
                 }
-                getFileLoader().loadFile(ImageLocation.getForPhoto(photoSize, photo), downloadObject.parent, null, 0, cacheType);
+                getFileLoader().loadFile(ImageLocation.getForPhoto(photoSize, photo), downloadObject.parent, null, FileLoader.PRIORITY_LOW, cacheType);
             } else if (downloadObject.object instanceof TLRPC.Document) {
                 TLRPC.Document document = (TLRPC.Document) downloadObject.object;
-                getFileLoader().loadFile(document, downloadObject.parent, 0, downloadObject.secret ? 2 : 0);
+                getFileLoader().loadFile(document, downloadObject.parent, FileLoader.PRIORITY_LOW, downloadObject.secret ? 2 : 0);
             } else {
                 added = false;
             }
@@ -1011,6 +1014,9 @@ public class DownloadController extends BaseController implements NotificationCe
                     if (reference.get() != null) {
                         reference.get().onSuccessDownload(fileName);
                         observersByTag.remove(reference.get().getObserverTag());
+                        if (PrefsHelper.INSTANCE.shouldDownloadVideosToGallery(currentAccount)){
+                            NicegramSaveToGallery.INSTANCE.tryToSave(fileName, ((File) args[1]).getPath(), ApplicationLoader.applicationContext); // ng video to gallery
+                        }
                     }
                 }
                 loadingFileObservers.remove(fileName);
@@ -1129,7 +1135,7 @@ public class DownloadController extends BaseController implements NotificationCe
                 }
             }
             if (!contains) {
-                downloadingFiles.add(parentObject);
+                downloadingFiles.add(0, parentObject);
                 getMessagesStorage().getStorageQueue().postRunnable(() -> {
                     try {
                         NativeByteBuffer data = new NativeByteBuffer(parentObject.messageOwner.getObjectSize());
@@ -1155,13 +1161,14 @@ public class DownloadController extends BaseController implements NotificationCe
     }
 
     public void onDownloadComplete(MessageObject parentObject) {
-        if (parentObject == null) {
+        if (parentObject == null || parentObject.getDocument() == null) {
             return;
         }
+        TLRPC.Document document = parentObject.getDocument();
         AndroidUtilities.runOnUIThread(() -> {
             boolean removed = false;
             for (int i = 0; i < downloadingFiles.size(); i++) {
-                if (downloadingFiles.get(i).getDocument().id == parentObject.getDocument().id) {
+                if (downloadingFiles.get(i).getDocument() != null && downloadingFiles.get(i).getDocument().id == document.id) {
                     downloadingFiles.remove(i);
                     removed = true;
                     break;
@@ -1171,7 +1178,7 @@ public class DownloadController extends BaseController implements NotificationCe
             if (removed) {
                 boolean contains = false;
                 for (int i = 0; i < recentDownloadingFiles.size(); i++) {
-                    if (recentDownloadingFiles.get(i).getDocument().id == parentObject.getDocument().id) {
+                    if (recentDownloadingFiles.get(i).getDocument() != null && recentDownloadingFiles.get(i).getDocument().id == document.id) {
                         contains = true;
                         break;
                     }
@@ -1343,6 +1350,24 @@ public class DownloadController extends BaseController implements NotificationCe
         });
     }
 
+    public void swapLoadingPriority(MessageObject o1, MessageObject o2) {
+        int index1 = downloadingFiles.indexOf(o1);
+        int index2 = downloadingFiles.indexOf(o2);
+        if (index1 >= 0 && index2 >= 0) {
+            downloadingFiles.set(index1, o2);
+            downloadingFiles.set(index2, o1);
+        }
+        updateFilesLoadingPriority();
+    }
+
+    public void updateFilesLoadingPriority() {
+        for (int i = downloadingFiles.size() - 1; i >= 0 ; i--) {
+            if (getFileLoader().isLoadingFile(downloadingFiles.get(i).getFileName())) {
+                getFileLoader().loadFile(downloadingFiles.get(i).getDocument(), downloadingFiles.get(i), FileLoader.PRIORITY_NORMAL_UP, 0);
+            }
+        }
+    }
+
     public void clearRecentDownloadedFiles() {
         recentDownloadingFiles.clear();
         getNotificationCenter().postNotificationName(NotificationCenter.onDownloadingFilesChanged);
@@ -1376,7 +1401,7 @@ public class DownloadController extends BaseController implements NotificationCe
                 }
             }
             messageObjects.get(i).putInDownloadsStore = false;
-            FileLoader.getInstance(currentAccount).loadFile(messageObjects.get(i).getDocument(), messageObjects.get(i), 0, 0);
+            FileLoader.getInstance(currentAccount).loadFile(messageObjects.get(i).getDocument(), messageObjects.get(i), FileLoader.PRIORITY_LOW, 0);
             FileLoader.getInstance(currentAccount).cancelLoadFile(messageObjects.get(i).getDocument(), true);
         }
         getNotificationCenter().postNotificationName(NotificationCenter.onDownloadingFilesChanged);
@@ -1401,5 +1426,14 @@ public class DownloadController extends BaseController implements NotificationCe
                 FileLog.e(e);
             }
         });
+    }
+
+    public boolean isDownloading(int messageId) {
+        for (int i = 0; i < downloadingFiles.size(); i++) {
+            if (downloadingFiles.get(i).messageOwner.id == messageId) {
+                return true;
+            }
+        }
+        return false;
     }
 }

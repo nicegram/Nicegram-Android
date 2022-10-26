@@ -22,11 +22,18 @@ import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
+import com.appvillis.nicegram.NicegramBillingHelper;
+import com.appvillis.nicegram.NicegramSpeechToTextHelper;
+import com.appvillis.nicegram.network.NicegramNetwork;
+import com.appvillis.nicegram.presentation.NicegramPremiumActivity;
+
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
@@ -38,6 +45,7 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.PremiumPreviewFragment;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -63,6 +71,7 @@ public class TranscribeButton {
     private Rect bounds, pressBounds;
 
     private boolean premium;
+    private boolean hasAnyPremium;
     private boolean isOpen, shouldBeOpen;
 
     public TranscribeButton(ChatMessageCell parent, SeekBarWaveform seekBar) {
@@ -76,7 +85,6 @@ public class TranscribeButton {
         outIconDrawable = new RLottieDrawable(R.raw.transcribe_out, "transcribe_out", AndroidUtilities.dp(26), AndroidUtilities.dp(26));
         outIconDrawable.setCurrentFrame(0);
         outIconDrawable.setCallback(parent);
-        outIconDrawable.addParentView(parent);
         outIconDrawable.setOnFinishCallback(() -> {
             outIconDrawable.stop();
             inIconDrawable.stop();
@@ -88,7 +96,7 @@ public class TranscribeButton {
         inIconDrawable = new RLottieDrawable(R.raw.transcribe_in, "transcribe_in", AndroidUtilities.dp(26), AndroidUtilities.dp(26));
         inIconDrawable.setCurrentFrame(0);
         inIconDrawable.setCallback(parent);
-        inIconDrawable.addParentView(parent);
+        inIconDrawable.setMasterParent(parent);
         inIconDrawable.setOnFinishCallback(() -> {
             inIconDrawable.stop();
             outIconDrawable.stop();
@@ -100,6 +108,7 @@ public class TranscribeButton {
         this.isOpen = false;
         this.shouldBeOpen = false;
         premium = AccountInstance.getInstance(parent.getMessageObject().currentAccount).getUserConfig().isPremium();
+        hasAnyPremium = premium || NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub();
 
         loadingFloat = new AnimatedFloat(parent, 250, CubicBezierInterpolator.EASE_OUT_QUINT);
     }
@@ -175,7 +184,7 @@ public class TranscribeButton {
         boolean processClick, toOpen = !shouldBeOpen;
         if (!shouldBeOpen) {
             processClick = !loading;
-            if (premium && parent.getMessageObject().isSent()) {
+            if (hasAnyPremium && parent.getMessageObject().isSent()) {
                 setLoading(true, true);
             }
         } else {
@@ -189,9 +198,9 @@ public class TranscribeButton {
         }
         pressed = false;
         if (processClick) {
-            if (!premium && toOpen) {
+            if (!hasAnyPremium && toOpen) {
                 if (parent.getDelegate() != null) {
-                    parent.getDelegate().needShowPremiumFeatures(PremiumPreviewFragment.featureTypeToServerString(PremiumPreviewFragment.PREMIUM_FEATURE_VOICE_TO_TEXT));
+                    parent.getDelegate().openNgPremiumScreen();
                 }
             } else {
                 transcribePressed(parent.getMessageObject(), toOpen);
@@ -222,12 +231,12 @@ public class TranscribeButton {
             inIconDrawable.setLayerColor("Artboard Outlines.**", this.iconColor);
             inIconDrawable.commitApplyLayerColors();
             inIconDrawable.setAllowDecodeSingleFrame(true);
-            inIconDrawable.updateCurrentFrame();
+            inIconDrawable.updateCurrentFrame(0, false);
             outIconDrawable.beginApplyLayerColors();
             outIconDrawable.setLayerColor("Artboard Outlines.**", this.iconColor);
             outIconDrawable.commitApplyLayerColors();
             outIconDrawable.setAllowDecodeSingleFrame(true);
-            outIconDrawable.updateCurrentFrame();
+            outIconDrawable.updateCurrentFrame(0, false);
         }
 //        inIconDrawable.setAlpha(disabled ? 125 : 255);
 //        outIconDrawable.setAlpha(disabled ? 125 : 255);
@@ -254,7 +263,7 @@ public class TranscribeButton {
         if (backgroundPaint != null) {
             canvas.drawRect(this.bounds, backgroundPaint);
         }
-        if (selectorDrawable != null && premium) {
+        if (selectorDrawable != null && hasAnyPremium) {
             selectorDrawable.setBounds(bounds);
             selectorDrawable.draw(canvas);
         }
@@ -355,7 +364,7 @@ public class TranscribeButton {
             lottie.setLayerColor("Comp 1.**", color);
             lottie.commitApplyLayerColors();
             lottie.setAllowDecodeSingleFrame(true);
-            lottie.updateCurrentFrame();
+            lottie.updateCurrentFrame(0, false);
         }
 
         @Override
@@ -402,6 +411,8 @@ public class TranscribeButton {
         if (messageObject == null || messageObject.messageOwner == null || !messageObject.isSent()) {
             return;
         }
+        boolean hasTgPremium = AccountInstance.getInstance(messageObject.currentAccount).getUserConfig().isPremium();
+
         int account = messageObject.currentAccount;
         final long start = SystemClock.elapsedRealtime(), minDuration = 350;
         TLRPC.InputPeer peer = MessagesController.getInstance(account).getInputPeer(messageObject.messageOwner.peer_id);
@@ -415,6 +426,10 @@ public class TranscribeButton {
                     NotificationCenter.getInstance(account).postNotificationName(NotificationCenter.voiceTranscriptionUpdate, messageObject, null, null, (Boolean) true, (Boolean) true);
                 });
             } else {
+                if (!hasTgPremium && NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub()) {
+                    callNgSpeech2Text(messageId, peer, messageObject, account, start, dialogId, minDuration);
+                    return;
+                }
                 TLRPC.TL_messages_transcribeAudio req = new TLRPC.TL_messages_transcribeAudio();
                 req.peer = peer;
                 req.msg_id = messageId;
@@ -454,7 +469,7 @@ public class TranscribeButton {
 
                     MessagesStorage.getInstance(account).updateMessageVoiceTranscription(dialogId, messageId, finalText, messageObject.messageOwner);
                     if (isFinal) {
-                        AndroidUtilities.runOnUIThread(() -> finishTranscription(messageObject, finalId, finalText), Math.max(0, minDuration - duration));
+                        AndroidUtilities.runOnUIThread(() -> finishTranscription(messageObject, finalId, finalText, false), Math.max(0, minDuration - duration));
                     }
                 });
             }
@@ -470,7 +485,7 @@ public class TranscribeButton {
         }
     }
 
-    public static boolean finishTranscription(MessageObject messageObject, long transcription_id, String text) {
+    public static boolean finishTranscription(MessageObject messageObject, long transcription_id, String text, boolean error) {
         try {
             MessageObject messageObjectByTranscriptionId = null;
             if (transcribeOperationsById != null && transcribeOperationsById.containsKey(transcription_id)) {
@@ -486,13 +501,59 @@ public class TranscribeButton {
             if (transcribeOperationsByDialogPosition != null) {
                 transcribeOperationsByDialogPosition.remove((Integer) reqInfoHash(messageObject));
             }
-            messageObject.messageOwner.voiceTranscriptionFinal = true;
+            messageObject.messageOwner.voiceTranscriptionFinal = !error;
             MessagesStorage.getInstance(messageObject.currentAccount).updateMessageVoiceTranscription(messageObject.getDialogId(), messageObject.getId(), text, messageObject.messageOwner);
             AndroidUtilities.runOnUIThread(() -> {
-                NotificationCenter.getInstance(finalMessageObject.currentAccount).postNotificationName(NotificationCenter.voiceTranscriptionUpdate, finalMessageObject, (Long) transcription_id, (String) text, (Boolean) true, (Boolean) true);
+                NotificationCenter.getInstance(finalMessageObject.currentAccount).postNotificationName(NotificationCenter.voiceTranscriptionUpdate, finalMessageObject, (Long) transcription_id, (String) text, (Boolean) true, (Boolean) !error);
             });
             return true;
         } catch (Exception ignore) {}
         return false;
+    }
+
+    private static void callNgSpeech2Text(int messageId, TLRPC.InputPeer peer, MessageObject messageObject, int account, long start, long dialogId, long minDuration) {
+        long ngTranscriptionId = 111111111;
+
+        if (transcribeOperationsByDialogPosition == null) {
+            transcribeOperationsByDialogPosition = new HashMap<>();
+        }
+        transcribeOperationsByDialogPosition.put((Integer) reqInfoHash(messageObject), messageObject);
+
+        File file = null;
+        boolean exists = false;
+        if (messageObject.messageOwner.attachPath != null && messageObject.messageOwner.attachPath.length() > 0) {
+            file = new File(messageObject.messageOwner.attachPath);
+            exists = file.exists();
+            if (!exists) {
+                file = null;
+            }
+        }
+        final File cacheFile = file != null ? file : FileLoader.getInstance(account).getPathToMessage(messageObject.messageOwner);
+        if (cacheFile == null) return;
+
+
+        String tgLang = LocaleController.getInstance().getCurrentLocale().getLanguage();
+        NicegramSpeechToTextHelper.INSTANCE.recognizeSpeech(cacheFile, tgLang, s -> {
+            String text = s;
+            if (s == null) {
+                text = null;
+            } else {
+                if (transcribeOperationsById == null) {
+                    transcribeOperationsById = new HashMap<>();
+                }
+                transcribeOperationsById.put(ngTranscriptionId, messageObject);
+                messageObject.messageOwner.voiceTranscriptionId = ngTranscriptionId;
+            }
+
+            messageObject.messageOwner.voiceTranscriptionOpen = true;
+            if (text != null) {
+                messageObject.messageOwner.voiceTranscriptionFinal = true;
+                MessagesStorage.getInstance(account).updateMessageVoiceTranscription(dialogId, messageId, text, messageObject.messageOwner);
+                finishTranscription(messageObject, ngTranscriptionId, text, false);
+            } else {
+                finishTranscription(messageObject, ngTranscriptionId, "", true);
+            }
+            return null;
+        });
     }
 }

@@ -23,4 +23,24 @@ object PrefsHelper {
         return MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER, NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER_DEFAULT)
     }
+
+    fun showQuickTranslateButton(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_QUICK_TRANSLATE, NicegramPrefs.PREF_QUICK_TRANSLATE_DEFAULT)
+    }
+
+    fun enableStartWithRearCamera(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_START_WITH_REAR_CAMERA, NicegramPrefs.PREF_START_WITH_REAR_CAMERA_DEFAULT)
+    }
+
+    fun shouldDownloadVideosToGallery(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY, NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY_DEFAULT)
+    }
+
+    fun hidePhoneNumber(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, NicegramPrefs.PREF_HIDE_PHONE_NUMBER_DEFAULT)
+    }
 }

@@ -1,5 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ExternalStorageConfigurationManager" enabled="true" />
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" project-jdk-name="11" project-jdk-type="JavaSDK" />
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="../../../.gradle/caches/transforms-3/045454d744108a7e0dcd8d347128f737/transformed/jetified-esim-lib-0.0.3-20220914.123817-1/res/drawable-anydpi-v24/ic_launcher_foreground.xml" value="0.271" />
+        <entry key="../../../.gradle/caches/transforms-3/07f8419cb9c869eaefae0f1d059602b9/transformed/jetified-esim-lib-0.0.3-20220208.212310-2/res/layout/activity_main_nicegram.xml" value="0.10462962962962963" />
+        <entry key="../../../.gradle/caches/transforms-3/2e7d5ecedc691d09835007026629f636/transformed/jetified-chat-sdk-3.2.3-rc-01/res/drawable/ic_hc_play.xml" value="0.22" />
+        <entry key="../../../.gradle/caches/transforms-3/cff9068ecf356051c6d880e196b10199/transformed/jetified-esim-lib-0.0.3-20220822.144355-2/res/drawable/bg_ripple_accent_rounded_5.xml" value="0.165" />
+        <entry key="../../../.gradle/caches/transforms-3/ec72540cfd5578dc86e23145b76d7ae4/transformed/jetified-esim-lib-0.0.3-20220719.232318-2/res/drawable/ic_launcher_background.xml" value="0.1985" />
+        <entry key="TMessagesProj/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.271" />
+        <entry key="TMessagesProj/src/main/res/drawable/icon_4_background.xml" value="0.2045" />
+        <entry key="TMessagesProj/src/main/res/drawable/icon_4_background_round.xml" value="0.2" />
+        <entry key="TMessagesProj/src/main/res/drawable/icon_6_background.xml" value="0.197" />
+        <entry key="TMessagesProj/src/main/res/drawable/nicegram_black.xml" value="0.123" />
+        <entry key="TMessagesProj/src/main/res/drawable/nicegram_forward.xml" value="0.18611111111111112" />
+        <entry key="TMessagesProj/src/main/res/drawable/nicegram_logo.xml" value="0.21851851851851853" />
+        <entry key="TMessagesProj/src/main/res/drawable/nicegram_logo_white.xml" value="0.1395" />
+        <entry key="TMessagesProj/src/main/res/drawable/nicegram_translate.xml" value="0.1395" />
+        <entry key="TMessagesProj/src/main/res/drawable/nicegram_white.xml" value="0.3351851851851852" />
+        <entry key="TMessagesProj/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="0.1" />
+        <entry key="TMessagesProj/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" value="0.1" />
+        <entry key="TMessagesProj/src/main/res/mipmap-anydpi-v26/ic_launcher_sa.xml" value="0.1" />
+        <entry key="TMessagesProj/src/main/res/mipmap-anydpi-v26/icon_4_launcher.xml" value="0.2045" />
+        <entry key="TMessagesProj/src/main/res/mipmap-anydpi-v26/icon_4_launcher_round.xml" value="0.2" />
+        <entry key="TMessagesProj/src/main/res/mipmap-anydpi-v26/icon_6_launcher.xml" value="0.197" />
+        <entry key="TMessagesProj/src/main/res/mipmap-anydpi-v26/icon_6_launcher_round.xml" value="0.197" />
+        <entry key="nicegram-features/src/main/res/drawable-v24/ic_launcher_default_foreground.xml" value="0.1" />
+        <entry key="nicegram-features/src/main/res/drawable-v24/ic_launcher_filled_black_foreground.xml" value="0.271" />
+        <entry key="nicegram-features/src/main/res/drawable-v24/ic_launcher_filled_foreground.xml" value="0.125" />
+        <entry key="nicegram-features/src/main/res/drawable-v24/ic_launcher_mono_black_foreground.xml" value="0.1925" />
+        <entry key="nicegram-features/src/main/res/drawable-v24/ic_launcher_nicegram_dark_foreground.xml" value="0.125" />
+        <entry key="nicegram-features/src/main/res/drawable-v24/ic_launcher_nicegram_foreground.xml" value="0.125" />
+        <entry key="nicegram-features/src/main/res/drawable-v24/ic_launcher_nicegram_light_foreground.xml" value="0.125" />
+        <entry key="nicegram-features/src/main/res/drawable/bg_ripple_blue_rounded_6.xml" value="0.165" />
+        <entry key="nicegram-features/src/main/res/drawable/ic_select_launcher_default_background.xml" value="0.1925" />
+        <entry key="nicegram-features/src/main/res/drawable/ic_select_launcher_default_bg.xml" value="0.1925" />
+        <entry key="nicegram-features/src/main/res/drawable/ic_select_launcher_default_foreground.xml" value="0.1925" />
+        <entry key="nicegram-features/src/main/res/drawable/ic_select_launcher_default_foreground_1.xml" value="0.1925" />
+        <entry key="nicegram-features/src/main/res/drawable/ng_premium_close.xml" value="0.123" />
+        <entry key="nicegram-features/src/main/res/drawable/ng_premium_translator.xml" value="0.123" />
+        <entry key="nicegram-features/src/main/res/drawable/outline_rounded_18dp.xml" value="0.2495" />
+        <entry key="nicegram-features/src/main/res/layout/activity_nicegram_premium.xml" value="0.18703703703703703" />
+        <entry key="nicegram-features/src/main/res/layout/dialog_fragment_nicegram_premium.xml" value="0.335" />
+        <entry key="nicegram-features/src/main/res/layout/fragment_ng_onboarding.xml" value="0.25" />
+        <entry key="nicegram-features/src/main/res/layout/fragment_nicegram_premium.xml" value="0.5390625" />
+        <entry key="nicegram-features/src/main/res/layout/item_ng_onboarding.xml" value="0.26481481481481484" />
+        <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_default.xml" value="0.1985" />
+        <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_default_round.xml" value="0.125" />
+        <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_default_white.xml" value="0.271" />
+        <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_filled.xml" value="0.1925" />
+        <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_filled_black.xml" value="0.1925" />
+        <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_filled_round.xml" value="0.271" />
+        <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_mono_black.xml" value="0.1985" />
+        <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_mono_black_round.xml" value="0.271" />
+        <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_nicegram.xml" value="0.271" />
+        <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_nicegram_light.xml" value="0.271" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="11" project-jdk-type="JavaSDK" />
 </project>

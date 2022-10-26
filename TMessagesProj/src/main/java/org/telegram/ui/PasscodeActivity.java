@@ -50,6 +50,9 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import app.nicegram.NicegramDoubleBottom;
+
+import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
@@ -134,6 +137,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
     private int currentPasswordType = 0;
     private int passcodeSetStep = 0;
     private String firstPassword;
+    private boolean doubleBottomSetup; // ng dbot
 
     private int utyanRow;
     private int hintRow;
@@ -161,9 +165,15 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
 
     private Runnable onShowKeyboardCallback;
 
-    public PasscodeActivity(@PasscodeActivityType int type) {
+    // ng dbot
+    public PasscodeActivity(@PasscodeActivityType int type, boolean doubleBottomSetup) {
         super();
         this.type = type;
+        this.doubleBottomSetup = doubleBottomSetup;
+    }
+
+    public PasscodeActivity(@PasscodeActivityType int type) {
+        this(type, false);
     }
 
     @Override
@@ -281,6 +291,8 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                                 .setMessage(LocaleController.getString(R.string.DisablePasscodeConfirmMessage))
                                 .setNegativeButton(LocaleController.getString(R.string.Cancel), null)
                                 .setPositiveButton(LocaleController.getString(R.string.DisablePasscodeTurnOff), (dialog, which) -> {
+                                    NicegramDoubleBottom.INSTANCE.disableDbot(getParentActivity()); //ng dbot
+
                                     SharedConfig.passcodeHash = "";
                                     SharedConfig.appLocked = false;
                                     SharedConfig.saveConfig();
@@ -960,6 +972,24 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
             return;
         }
 
+        // region ng dbot
+        if (type == TYPE_SETUP_CODE && doubleBottomSetup) {
+            String code = currentPasswordType == SharedConfig.PASSCODE_TYPE_PASSWORD ? passwordEditText.getText().toString() : codeFieldContainer.getCode();
+            if (SharedConfig.checkPasscode(code)) {
+                for (CodeNumberField f : codeFieldContainer.codeField) {
+                    f.setText("");
+                }
+                passwordEditText.setText("");
+                if (isPinCode()) {
+                    codeFieldContainer.codeField[0].requestFocus();
+                }
+                onPasscodeError();
+                Toast.makeText(getParentActivity(), LocaleController.getString("NicegramDoubleBottomAnotherCode"), Toast.LENGTH_LONG).show();
+                return;
+            }
+        }
+        // endregion ng dbot
+
         if (otherItem != null) {
             otherItem.setVisibility(View.GONE);
         }
@@ -1012,20 +1042,41 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
 
             boolean isFirst = SharedConfig.passcodeHash.length() == 0;
             try {
-                SharedConfig.passcodeSalt = new byte[16];
-                Utilities.random.nextBytes(SharedConfig.passcodeSalt);
-                byte[] passcodeBytes = firstPassword.getBytes("UTF-8");
-                byte[] bytes = new byte[32 + passcodeBytes.length];
-                System.arraycopy(SharedConfig.passcodeSalt, 0, bytes, 0, 16);
-                System.arraycopy(passcodeBytes, 0, bytes, 16, passcodeBytes.length);
-                System.arraycopy(SharedConfig.passcodeSalt, 0, bytes, passcodeBytes.length + 16, 16);
-                SharedConfig.passcodeHash = Utilities.bytesToHex(Utilities.computeSHA256(bytes, 0, bytes.length));
+                if (doubleBottomSetup) {
+                    // region ng dbot
+                    byte[] passcodeSalt = new byte[16];
+                    Utilities.random.nextBytes(passcodeSalt);
+                    byte[] passcodeBytes = firstPassword.getBytes("UTF-8");
+                    byte[] bytes = new byte[32 + passcodeBytes.length];
+                    System.arraycopy(passcodeSalt, 0, bytes, 0, 16);
+                    System.arraycopy(passcodeBytes, 0, bytes, 16, passcodeBytes.length);
+                    System.arraycopy(passcodeSalt, 0, bytes, passcodeBytes.length + 16, 16);
+                    String passcodeHash = Utilities.bytesToHex(Utilities.computeSHA256(bytes, 0, bytes.length));
+                    NicegramDoubleBottom.INSTANCE.setPassCode(getParentActivity(), passcodeHash, passcodeSalt, AccountInstance.getInstance(currentAccount).getUserConfig().clientUserId);
+
+                    SharedConfig.appLocked = true;
+                    SharedConfig.saveConfig();
+                    getParentActivity().onBackPressed();
+                    ((LaunchActivity) getParentActivity()).showPasscodeActivity(false, false, 0, 0, null, null);
+                    return;
+                    // endregion
+                } else {
+                    SharedConfig.passcodeSalt = new byte[16];
+                    Utilities.random.nextBytes(SharedConfig.passcodeSalt);
+                    byte[] passcodeBytes = firstPassword.getBytes("UTF-8");
+                    byte[] bytes = new byte[32 + passcodeBytes.length];
+                    System.arraycopy(SharedConfig.passcodeSalt, 0, bytes, 0, 16);
+                    System.arraycopy(passcodeBytes, 0, bytes, 16, passcodeBytes.length);
+                    System.arraycopy(SharedConfig.passcodeSalt, 0, bytes, passcodeBytes.length + 16, 16);
+                    SharedConfig.passcodeHash = Utilities.bytesToHex(Utilities.computeSHA256(bytes, 0, bytes.length));
+
+                    SharedConfig.allowScreenCapture = true;
+                    SharedConfig.passcodeType = currentPasswordType;
+                    SharedConfig.saveConfig();
+                }
             } catch (Exception e) {
                 FileLog.e(e);
             }
-            SharedConfig.allowScreenCapture = true;
-            SharedConfig.passcodeType = currentPasswordType;
-            SharedConfig.saveConfig();
 
             passwordEditText.clearFocus();
             AndroidUtilities.hideKeyboard(passwordEditText);

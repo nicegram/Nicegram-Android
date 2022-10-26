@@ -47,12 +47,19 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.IdRes;
 import androidx.core.os.CancellationSignal;
+import androidx.dynamicanimation.animation.FloatValueHolder;
+import androidx.dynamicanimation.animation.SpringAnimation;
+import androidx.dynamicanimation.animation.SpringForce;
+
+import app.nicegram.NicegramDoubleBottom;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.FingerprintController;
 import org.telegram.messenger.LocaleController;
@@ -64,9 +71,13 @@ import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.Theme;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 
 public class PasscodeView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
+    private final static float BACKGROUND_SPRING_STIFFNESS = 300f;
 
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
@@ -438,6 +449,10 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
     private final static int id_fingerprint_textview = 1000;
     private final static int id_fingerprint_imageview = 1001;
 
+    private SpringAnimation backgroundAnimationSpring;
+    private LinkedList<Runnable> backgroundSpringQueue = new LinkedList<>();
+    private LinkedList<Boolean> backgroundSpringNextQueue = new LinkedList<>();
+
     private static class InnerAnimator {
         private AnimatorSet animatorSet;
         private float startRadius;
@@ -463,6 +478,9 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
 
     public PasscodeView(final Context context) {
         super(context);
+
+        // ng dbot
+        if (NicegramDoubleBottom.INSTANCE.hasDbot()) NicegramDoubleBottom.INSTANCE.clearNotifications(context);
 
         setWillNotDraw(false);
         setVisibility(GONE);
@@ -547,13 +565,59 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
             return false;
         });
         passwordEditText.addTextChangedListener(new TextWatcher() {
+
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 if (backgroundDrawable instanceof MotionBackgroundDrawable) {
+                    boolean needAnimation = false;
+                    MotionBackgroundDrawable motionBackgroundDrawable = (MotionBackgroundDrawable) backgroundDrawable;
+                    motionBackgroundDrawable.setAnimationProgressProvider(null);
+                    float progress = motionBackgroundDrawable.getPosAnimationProgress();
+                    boolean next;
                     if (count == 0 && after == 1) {
-                        ((MotionBackgroundDrawable) backgroundDrawable).switchToNextPosition(true);
+                        motionBackgroundDrawable.switchToNextPosition(true);
+                        needAnimation = true;
+                        next = true;
                     } else if (count == 1 && after == 0) {
-                        ((MotionBackgroundDrawable) backgroundDrawable).switchToPrevPosition(true);
+                        motionBackgroundDrawable.switchToPrevPosition(true);
+                        needAnimation = true;
+                        next = false;
+                    } else {
+                        next = false;
+                    }
+
+                    if (needAnimation) {
+                        if (progress >= 1f) {
+                            animateBackground(motionBackgroundDrawable);
+                        } else {
+                            backgroundSpringQueue.offer(()-> {
+                                if (next) {
+                                    motionBackgroundDrawable.switchToNextPosition(true);
+                                } else {
+                                    motionBackgroundDrawable.switchToPrevPosition(true);
+                                }
+                                animateBackground(motionBackgroundDrawable);
+                            });
+                            backgroundSpringNextQueue.offer(next);
+
+                            List<Runnable> remove = new ArrayList<>();
+                            List<Integer> removeIndex = new ArrayList<>();
+                            for (int i = 0; i < backgroundSpringQueue.size(); i++) {
+                                Runnable callback = backgroundSpringQueue.get(i);
+                                boolean qNext = backgroundSpringNextQueue.get(i);
+
+                                if (qNext != next) {
+                                    remove.add(callback);
+                                    removeIndex.add(i);
+                                }
+                            }
+                            for (Runnable callback : remove) {
+                                backgroundSpringQueue.remove(callback);
+                            }
+                            for (int i : removeIndex) {
+                                backgroundSpringNextQueue.remove(i);
+                            }
+                        }
                     }
                 }
             }
@@ -759,13 +823,59 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
                 }
                 if (tag == 11) {
 
-                } else if (tag == 10) {
-                    if (erased && backgroundDrawable instanceof MotionBackgroundDrawable) {
-                        ((MotionBackgroundDrawable) backgroundDrawable).switchToPrevPosition(true);
-                    }
                 } else {
                     if (backgroundDrawable instanceof MotionBackgroundDrawable) {
-                        ((MotionBackgroundDrawable) backgroundDrawable).switchToNextPosition(true);
+                        MotionBackgroundDrawable motionBackgroundDrawable = (MotionBackgroundDrawable) backgroundDrawable;
+                        motionBackgroundDrawable.setAnimationProgressProvider(null);
+                        boolean needAnimation = false;
+                        float progress = motionBackgroundDrawable.getPosAnimationProgress();
+                        boolean next;
+                        if (tag == 10) {
+                            if (erased) {
+                                motionBackgroundDrawable.switchToPrevPosition(true);
+                                needAnimation = true;
+                            }
+                            next = false;
+                        } else {
+                            motionBackgroundDrawable.switchToNextPosition(true);
+                            needAnimation = true;
+                            next = true;
+                        }
+
+                        if (needAnimation) {
+                            if (progress >= 1f) {
+                                animateBackground(motionBackgroundDrawable);
+                            } else {
+                                backgroundSpringQueue.offer(()-> {
+                                    if (next) {
+                                        motionBackgroundDrawable.switchToNextPosition(true);
+                                    } else {
+                                        motionBackgroundDrawable.switchToPrevPosition(true);
+                                    }
+                                    animateBackground(motionBackgroundDrawable);
+                                });
+                                backgroundSpringNextQueue.offer(next);
+
+                                List<Runnable> remove = new ArrayList<>();
+                                List<Integer> removeIndex = new ArrayList<>();
+                                for (int i = 0; i < backgroundSpringQueue.size(); i++) {
+                                    Runnable callback = backgroundSpringQueue.get(i);
+                                    Boolean qNext = backgroundSpringNextQueue.get(i);
+
+                                    if (qNext != null && qNext != next) {
+                                        remove.add(callback);
+                                        removeIndex.add(i);
+                                    }
+                                }
+                                for (Runnable callback : remove) {
+                                    backgroundSpringQueue.remove(callback);
+                                }
+                                Collections.sort(removeIndex, (o1, o2) -> o2 - o1);
+                                for (int i : removeIndex) {
+                                    backgroundSpringNextQueue.remove(i);
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -775,6 +885,33 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
             FrameLayout frameLayout = numberFrameLayouts.get(a);
             numbersFrameLayout.addView(frameLayout, LayoutHelper.createFrame(100, 100, Gravity.TOP | Gravity.LEFT));
         }
+    }
+
+    private void animateBackground(MotionBackgroundDrawable motionBackgroundDrawable) {
+        if (backgroundAnimationSpring != null && backgroundAnimationSpring.isRunning()) {
+            backgroundAnimationSpring.cancel();
+        }
+
+        FloatValueHolder animationValue = new FloatValueHolder(0);
+        motionBackgroundDrawable.setAnimationProgressProvider(obj -> animationValue.getValue() / 100f);
+        backgroundAnimationSpring = new SpringAnimation(animationValue)
+                .setSpring(new SpringForce(100)
+                        .setStiffness(BACKGROUND_SPRING_STIFFNESS)
+                        .setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY));
+        backgroundAnimationSpring.addEndListener((animation, canceled, value, velocity) -> {
+            backgroundAnimationSpring = null;
+            motionBackgroundDrawable.setAnimationProgressProvider(null);
+
+            if (!canceled) {
+                motionBackgroundDrawable.setPosAnimationProgress(1f);
+                if (!backgroundSpringQueue.isEmpty()) {
+                    backgroundSpringQueue.poll().run();
+                    backgroundSpringNextQueue.poll();
+                }
+            }
+        });
+        backgroundAnimationSpring.addUpdateListener((animation, value, velocity) -> motionBackgroundDrawable.updateAnimation(true));
+        backgroundAnimationSpring.start();
     }
 
     private void setNextFocus(View view, @IdRes int nextId) {
@@ -789,6 +926,9 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
     }
 
     private void processDone(boolean fingerprint) {
+        // ng dbot
+        boolean saveConfig = true;
+
         if (!fingerprint) {
             if (SharedConfig.passcodeRetryInMs > 0) {
                 return;
@@ -803,7 +943,14 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
                 onPasscodeError();
                 return;
             }
-            if (!SharedConfig.checkPasscode(password)) {
+            // ng dbot
+            NicegramDoubleBottom.INSTANCE.setLoggedToDbot(getContext(), false);
+            if (NicegramDoubleBottom.INSTANCE.isDbotPasscode(password)) {
+                if (BuildConfig.DEBUG) Toast.makeText(getContext(), "Logged to Double bottom (debug message)", Toast.LENGTH_LONG).show();
+
+                NicegramDoubleBottom.INSTANCE.setLoggedToDbot(getContext(), true);
+                saveConfig = false;
+            } else if (!SharedConfig.checkPasscode(password)) { // ng dbot
                 SharedConfig.increaseBadPasscodeTries();
                 if (SharedConfig.passcodeRetryInMs > 0) {
                     checkRetryTextView();
@@ -812,7 +959,14 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
                 passwordEditText2.eraseAllCharacters(true);
                 onPasscodeError();
                 if (backgroundDrawable instanceof MotionBackgroundDrawable) {
-                    ((MotionBackgroundDrawable) backgroundDrawable).rotatePreview(true);
+                    MotionBackgroundDrawable motionBackgroundDrawable = (MotionBackgroundDrawable) backgroundDrawable;
+                    if (backgroundAnimationSpring != null) {
+                        backgroundAnimationSpring.cancel();
+                        motionBackgroundDrawable.setPosAnimationProgress(1f);
+                    }
+                    if (motionBackgroundDrawable.getPosAnimationProgress() >= 1f) {
+                        motionBackgroundDrawable.rotatePreview(true);
+                    }
                 }
                 return;
             }
@@ -826,7 +980,7 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
         }
 
         SharedConfig.appLocked = false;
-        SharedConfig.saveConfig();
+        if (saveConfig) SharedConfig.saveConfig(); // ng dbot
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.didSetPasscode);
         setOnTouchListener(null);
         if (delegate != null) {

@@ -58,7 +58,7 @@ public class SizeNotifierFrameLayout extends FrameLayout {
     private boolean paused = true;
     private Drawable oldBackgroundDrawable;
     private ActionBarLayout parentLayout;
-    protected AdjustPanLayoutHelper adjustPanLayoutHelper;
+    public AdjustPanLayoutHelper adjustPanLayoutHelper;
     private int emojiHeight;
     private float emojiOffset;
     private boolean animationInProgress;
@@ -240,6 +240,7 @@ public class SizeNotifierFrameLayout extends FrameLayout {
             }
         };
         addView(backgroundView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        checkLayerType();
     }
 
     public void setBackgroundImage(Drawable bitmap, boolean motion) {
@@ -275,6 +276,15 @@ public class SizeNotifierFrameLayout extends FrameLayout {
             translationY = 0;
         }
         backgroundView.invalidate();
+        checkLayerType();
+    }
+
+    private void checkLayerType() {
+//        if (parallaxEffect == null && backgroundDrawable instanceof MotionBackgroundDrawable && SharedConfig.getDevicePerformanceClass() == SharedConfig.PERFORMANCE_CLASS_HIGH) {
+//            backgroundView.setLayerType(LAYER_TYPE_HARDWARE, null);
+//        } else {
+//            backgroundView.setLayerType(LAYER_TYPE_NONE, null);
+//        }
     }
 
     public Drawable getBackgroundImage() {

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ShowMentionAll">Tampilkan «Sebutkan semua»</string>
+    <string name="MentionAllUsers">Sebut semua pemain</string>
+    <string name="For20OrLessChats">Untuk obrolan dengan kurang dari 20 orang</string>
+    <string name="NicegramSettings">Pengaturan Nicegram</string>
+    <string name="NicegramRegistered">Terdaftar</string>
+    <string name="NicegramGetIdCopied">Id tersalin ke papan salin</string>
+    <string name="NicegramLoading">Memuat…</string>
+    <string name="NicegramRegDateError">Maaf, tidak bisa mendapatkan tanggal pendaftaran</string>
+    <string name="NicegramUndoTranslate">Urungkan terjemahan</string>
+    <string name="NicegramTranslationUnavailable">Maaf, terjemahan tidak tersedia</string>
+    <string name="NicegramForwardAsCopy">Teruskan sebagai salinan</string>
+    <string name="NicegramSkipReadHistory">Lewati baca history</string>
+    <string name="NicegramOlderThan">Lebih tua dari</string>
+    <string name="NicegramNewerThan">Lebih baru dari</string>
+    <string name="NicegramApproximately">Sekitar</string>
+    <string name="NicegramShowProfileID">Tampilkan ID profil</string>
+    <string name="NicegramShowRegistrationDate">Tampilkan tanggal pendaftaran</string>
+    <string name="NicegramUnblockGuide">Panduan buka blokir</string>
+    <string name="NicegramPremiumFeatures">Fitur Premium</string>
+    <string name="NicegramPrivacyPolicy">Kebijakan pribadi</string>
+    <string name="NicegramEULA">EULA</string>
+    <string name="NicegramSubRenews">Berlangganan Memperbarui Secara Otomatis</string>
+    <string name="NicegramSubPerMonth"><![CDATA[<b>Berlangganan %s</b> per bulan]]></string>
+    <string name="NicegramBuildInTranslator">Penerjemah bawaan</string>
+    <string name="NicegramBuildInTranslatorDesc">Terjemahkan pesan apa pun secara instan di aplikasi tanpa beralih ke penerjemah pihak ketiga</string>
+    <string name="NicegramSpeech2TextDesc">Dapatkan pesan suara apa pun yang ditranskripsi dalam hitungan detik dan hemat banyak waktu luang anda </string>
+    <string name="NicegramMentionAll">\@SebutkanSemua</string>
+    <string name="NicegramMentionAllDesc">Sangat cepat memberitahu anggota grup dan pastikan semua orang akan membaca pesan anda</string>
+    <string name="NicegramDialogPolicy">Kebijakan Privasi Nicegram</string>
+    <string name="NicegramDialogPolicyText">Nicegram adalah unofficial Telegram client dan banyak layanan yang Anda dapatkan dengan menggunakan Nicegram, sebenarnya disediakan oleh perusahaan Telegram.\n\nHarap baca Kebijakan Privasi kami sebelum menggunakan aplikasi.\n\nDengan mengeklik lanjutkan, Anda mengonfirmasi bahwa Anda telah membaca dan menyetujui Kebijakan Privasi Nicegram.</string>
+    <string name="NicegramGetStarted">Memulai</string>
+    <string name="NicegramOnbroadingTitle1">Klien №1 untuk Telegram Messenger</string>
+    <string name="NicegramOnbroadingText1">Bergabunglah dengan lebih dari 2 juta pengguna Nicegram dan dapatkan akses ke klien Telegram paling ampuh dan aman untuk bisnis.</string>
+    <string name="NicegramOnbroadingTitle2">Pengalaman Perpesanan Tingkat Lanjut</string>
+    <string name="NicegramOnbroadingText2">Percepat komunikasi dengan fitur unik seperti Penerjemah Bawaan, Teks ke Ucapan, Meneruskan pesan tanpa menyebut penulis dan Menyimpan cepat ke favorit.</string>
+    <string name="NicegramOnbroadingTitle3">Profil Pengguna Diperluas</string>
+    <string name="NicegramOnbroadingText3">Buat akun Telegram sebanyak yang Anda butuhkan secara gratis sepenuhnya, serta lihat profil pengguna tingkat lanjut dengan ID, tanggal pendaftaran, dan tautan yang dapat diklik.</string>
+    <string name="NicegramOnbroadingTitle4">Ekstensi Bisnis yang Unik</string>
+    <string name="NicegramOnbroadingText4">Manfaatkan inovasi dari tim Nicegram dan dapatkan eSIM dengan akses internet di 133 negara. Anda juga dapat mendaftarkan akun Telegram baru dengan nomor telepon dari paket data eSIM.</string>
+    <string name="NicegramOnbroadingTitle5">Perpesanan yang Paling Aman</string>
+    <string name="NicegramOnbroadingText5">Perpesanan aman dengan Enkripsi yang Kuat, Panggilan Audio dan Video Grup, Saluran Publik, Grup dan Bot, Penyimpanan Cloud Tanpa Batas untuk Obrolan, Berbagi Media dan Dokumen.</string>
+</resources>

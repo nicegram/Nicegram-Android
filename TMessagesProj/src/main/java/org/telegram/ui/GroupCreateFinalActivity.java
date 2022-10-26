@@ -498,8 +498,8 @@ public class GroupCreateFinalActivity extends BaseFragment implements Notificati
         avatarEditor.setAnimation(cameraDrawable);
         avatarEditor.setEnabled(false);
         avatarEditor.setClickable(false);
-        avatarEditor.setPadding(AndroidUtilities.dp(2), 0, 0, AndroidUtilities.dp(1));
-        editTextContainer.addView(avatarEditor, LayoutHelper.createFrame(64, 64, Gravity.TOP | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), LocaleController.isRTL ? 0 : 16, 16, LocaleController.isRTL ? 16 : 0, 16));
+        avatarEditor.setPadding(AndroidUtilities.dp(0), 0, 0, AndroidUtilities.dp(1));
+        editTextContainer.addView(avatarEditor, LayoutHelper.createFrame(64, 64, Gravity.TOP | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), LocaleController.isRTL ? 0 : 15, 16, LocaleController.isRTL ? 15 : 0, 16));
 
         avatarProgressView = new RadialProgressView(context) {
             @Override
@@ -515,7 +515,7 @@ public class GroupCreateFinalActivity extends BaseFragment implements Notificati
 
         showAvatarProgress(false, false);
 
-        editText = new EditTextEmoji(context, sizeNotifierFrameLayout, this, EditTextEmoji.STYLE_FRAGMENT);
+        editText = new EditTextEmoji(context, sizeNotifierFrameLayout, this, EditTextEmoji.STYLE_FRAGMENT, false);
         editText.setHint(chatType == ChatObject.CHAT_TYPE_CHAT || chatType == ChatObject.CHAT_TYPE_MEGAGROUP ? LocaleController.getString("EnterGroupNamePlaceholder", R.string.EnterGroupNamePlaceholder) : LocaleController.getString("EnterListName", R.string.EnterListName));
         if (nameToSet != null) {
             editText.setText(nameToSet);
@@ -547,7 +547,7 @@ public class GroupCreateFinalActivity extends BaseFragment implements Notificati
         });
         listView.setOnItemClickListener((view, position) -> {
             if (view instanceof TextSettingsCell) {
-                if (!AndroidUtilities.isGoogleMapsInstalled(GroupCreateFinalActivity.this)) {
+                if (!AndroidUtilities.isMapsInstalled(GroupCreateFinalActivity.this)) {
                     return;
                 }
                 LocationActivity fragment = new LocationActivity(LocationActivity.LOCATION_TYPE_GROUP);

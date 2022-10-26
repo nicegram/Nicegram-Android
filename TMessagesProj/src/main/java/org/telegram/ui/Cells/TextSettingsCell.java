@@ -27,6 +27,7 @@ import android.widget.TextView;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CubicBezierInterpolator;
@@ -104,6 +105,10 @@ public class TextSettingsCell extends FrameLayout {
         addView(valueImageView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.CENTER_VERTICAL, padding, 0, padding, 0));
     }
 
+    public ImageView getValueImageView() {
+        return valueImageView;
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), AndroidUtilities.dp(50) + (needDivider ? 1 : 0));
@@ -124,6 +129,15 @@ public class TextSettingsCell extends FrameLayout {
         if (valueTextView.getVisibility() == VISIBLE) {
             valueTextView.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(getMeasuredHeight(), MeasureSpec.EXACTLY));
             width = availableWidth - valueTextView.getMeasuredWidth() - AndroidUtilities.dp(8);
+
+            if (valueImageView.getVisibility() == VISIBLE) {
+                MarginLayoutParams params = (MarginLayoutParams) valueImageView.getLayoutParams();
+                if (LocaleController.isRTL) {
+                    params.leftMargin = AndroidUtilities.dp(padding + 4) + valueTextView.getMeasuredWidth();
+                } else {
+                    params.rightMargin = AndroidUtilities.dp(padding + 4) + valueTextView.getMeasuredWidth();
+                }
+            }
         } else {
             width = availableWidth;
         }
@@ -323,5 +337,13 @@ public class TextSettingsCell extends FrameLayout {
             addView(valueBackupImageView, LayoutHelper.createFrame(24, 24, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.CENTER_VERTICAL, padding, 0, padding, 0));
         }
         return valueBackupImageView;
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        if (valueBackupImageView != null && valueBackupImageView.getImageReceiver() != null && valueBackupImageView.getImageReceiver().getDrawable() instanceof AnimatedEmojiDrawable) {
+            ((AnimatedEmojiDrawable) valueBackupImageView.getImageReceiver().getDrawable()).removeView(this);
+        }
     }
 }

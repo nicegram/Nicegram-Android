@@ -29,7 +29,6 @@ import android.os.Handler;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.telephony.TelephonyManager;
-import android.text.TextUtils;
 
 import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase;
 import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase;
@@ -39,12 +38,15 @@ import com.appvillis.nicegram.NicegramAssistantHelper;
 import androidx.annotation.NonNull;
 import androidx.multidex.MultiDex;
 
+import com.appvillis.nicegram.NicegramBillingHelper;
+import com.appvillis.nicegram.NicegramFeaturesHelper;
+import com.appvillis.nicegram.domain.BillingManager;
+import com.appvillis.nicegram.domain.NicegramFeaturesOnboardingUseCase;
 import com.appvillis.nicegram.network.NicegramNetwork;
 import com.appvillis.rep_user.domain.AppSessionControlUseCase;
 import com.appvillis.rep_user.domain.UserRepository;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
@@ -54,14 +56,13 @@ import org.telegram.ui.LauncherIconController;
 
 import java.io.File;
 
-import androidx.multidex.MultiDex;
-
 import javax.inject.Inject;
 
-import dagger.hilt.android.HiltAndroidApp;
+import app.nicegram.NicegramDoubleBottom;
 
-@HiltAndroidApp
 public class ApplicationLoader extends Application {
+
+    private static ApplicationLoader applicationLoaderInstance;
 
     @SuppressLint("StaticFieldLeak")
     public static volatile Context applicationContext;
@@ -84,8 +85,12 @@ public class ApplicationLoader extends Application {
     public static boolean canDrawOverlays;
     public static volatile long mainInterfacePausedStageQueueTime;
 
-    public static boolean hasPlayServices;
+    private static PushListenerController.IPushListenerServiceProvider pushProvider;
+    private static IMapsProvider mapsProvider;
+    private static ILocationServiceProvider locationServiceProvider;
 
+    @Inject
+    public NicegramFeaturesOnboardingUseCase nicegramFeaturesOnboardingUseCase;
     @Inject
     public GetNicegramOnboardingStatusUseCase getNicegramOnboardingStatusUseCase;
     @Inject
@@ -98,6 +103,8 @@ public class ApplicationLoader extends Application {
     public UserRepository userRepository;
     @Inject
     public SpecialOffersRepository specialOffersRepository;
+    @Inject
+    public BillingManager billingManager;
 
     private static ApplicationLoader appInstance = null;
     public static ApplicationLoader getInstance() {
@@ -108,6 +115,56 @@ public class ApplicationLoader extends Application {
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         MultiDex.install(this);
+    }
+
+    public static ILocationServiceProvider getLocationServiceProvider() {
+        if (locationServiceProvider == null) {
+            locationServiceProvider = applicationLoaderInstance.onCreateLocationServiceProvider();
+            locationServiceProvider.init(applicationContext);
+        }
+        return locationServiceProvider;
+    }
+
+    protected ILocationServiceProvider onCreateLocationServiceProvider() {
+        return new GoogleLocationProvider();
+    }
+
+    public static IMapsProvider getMapsProvider() {
+        if (mapsProvider == null) {
+            mapsProvider = applicationLoaderInstance.onCreateMapsProvider();
+        }
+        return mapsProvider;
+    }
+
+    protected IMapsProvider onCreateMapsProvider() {
+        return new GoogleMapsProvider();
+    }
+
+    public static PushListenerController.IPushListenerServiceProvider getPushProvider() {
+        if (pushProvider == null) {
+            pushProvider = applicationLoaderInstance.onCreatePushProvider();
+        }
+        return pushProvider;
+    }
+
+    protected PushListenerController.IPushListenerServiceProvider onCreatePushProvider() {
+        return PushListenerController.GooglePushListenerServiceProvider.INSTANCE;
+    }
+
+    public static String getApplicationId() {
+        return applicationLoaderInstance.onGetApplicationId();
+    }
+
+    protected String onGetApplicationId() {
+        return null;
+    }
+
+    public static boolean isHuaweiStoreBuild() {
+        return applicationLoaderInstance.isHuaweiBuild();
+    }
+
+    protected boolean isHuaweiBuild() {
+        return false;
     }
 
     public static File getFilesDirFixed() {
@@ -201,7 +258,7 @@ public class ApplicationLoader extends Application {
         }
 
         ApplicationLoader app = (ApplicationLoader) ApplicationLoader.applicationContext;
-        app.initPlayServices();
+        app.initPushServices();
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("app initied");
         }
@@ -221,8 +278,8 @@ public class ApplicationLoader extends Application {
 
     @Override
     public void onCreate() {
+        applicationLoaderInstance = this;
         appInstance = this;
-
         try {
             applicationContext = getApplicationContext();
         } catch (Throwable ignore) {
@@ -294,53 +351,22 @@ public class ApplicationLoader extends Application {
             LocaleController.getInstance().onDeviceConfigurationChange(newConfig);
             AndroidUtilities.checkDisplaySize(applicationContext, newConfig);
             VideoCapturerDevice.checkScreenCapturerSize();
+            AndroidUtilities.resetTabletFlag();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void initPlayServices() {
+    private void initPushServices() {
         AndroidUtilities.runOnUIThread(() -> {
-            if (hasPlayServices = checkPlayServices()) {
-                final String currentPushString = SharedConfig.pushString;
-                if (!TextUtils.isEmpty(currentPushString)) {
-                    if (BuildVars.DEBUG_PRIVATE_VERSION && BuildVars.LOGS_ENABLED) {
-                        FileLog.d("GCM regId = " + currentPushString);
-                    }
-                } else {
-                    if (BuildVars.LOGS_ENABLED) {
-                        FileLog.d("GCM Registration not found.");
-                    }
-                }
-                Utilities.globalQueue.postRunnable(() -> {
-                    try {
-                        SharedConfig.pushStringGetTimeStart = SystemClock.elapsedRealtime();
-                        FirebaseMessaging.getInstance().getToken()
-                                .addOnCompleteListener(task -> {
-                                    SharedConfig.pushStringGetTimeEnd = SystemClock.elapsedRealtime();
-                                    if (!task.isSuccessful()) {
-                                        if (BuildVars.LOGS_ENABLED) {
-                                            FileLog.d("Failed to get regid");
-                                        }
-                                        SharedConfig.pushStringStatus = "__FIREBASE_FAILED__";
-                                        GcmPushListenerService.sendRegistrationToServer(null);
-                                        return;
-                                    }
-                                    String token = task.getResult();
-                                    if (!TextUtils.isEmpty(token)) {
-                                        GcmPushListenerService.sendRegistrationToServer(token);
-                                    }
-                                });
-                    } catch (Throwable e) {
-                        FileLog.e(e);
-                    }
-                });
+            if (getPushProvider().hasServices()) {
+                getPushProvider().onRequestPushToken();
             } else {
                 if (BuildVars.LOGS_ENABLED) {
-                    FileLog.d("No valid Google Play Services APK found.");
+                    FileLog.d("No valid " + getPushProvider().getLogTitle() + " APK found.");
                 }
                 SharedConfig.pushStringStatus = "__NO_GOOGLE_PLAY_SERVICES__";
-                GcmPushListenerService.sendRegistrationToServer(null);
+                PushListenerController.sendRegistrationToServer(getPushProvider().getPushType(), null);
             }
         }, 1000);
     }
@@ -540,15 +566,46 @@ public class ApplicationLoader extends Application {
     }
 
     private void initNicegram() {
+        NicegramDoubleBottom.INSTANCE.init(this);
+
+        billingManager.initializeBilling();
         userRepository.initialize();
         specialOffersRepository.initialize();
         appSessionControlUseCase.increaseSessionCount();
 
         NicegramAssistantHelper.INSTANCE.setSetNicegramOnboardingStatusUseCase(setNicegramOnboardingStatusUseCase);
         NicegramAssistantHelper.INSTANCE.setGetNicegramOnboardingStatusUseCase(getNicegramOnboardingStatusUseCase);
+        NicegramFeaturesHelper.INSTANCE.setNicegramFeaturesOnboardingUseCase(nicegramFeaturesOnboardingUseCase);
         NicegramAssistantHelper.INSTANCE.setGetSpecialOfferUseCase(getSpecialOfferUseCase);
         NicegramAssistantHelper.INSTANCE.setAppSessionControlUseCase(appSessionControlUseCase);
 
+        NicegramBillingHelper.INSTANCE.setBillingManager(billingManager);
+
         new Handler().postDelayed(() -> NicegramNetwork.INSTANCE.getSettings(UserConfig.getInstance(UserConfig.selectedAccount).clientUserId), 3000);
     }
+
+    public static void startAppCenter(Activity context) {
+        applicationLoaderInstance.startAppCenterInternal(context);
+    }
+
+    public static void checkForUpdates() {
+        applicationLoaderInstance.checkForUpdatesInternal();
+    }
+
+    public static void appCenterLog(Throwable e) {
+        applicationLoaderInstance.appCenterLogInternal(e);
+    }
+
+    protected void appCenterLogInternal(Throwable e) {
+
+    }
+
+    protected void checkForUpdatesInternal() {
+
+    }
+
+    protected void startAppCenterInternal(Activity context) {
+
+    }
+
 }

@@ -20,5 +20,4 @@
     <string name="NicegramShowRegistrationDate">Zobraziť dátum registrácie</string>
     <string name="NicegramOpenLinksInBrowser">Otvoriť linku v prehliadači</string>
     <string name="NicegramDialogPolicy">Zásady ochrany osobných údajov spoločnosti Nicegram</string>
-    <string name="NicegramDialogPolicyText">Nicegram je neoficiálny klient Telegramu a mnohé zo služieb, ktoré získate používaním Nicegramu, v skutočnosti poskytuje spoločnosť Telegram.\n\nPred použitím aplikácie si prečítajte naše Zásady ochrany osobných údajov.\n\nKliknutím na pokračovať potvrdzujete, že ste si prečítali a súhlasíte so Zásadami ochrany osobných údajov spoločnosti Nicegram.</string>
 </resources>

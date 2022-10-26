@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ShowMentionAll">दिखाएं &lt;&lt;सबको मेंशन करें &gt;&gt; </string>
+    <string name="MentionAllUsers">सभी यूजर्स का मेंशन करें </string>
+    <string name="For20OrLessChats">20 लोगों से कम के चैट के लिए </string>
+    <string name="NicegramSettings">नाइसग्राम की सेटिंग्स </string>
+    <string name="NicegramRegistered">रजिस्टर किया गया </string>
+    <string name="NicegramGetIdCopied">आईडी क्लिपबोर्ड पे कॉपी हो गई </string>
+    <string name="NicegramLoading">लोडिंग....</string>
+    <string name="NicegramRegDateError">क्षमा करें , रजिस्ट्रेशन तारीख नहीं मिल सकती </string>
+    <string name="NicegramUndoTranslate">ट्रांसलेशन  को अनडू करें</string>
+    <string name="NicegramTranslationUnavailable">क्षमा करें ट्रांसलेशन उपलब्ध नहीं है</string>
+    <string name="NicegramForwardAsCopy">कॉपी करके फॉरवर्ड करें </string>
+    <string name="NicegramSkipReadHistory">स्किप रीड हिस्ट्री </string>
+    <string name="NicegramOlderThan">से पुराना </string>
+    <string name="NicegramNewerThan">से नया</string>
+    <string name="NicegramApproximately">लगभग </string>
+    <string name="NicegramShowProfileID">प्रोफाइल आईडी दिखाएं</string>
+    <string name="NicegramShowRegistrationDate">रजिस्ट्रेशन तारीख दिखाएं </string>
+    <string name="NicegramUnblockGuide">गाइड अनब्लॉक करें </string>
+    <string name="NicegramPremiumFeatures">प्रीमियम सुविधाएं (फीचर्स)</string>
+    <string name="NicegramPrivacyPolicy">प्राइवेसी पॉलिसी</string>
+    <string name="NicegramEULA">ईयूएलए </string>
+    <string name="NicegramSubRenews">सब्सक्रिप्शन खुद ब खुद रीन्यू हो जाएगी </string>
+    <string name="NicegramSubPerMonth"><![CDATA[<b>हर महीने%s </b> के लिए सब्सक्राइब करें ]]></string>
+    <string name="NicegramBuildInTranslator">बिल्ट इन ट्रांसलेटर </string>
+    <string name="NicegramBuildInTranslatorDesc">बिना 3rd पार्टी ट्रांसलेटर  को स्विच किए फटाफट एप्प में किसी भी संदेश का ट्रांसलेशन पाएं </string>
+    <string name="NicegramSpeech2TextDesc">सेकंड्स में कोई भी वॉइस मैसेज का ट्रांसक्रिप्शन पाएं और अपना बहुत सारा समय बचाएं </string>
+    <string name="NicegramMentionAll">\@सबको मेंशन करो </string>
+    <string name="NicegramMentionAllDesc">फटाफट सभी ग्रुप मेंबर्स को इनफॉर्म करें और सुनिश्चित करें कि सब आपका संदेश पढ़ेंगे </string>
+    <string name="NicegramDialogPolicy">नाइसग्रेम की प्राइवेसी पॉलिसी </string>
+    <string name="NicegramDialogPolicyText">नाइसग्रेम टेलीग्राम का  एक अनऑफिशियल क्लाइंट है और नाइसग्रेम का इस्तेमाल करके आपको जो बहुत सारी सर्विसेज मिलती हैं वह दरअसल में टेलीग्राम कंपनी द्वारा दी जाती है । \n\nकृपया एप्प इस्तेमाल करने से पहले हमारी प्राइवेसी पॉलिसी पढ़ें। \n\n कंटिन्यू पे क्लिक करके आप यह  कन्फर्म करते हैं कि आपने पढ़ी हैं और आपको नाइसग्रेम की प्राइवेसी पॉलिसी मंजूर है । </string>
+    <string name="NicegramGetStarted">शुरू हो जाइए</string>
+    <string name="NicegramOnbroadingTitle1">टेलीग्राम और मेसेंजर के लिए No.1 क्लाइंट </string>
+    <string name="NicegramOnbroadingText1">2 मिलियन से ज़्यादा Nicegram यूजर्स से जुड़ें और बिज़नेस के लिए सबसे शक्तिशाली और सुरक्षित Telegram के क्लाइंट को एक्सेस पाएं ।  </string>
+    <string name="NicegramOnbroadingTitle2">एडवांस्ड मैसेज करने का अनुभव </string>
+    <string name="NicegramOnbroadingText2">यूनीक फीचर्स जैसे बिल्ट इन ट्रांसलेटर , स्पीच 2 टेक्स्ट, ऑथर के बारे में स्पेसिफाई किए बिना मैसेज फॉरवर्ड करना, फेवरेट में क्विक सेव करने
+के साथ,अपने कम्युनिकेशन में तेज़ी लाएं ।</string>
+    <string name="NicegramOnbroadingTitle3">यूज़र का एक्सटेंडेड प्रोफाइल</string>
+    <string name="NicegramOnbroadingText3">मुफ्त में आपको जितने चाहिएं उतने Telegram एकाउंट बनाएं , साथ ही आईडी के साथ एडवांस्ड यूज़र प्रोफाइल , उसकी रजिस्ट्रेशन की तारीख और क्लिक किए जा सकने वाले लिंक्स देखें । </string>
+    <string name="NicegramOnbroadingTitle4">बिज़नेस के यूनीक एक्सटेंशन</string>
+    <string name="NicegramOnbroadingText4">Nicegram टीम के इन्नोवेशन का फायदा उठाएं और eSIM के साथ 133 देशों में इन्टरनेट का एक्सेस पाएं । eSim डेटा प्लैन के फोन नम्बर के  साथ आप अपना नया Telegram एकाउंट भी रजिस्टर कर सकते हैं ।</string>
+    <string name="NicegramOnbroadingTitle5">सबसे सुरक्षित मेसेंजर </string>
+    <string name="NicegramOnbroadingText5">अपने मैसेंजर को मजबूत एनक्रिप्शन , ग्रुप ऑडियो और वीडियो कॉल , पब्लिक चैनल्स, ग्रुप्स और बॉट्स, चैट्स,मीडिया के लिए असीमित क्लाउड स्टोरेज ,डॉक्यूमेंट शेयरिंग जैसी सुविधाओं से सिक्योर (सुरक्षित) करें ।</string>
+</resources>
