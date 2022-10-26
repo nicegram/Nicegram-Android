@@ -24,6 +24,7 @@ import org.telegram.ui.ActionBar.Theme;
 public class PremiumGradient {
 
     private final GradientTools mainGradient = new GradientTools(Theme.key_premiumGradient1, Theme.key_premiumGradient2, Theme.key_premiumGradient3, Theme.key_premiumGradient4);
+//    private final GradientTools grayGradient = new GradientTools(Theme.key_windowBackgroundWhiteGrayText7, Theme.key_windowBackgroundWhiteGrayText7, Theme.key_windowBackgroundWhiteGrayText7);
     private final Paint mainGradientPaint = mainGradient.paint;
     Paint lockedPremiumPaint;
 
@@ -36,6 +37,7 @@ public class PremiumGradient {
     public Drawable premiumStarDrawableMini;
     public InternalDrawable premiumStarMenuDrawable;
     public InternalDrawable premiumStarMenuDrawable2;
+    public InternalDrawable premiumStarMenuDrawableGray;
 
     private int lastStarColor;
 
@@ -50,12 +52,20 @@ public class PremiumGradient {
         premiumStarDrawableMini = ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_premium_liststar).mutate();
         premiumStarMenuDrawable = createGradientDrawable(ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_settings_premium));
         premiumStarMenuDrawable2 = createGradientDrawable(ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_premium_normal));
+//        premiumStarMenuDrawableGray = createGradientDrawable(ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_settings_premium), grayGradient);
         premiumStarColoredDrawable = ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_premium_liststar).mutate();
         mainGradient.chekColors();
         checkIconColors();
     }
 
     public InternalDrawable createGradientDrawable(Drawable drawable) {
+        return createGradientDrawable(drawable, mainGradient);
+    }
+
+    public InternalDrawable createGradientDrawable(Drawable drawable, PremiumGradient.GradientTools gradient) {
+        if (drawable == null) {
+            return null;
+        }
         int width = drawable.getIntrinsicWidth();
         int height = drawable.getMinimumHeight();
         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
@@ -63,12 +73,12 @@ public class PremiumGradient {
         drawable.setBounds(0, 0, width, height);
         drawable.draw(canvas);
 
-        mainGradient.paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
-        mainGradient.gradientMatrix(0, 0, width, height, -width, 0);
-        canvas.drawRect(0, 0, width, height, mainGradient.paint);
-        mainGradient.paint.setXfermode(null);
+        gradient.paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        gradient.gradientMatrix(0, 0, width, height, -width, 0);
+        canvas.drawRect(0, 0, width, height, gradient.paint);
+        gradient.paint.setXfermode(null);
 
-        return new InternalDrawable(drawable, bitmap, mainGradient.colors);
+        return new InternalDrawable(drawable, bitmap, gradient.colors);
     }
 
     public void checkIconColors() {
@@ -133,18 +143,28 @@ public class PremiumGradient {
         Matrix matrix = new Matrix();
         public final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-        final String colorKey1, colorKey2, colorKey3, colorKey4;
-        final int colors[] = new int[4];
+        final String colorKey1, colorKey2, colorKey3, colorKey4, colorKey5;
+        final int colors[] = new int[5];
         public boolean exactly;
 
         public float x1 = 0f, y1 = 1f, x2 = 1.5f, y2 = 0f;
 
+        public GradientTools(String colorKey1, String colorKey2, String colorKey3) {
+            this(colorKey1, colorKey2, colorKey3, null, null);
+        }
+
         public GradientTools(String colorKey1, String colorKey2, String colorKey3, String colorKey4) {
+            this(colorKey1, colorKey2, colorKey3, colorKey4, null);
+        }
+
+        public GradientTools(String colorKey1, String colorKey2, String colorKey3, String colorKey4, String colorKey5) {
             this.colorKey1 = colorKey1;
             this.colorKey2 = colorKey2;
             this.colorKey3 = colorKey3;
             this.colorKey4 = colorKey4;
+            this.colorKey5 = colorKey5;
         }
+
 
         public void gradientMatrix(int x, int y, int x1, int y1, float xOffset, float yOffset) {
             chekColors();
@@ -176,17 +196,21 @@ public class PremiumGradient {
             int c2 = Theme.getColor(colorKey2);
             int c3 = colorKey3 == null ? 0 : Theme.getColor(colorKey3);
             int c4 = colorKey4 == null ? 0 : Theme.getColor(colorKey4);
-            if (colors[0] != c1 || colors[1] != c2 || colors[2] != c3 || colors[3] != c4) {
+            int c5 = colorKey5 == null ? 0 : Theme.getColor(colorKey5);
+            if (colors[0] != c1 || colors[1] != c2 || colors[2] != c3 || colors[3] != c4 || colors[4] != c5) {
                 colors[0] = c1;
                 colors[1] = c2;
                 colors[2] = c3;
                 colors[3] = c4;
+                colors[4] = c5;
                 if (c3 == 0) {
                     shader = new LinearGradient(size * x1, size * y1, size * x2, size * y2, new int[]{colors[0], colors[1]}, new float[]{0, 1f}, Shader.TileMode.CLAMP);
                 } else if (c4 == 0) {
                     shader = new LinearGradient(size * x1, size * y1, size * x2, size * y2, new int[]{colors[0], colors[1], colors[2]}, new float[]{0, 0.5f, 1f}, Shader.TileMode.CLAMP);
-                } else {
+                } else if (c5 == 0) {
                     shader = new LinearGradient(size * x1, size * y1, size * x2, size * y2, new int[]{colors[0], colors[1], colors[2], colors[3]}, new float[]{0, 0.5f, 0.78f, 1f}, Shader.TileMode.CLAMP);
+                } else {
+                    shader = new LinearGradient(size * x1, size * y1, size * x2, size * y2, new int[]{colors[0], colors[1], colors[2], colors[3], colors[4]}, new float[]{0, 0.425f, 0.655f, 0.78f, 1f}, Shader.TileMode.CLAMP);
                 }
                 shader.setLocalMatrix(matrix);
                 paint.setShader(shader);

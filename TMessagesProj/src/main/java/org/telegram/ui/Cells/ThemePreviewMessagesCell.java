@@ -32,6 +32,7 @@ import org.telegram.ui.Components.BackgroundGradientDrawable;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
 import org.telegram.ui.Components.Reactions.ReactionsEffectOverlay;
+import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 
 public class ThemePreviewMessagesCell extends LinearLayout {
 
@@ -94,6 +95,15 @@ public class ThemePreviewMessagesCell extends LinearLayout {
             } else {
                 message.message = LocaleController.getString("NewThemePreviewReply", R.string.NewThemePreviewReply);
             }
+            String greeting = "\uD83D\uDC4B";
+            int index = message.message.indexOf(greeting);
+            if (index >= 0) {
+                TLRPC.TL_messageEntityCustomEmoji entity = new TLRPC.TL_messageEntityCustomEmoji();
+                entity.offset = index;
+                entity.length = greeting.length();
+                entity.document_id = 5386654653003864312L;
+                message.entities.add(entity);
+            }
             message.date = date + 60;
             message.dialog_id = 1;
             message.flags = 259;
@@ -124,6 +134,15 @@ public class ThemePreviewMessagesCell extends LinearLayout {
                     message.entities.add(entityUrl);
                 }
                 message.message = builder.toString();
+            }
+            String cool = "\uD83D\uDE0E";
+            int index1 = message.message.indexOf(cool);
+            if (index1 >= 0) {
+                TLRPC.TL_messageEntityCustomEmoji entity = new TLRPC.TL_messageEntityCustomEmoji();
+                entity.offset = index1;
+                entity.length = cool.length();
+                entity.document_id = 5373141891321699086L;
+                message.entities.add(entity);
             }
             message.date = date + 960;
             message.dialog_id = 1;
@@ -172,12 +191,12 @@ public class ThemePreviewMessagesCell extends LinearLayout {
                 private GestureDetector gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
                     @Override
                     public boolean onDoubleTap(MotionEvent e) {
-                        boolean added = getMessageObject().selectReaction(MediaDataController.getInstance(currentAccount).getDoubleTapReaction(), false, false);
+                        boolean added = getMessageObject().selectReaction(ReactionsLayoutInBubble.VisibleReaction.fromEmojicon(MediaDataController.getInstance(currentAccount).getDoubleTapReaction()), false, false);
                         setMessageObject(getMessageObject(), null, false, false);
                         requestLayout();
                         ReactionsEffectOverlay.removeCurrent(false);
                         if (added) {
-                            ReactionsEffectOverlay.show(fragment, null, cells[1], e.getX(), e.getY(), MediaDataController.getInstance(currentAccount).getDoubleTapReaction(), currentAccount, ReactionsEffectOverlay.LONG_ANIMATION);
+                            ReactionsEffectOverlay.show(fragment, null, cells[1], null, e.getX(), e.getY(), ReactionsLayoutInBubble.VisibleReaction.fromEmojicon(MediaDataController.getInstance(currentAccount).getDoubleTapReaction()), currentAccount, ReactionsEffectOverlay.LONG_ANIMATION);
                             ReactionsEffectOverlay.startAnimation();
                         }
                         getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {

@@ -16,6 +16,8 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -30,7 +32,9 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.AnimatedVectorDrawable;
+import android.hardware.Camera;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
@@ -63,6 +67,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 
 import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
@@ -112,6 +117,8 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 import javax.microedition.khronos.opengles.GL;
 
+import app.nicegram.PrefsHelper;
+
 @TargetApi(18)
 public class InstantCameraView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
 
@@ -157,7 +164,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
     private CameraGLThread cameraThread;
     private Size previewSize;
     private Size pictureSize;
-    private Size aspectRatio = SharedConfig.roundCamera16to9 ? new Size(1, 1) : new Size(4, 3);
+    private Size aspectRatio = SharedConfig.roundCamera16to9 ? new Size(16, 9) : new Size(4, 3);
     private TextureView textureView;
     private BackupImageView textureOverlayView;
     private CameraSession cameraSession;
@@ -570,7 +577,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
             textureOverlayView.setImageResource(R.drawable.icplaceholder);
         }
         cameraReady = false;
-        isFrontface = true;
+        isFrontface = !PrefsHelper.INSTANCE.enableStartWithRearCamera(currentAccount);  // ng startWithRearCamera
         selectedCamera = null;
         recordedTime = 0;
         progress = 0;
@@ -981,10 +988,16 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
             }
         }
         if (sortedSizes.isEmpty() || SharedConfig.getDevicePerformanceClass() == SharedConfig.PERFORMANCE_CLASS_LOW || SharedConfig.getDevicePerformanceClass() == SharedConfig.PERFORMANCE_CLASS_AVERAGE) {
+            ArrayList<Size> sizes = sortedSizes;
             if (!sortedSizes.isEmpty()) {
-                return CameraController.chooseOptimalSize(sortedSizes, 480, 270, aspectRatio);
+                sizes = sortedSizes;
             } else {
-                return CameraController.chooseOptimalSize(previewSizes, 480, 270, aspectRatio);
+                sizes = previewSizes;
+            }
+            if (Build.MANUFACTURER.equalsIgnoreCase("Xiaomi")) {
+                return CameraController.chooseOptimalSize(sizes, 640, 480, aspectRatio);
+            } else {
+                return CameraController.chooseOptimalSize(sizes, 480, 270, aspectRatio);
             }
         }
         Collections.sort(sortedSizes, (o1, o2) -> {
@@ -1015,10 +1028,34 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
             cameraThread.setCurrentSession(cameraSession);
             CameraController.getInstance().openRound(cameraSession, surfaceTexture, () -> {
                 if (cameraSession != null) {
+                    boolean updateScale = false;
+                    try {
+                        Camera.Size size = cameraSession.getCurrentPreviewSize();
+                        if (size.width != previewSize.getWidth() || size.height != previewSize.getHeight()) {
+                            previewSize = new Size(size.width, size.height);
+                            FileLog.d("change preview size to w = " + previewSize.getWidth() + " h = " + previewSize.getHeight());
+                        }
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                    }
+
+                    try {
+                        Camera.Size size = cameraSession.getCurrentPictureSize();
+                        if (size.width != pictureSize.getWidth() || size.height != pictureSize.getHeight()) {
+                            pictureSize = new Size(size.width, size.height);
+                            FileLog.d("change picture size to w = " + pictureSize.getWidth() + " h = " + pictureSize.getHeight());
+                            updateScale = true;
+                        }
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                    }
                     if (BuildVars.LOGS_ENABLED) {
                         FileLog.d("camera initied");
                     }
                     cameraSession.setInitied();
+                    if (updateScale) {
+                        cameraThread.reinitForNewCamera();
+                    }
                 }
             }, () -> cameraThread.setCurrentSession(cameraSession));
         });
@@ -2009,7 +2046,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
 
             GLES20.glUniform2f(resolutionHandle, videoWidth, videoHeight);
 
-            if (oldCameraTexture[0] != 0) {
+            if (oldCameraTexture[0] != 0 && oldTextureTextureBuffer != null) {
                 if (!blendEnabled) {
                     GLES20.glEnable(GLES20.GL_BLEND);
                     blendEnabled = true;
@@ -2122,6 +2159,8 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                     audioEncoder.stop();
                     audioEncoder.release();
                     audioEncoder = null;
+
+                    setBluetoothScoOn(false);
                 } catch (Exception e) {
                     FileLog.e(e);
                 }
@@ -2244,7 +2283,28 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
             handler.exit();
         }
 
+        private void setBluetoothScoOn(boolean scoOn) {
+            AudioManager am = (AudioManager) ApplicationLoader.applicationContext.getSystemService(Context.AUDIO_SERVICE);
+            if (am.isBluetoothScoAvailableOffCall() && SharedConfig.recordViaSco || !scoOn) {
+                BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+                try {
+                    if (btAdapter != null && btAdapter.getProfileConnectionState(BluetoothProfile.HEADSET) == BluetoothProfile.STATE_CONNECTED || !scoOn) {
+                        if (scoOn && !am.isBluetoothScoOn()) {
+                            am.startBluetoothSco();
+                        } else if (!scoOn && am.isBluetoothScoOn()) {
+                            am.stopBluetoothSco();
+                        }
+                    }
+                } catch (SecurityException ignored) {
+                } catch (Throwable e) {
+                    FileLog.e(e);
+                }
+            }
+        }
+
         private void prepareEncoder() {
+            setBluetoothScoOn(true);
+
             try {
                 int recordBufferSize = AudioRecord.getMinBufferSize(audioSampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
                 if (recordBufferSize <= 0) {

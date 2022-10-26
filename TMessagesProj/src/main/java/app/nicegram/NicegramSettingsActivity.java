@@ -1,11 +1,3 @@
-/*
- * This is the source code of Telegram for Android v. 5.x.x.
- * It is licensed under GNU GPL v. 2 or later.
- * You should have received a copy of the license in this archive (see LICENSE).
- *
- * Copyright Nikolai Kudashov, 2013-2018.
- */
-
 package app.nicegram;
 
 import android.content.Context;
@@ -13,15 +5,20 @@ import android.content.SharedPreferences;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.nicegram.NicegramConsts;
 import com.appvillis.nicegram.NicegramPrefs;
 
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -32,6 +29,7 @@ import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
+import org.telegram.ui.PasscodeActivity;
 
 import java.util.ArrayList;
 
@@ -42,22 +40,28 @@ public class NicegramSettingsActivity extends BaseFragment {
 
     private int nicegramSectionRow;
     private int unblockGuideRow;
-    private int mentionAllRow;
     private int skipReadHistoryRow;
     private int showProfileIdRow;
     private int showRegDateRow;
     private int openLinksRow;
+    private int startWithRearCameraRow;
+    private int downloadVideosToGallery;
+    private int hidePhoneNumberRow;
+    private int doubleBottomRow;
     private int rowCount = 0;
 
     @Override
     public boolean onFragmentCreate() {
         nicegramSectionRow = -1;
         unblockGuideRow = rowCount++;
-        mentionAllRow = rowCount++;
         skipReadHistoryRow = rowCount++;
         showProfileIdRow = rowCount++;
         showRegDateRow = rowCount++;
         openLinksRow = rowCount++;
+        startWithRearCameraRow = rowCount++;
+        downloadVideosToGallery = rowCount++;
+        hidePhoneNumberRow = rowCount++;
+        if (!NicegramDoubleBottom.INSTANCE.getLoggedToDbot()) doubleBottomRow = rowCount++;
 
         return super.onFragmentCreate();
     }
@@ -97,12 +101,25 @@ public class NicegramSettingsActivity extends BaseFragment {
             if (getParentActivity() == null) {
                 return;
             }
-            if (position == mentionAllRow) {
+            if (position == startWithRearCameraRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_MENTION_ALL_ENABLED, NicegramPrefs.PREF_MENTION_ALL_ENABLED_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_MENTION_ALL_ENABLED, !enabled);
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_START_WITH_REAR_CAMERA, NicegramPrefs.PREF_START_WITH_REAR_CAMERA_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_START_WITH_REAR_CAMERA, !enabled);
                 editor.apply();
+            } else if (position == downloadVideosToGallery) {
+                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY, NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY, !enabled);
+                editor.apply();
+            } else if (position == hidePhoneNumberRow) {
+                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, NicegramPrefs.PREF_HIDE_PHONE_NUMBER_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, !enabled);
+                editor.apply();
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.mainUserInfoChanged);
             } else if (position == skipReadHistoryRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
@@ -129,8 +146,19 @@ public class NicegramSettingsActivity extends BaseFragment {
                 editor.apply();
             } else if (position == unblockGuideRow) {
                 Browser.openUrl(getParentActivity(), NicegramConsts.UNBLOCK_URL);
+            } else if (position == doubleBottomRow) {
+                if (NicegramDoubleBottom.INSTANCE.hasDbot()) {
+                    NicegramDoubleBottom.INSTANCE.disableDbot(getParentActivity());
+                    ((TextCheckCell) view).setChecked(false);
+                } else {
+                    if (SharedConfig.passcodeHash.length() <= 0 || UserConfig.getActivatedAccountsCount() < 2) {
+                        Toast.makeText(getParentActivity(), LocaleController.getString("NicegramDoubleBottomDesc"), Toast.LENGTH_LONG).show();
+                    } else {
+                        presentFragment(new PasscodeActivity(PasscodeActivity.TYPE_SETUP_CODE, true), true);
+                    }
+                }
             }
-            if (view instanceof TextCheckCell) {
+            if (view instanceof TextCheckCell && position != doubleBottomRow) {
                 ((TextCheckCell) view).setChecked(!enabled);
             }
         });
@@ -199,9 +227,7 @@ public class NicegramSettingsActivity extends BaseFragment {
                 case 1: {
                     TextCheckCell checkCell = (TextCheckCell) holder.itemView;
                     SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                    if (position == mentionAllRow) {
-                        checkCell.setTextAndValueAndCheck(LocaleController.getString("ShowMentionAll"), LocaleController.getString("For20OrLessChats"), preferences.getBoolean(NicegramPrefs.PREF_MENTION_ALL_ENABLED, NicegramPrefs.PREF_MENTION_ALL_ENABLED_DEFAULT), true, false);
-                    } else if (position == skipReadHistoryRow) {
+                    if (position == skipReadHistoryRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramSkipReadHistory"), preferences.getBoolean(NicegramPrefs.PREF_SKIP_READ_HISTORY, NicegramPrefs.PREF_SKIP_READ_HISTORY_DEFAULT), false);
                     } else if (position == showProfileIdRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramShowProfileID"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_PROFILE_ID, NicegramPrefs.PREF_SHOW_PROFILE_ID_DEFAULT), false);
@@ -209,6 +235,15 @@ public class NicegramSettingsActivity extends BaseFragment {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramShowRegistrationDate"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT), false);
                     } else if (position == openLinksRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramOpenLinksInBrowser"), preferences.getBoolean(NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER, NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER_DEFAULT), false);
+                    } else if (position == doubleBottomRow) {
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramDoubleBottom"), LocaleController.getString("NicegramDoubleBottomDesc"), NicegramDoubleBottom.INSTANCE.hasDbot(), true, false);
+                        checkCell.setEnabled(false);
+                    } else if (position == startWithRearCameraRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("NicegramStartWithRearCamera"), preferences.getBoolean(NicegramPrefs.PREF_START_WITH_REAR_CAMERA, NicegramPrefs.PREF_START_WITH_REAR_CAMERA_DEFAULT), false);
+                    } else if (position == downloadVideosToGallery) {
+                        checkCell.setTextAndCheck(LocaleController.getString("NicegramDownloadVideosToGallery"), preferences.getBoolean(NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY, NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY_DEFAULT), false);
+                    } else if (position == hidePhoneNumberRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("NicegramHidePhoneNumber"), preferences.getBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, NicegramPrefs.PREF_HIDE_PHONE_NUMBER_DEFAULT), false);
                     }
                     break;
                 }
@@ -224,11 +259,15 @@ public class NicegramSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == nicegramSectionRow) {
                 return 0;
-            } else if (position == mentionAllRow || position == skipReadHistoryRow || position == openLinksRow ||
-                    position == showRegDateRow || position == showProfileIdRow) {
+            } else if (position == skipReadHistoryRow || position == openLinksRow ||
+                    position == showRegDateRow || position == showProfileIdRow ||
+                    position == startWithRearCameraRow || position == downloadVideosToGallery ||
+                    position == hidePhoneNumberRow) {
                 return 1;
             } else if (position == unblockGuideRow) {
                 return 2;
+            } else if (position == doubleBottomRow) {
+                return 1;
             } else {
                 return 0;
             }

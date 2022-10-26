@@ -71,6 +71,7 @@ import android.telephony.TelephonyManager;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.util.LruCache;
 import android.view.KeyEvent;
 import android.view.View;
@@ -79,8 +80,7 @@ import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-
-import com.google.android.exoplayer2.util.Log;
+import androidx.core.app.ActivityCompat;
 
 import org.json.JSONObject;
 import org.telegram.messenger.AccountInstance;
@@ -139,6 +139,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
+import app.nicegram.NicegramDoubleBottom;
 
 @SuppressLint("NewApi")
 public class VoIPService extends Service implements SensorEventListener, AudioManager.OnAudioFocusChangeListener, VoIPController.ConnectionStateListener, NotificationCenter.NotificationCenterDelegate {
@@ -359,15 +361,21 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 
 		@Override
 		public void onServiceConnected(int profile, BluetoothProfile proxy) {
-			for (BluetoothDevice device : proxy.getConnectedDevices()) {
-				if (proxy.getConnectionState(device) != BluetoothProfile.STATE_CONNECTED) {
-					continue;
+			try {
+				if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+					for (BluetoothDevice device : proxy.getConnectedDevices()) {
+						if (proxy.getConnectionState(device) != BluetoothProfile.STATE_CONNECTED) {
+							continue;
+						}
+						currentBluetoothDeviceName = device.getName();
+						break;
+					}
 				}
-				currentBluetoothDeviceName = device.getName();
-				break;
+				BluetoothAdapter.getDefaultAdapter().closeProfileProxy(profile, proxy);
+				fetchingBluetoothDeviceName = false;
+			} catch (Throwable e) {
+				FileLog.e(e);
 			}
-			BluetoothAdapter.getDefaultAdapter().closeProfileProxy(profile, proxy);
-			fetchingBluetoothDeviceName = false;
 		}
 	};
 
@@ -672,6 +680,17 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		if (currentAccount == -1) {
 			throw new IllegalStateException("No account specified when starting VoIP service");
 		}
+
+		// region ng dbot
+		UserConfig userConfig = UserConfig.getInstance(currentAccount);
+		if (NicegramDoubleBottom.INSTANCE.needToHideAccount(userConfig.clientUserId)) {
+			if (BuildConfig.DEBUG) {
+				Log.w("Double bottom", "Suppressed incoming call for " + userConfig.clientUserId);
+			}
+			return START_NOT_STICKY;
+		}
+		// endregion
+
 		classGuid = ConnectionsManager.generateClassGuid();
 		long userID = intent.getLongExtra("user_id", 0);
 		long chatID = intent.getLongExtra("chat_id", 0);
@@ -3911,7 +3930,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 				.setSmallIcon(R.drawable.notification)
 				.setSubText(subText)
 				.setContentIntent(PendingIntent.getActivity(this, 0, intent, 0));
-		Uri soundProviderUri = Uri.parse("content://" + BuildConfig.APPLICATION_ID + ".call_sound_provider/start_ringing");
+		Uri soundProviderUri = Uri.parse("content://" + ApplicationLoader.getApplicationId() + ".call_sound_provider/start_ringing");
 		if (Build.VERSION.SDK_INT >= 26) {
 			SharedPreferences nprefs = MessagesController.getGlobalNotificationsSettings();
 			int chanIndex = nprefs.getInt("calls_notification_channel", 0);

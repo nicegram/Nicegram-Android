@@ -34,13 +34,13 @@ public class LauncherIconController {
     }
 
     public enum LauncherIcon {
-        DEFAULT("DefaultIcon", R.mipmap.ic_launcher_default, R.mipmap.ic_launcher_default, R.string.NicegramIconDefault),
-        MONO_BLACK("MonoBlack", R.mipmap.ic_launcher_mono_black, R.mipmap.ic_launcher_mono_black, R.string.NicegramIconMonoBlack),
-        FILLED("Filled", R.mipmap.ic_launcher_filled, R.mipmap.ic_launcher_filled, R.string.NicegramIconFilled),
-        FILLED_BLACK("FilledBlack", R.mipmap.ic_launcher_filled_black, R.mipmap.ic_launcher_filled_black, R.string.NicegramIconFilledBlack),
-        NICEGRAM("Nicegram", R.mipmap.ic_launcher_nicegram, R.mipmap.ic_launcher_nicegram, R.string.NicegramIconNicegram),
-        NICEGRAM_LIGHT("NicegramLight", R.mipmap.ic_launcher_nicegram_light, R.mipmap.ic_launcher_nicegram_light, R.string.NicegramIconNicegramLight),
-        NICEGRAM_DARK("NicegramDark", R.mipmap.ic_launcher_nicegram_dark, R.mipmap.ic_launcher_nicegram_dark, R.string.NicegramIconNicegramDark);
+        DEFAULT("DefaultIcon", R.drawable.preview_ic_default, R.drawable.preview_ic_default, R.string.NicegramIconDefault),
+        CLASSIC("NicegramClassic", R.drawable.preview_ic_classic, R.drawable.preview_ic_classic, R.string.NicegramIconNicegramClassic),
+        MONO_BLACK("MonoBlack", R.drawable.preview_ic_mono_black, R.drawable.preview_ic_mono_black, R.string.NicegramIconMonoBlack),
+        FILLED("Filled", R.drawable.preview_ic_filled, R.drawable.preview_ic_filled, R.string.NicegramIconFilled),
+        FILLED_BLACK("FilledBlack", R.drawable.preview_ic_filled_black, R.drawable.preview_ic_filled_black, R.string.NicegramIconFilledBlack),
+        NICEGRAM("Nicegram", R.drawable.preview_ic_nicegram, R.drawable.preview_ic_nicegram, R.string.NicegramIconNicegram),
+        NICEGRAM_LIGHT("NicegramLight", R.drawable.preview_ic_nicegram_light, R.drawable.preview_ic_nicegram_light, R.string.NicegramIconNicegramLight);
 
         public final String key;
         public final int background;

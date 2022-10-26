@@ -19,6 +19,6 @@
     <string name="NicegramShowProfileID">Arată profil ID</string>
     <string name="NicegramShowRegistrationDate">Arată data înregistrării</string>
     <string name="NicegramOpenLinksInBrowser">Deschideți în navigator</string>
+    <string name="NicegramQuickTranslateButton">Butonul Traducere Rapidă</string>
     <string name="NicegramDialogPolicy">Politica de Confidențialitate Nicegram</string>
-    <string name="NicegramDialogPolicyText">Nicegram este un client neoficial Telegram și multe din serviciile pe care le obțineți utilizând Nicegram sunt de fapt furnizate de către compania Telegram.\n\nVă rugăm să citiți Politica noastră de Confidențialitate înainte de a utiliza aplicația.\n\nAtingând Continuare confirmați că ați citit și sunteți de acord cu Politica de Confidențialitate Nicegram.</string>
 </resources>

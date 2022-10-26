@@ -21,8 +21,6 @@ import android.view.View;
 
 import androidx.core.graphics.ColorUtils;
 import androidx.core.math.MathUtils;
-
-import org.checkerframework.checker.units.qual.A;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MessageObject;
@@ -55,7 +53,7 @@ public class SeekBarWaveform {
 
     private float clearProgress = 1f;
     private boolean isUnread;
-    private AnimatedFloat appearFloat = new AnimatedFloat(125, 450, CubicBezierInterpolator.EASE_OUT_QUINT);
+    private AnimatedFloat appearFloat = new AnimatedFloat(125, 600, CubicBezierInterpolator.EASE_OUT_QUINT);
 
     private float waveScaling = 1f;
 
@@ -324,6 +322,7 @@ public class SeekBarWaveform {
                 float x = barNum * AndroidUtilities.dpf2(3);
                 float bart = MathUtils.clamp(appearProgress * totalBarsCount - barNum, 0, 1);
                 float h = AndroidUtilities.dpf2(heights[barNum]) * bart;
+                h -= AndroidUtilities.dpf2(1) * (1f - bart);
                 addBar(path, x, h);
             }
         }
