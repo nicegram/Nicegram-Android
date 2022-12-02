@@ -135,3 +135,6 @@
 -keep class org.json.** { *; }
 
 -keep class com.ecommpay.** { *; }
+
+-keep class com.appvillis.nicegram.network.request.** { *; }
+-keep class com.appvillis.nicegram.network.response.** { *; }

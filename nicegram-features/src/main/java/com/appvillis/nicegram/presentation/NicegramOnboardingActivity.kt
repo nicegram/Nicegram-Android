@@ -63,6 +63,6 @@ class NicegramOnboardingActivity : AppCompatActivity() {
     }
 
     fun showPermissionDialog() {
-        NicegramDialogs.showContactsPermissionDialogIfNeeded(this)
+        if (!this.isFinishing) NicegramDialogs.showContactsPermissionDialogIfNeeded(this)
     }
 }

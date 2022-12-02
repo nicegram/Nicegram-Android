@@ -1,5 +1,6 @@
 package app.nicegram
 
+import android.content.SharedPreferences
 import com.appvillis.nicegram.NicegramPrefs
 import org.telegram.messenger.MessagesController
 
@@ -42,5 +43,46 @@ object PrefsHelper {
     fun hidePhoneNumber(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, NicegramPrefs.PREF_HIDE_PHONE_NUMBER_DEFAULT)
+    }
+
+    fun hideReactions(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, NicegramPrefs.PREF_HIDE_REACTIONS_DEFAULT)
+    }
+    // region ng translate input text
+    fun getTranslateLanguageToShortName(currentAccount: Int, currentChat: Long): String {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getString(NicegramPrefs.PREF_CHAT_LANGUAGE_TO_TRANSLATE + currentChat, NicegramPrefs.PREF_CHAT_LANGUAGE_TO_TRANSLATE_DEFAULT) ?: NicegramPrefs.PREF_CHAT_LANGUAGE_TO_TRANSLATE_DEFAULT
+    }
+
+    fun setTranslateLanguageToShortName(currentAccount: Int, currentChat: Long, newLocaleShortName: String) {
+        val preferences: SharedPreferences = MessagesController.getNicegramSettings(currentAccount)
+        val editor: SharedPreferences.Editor = preferences.edit()
+        editor.putString(NicegramPrefs.PREF_CHAT_LANGUAGE_TO_TRANSLATE + currentChat, newLocaleShortName)
+        editor.apply()
+    }
+
+    fun isCurrentLanguageTheDefault(currentAccount: Int, currentChat: Long): Boolean {
+        return getTranslateLanguageToShortName(
+            currentAccount, currentChat
+        ) == NicegramPrefs.PREF_CHAT_LANGUAGE_TO_TRANSLATE_DEFAULT
+    }
+    // endregion ng translate input text
+
+    fun saveFolderOnExit(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT, NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT_DEFAULT)
+    }
+
+    fun setCurrentFolder(currentAccount: Int, folder: Int) {
+        MessagesController.getNicegramSettings(currentAccount)
+            .edit()
+            .putInt(NicegramPrefs.PREF_SAVED_FOLDER, folder)
+            .apply()
+    }
+
+    fun getCurrentFolder(currentAccount: Int): Int {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getInt(NicegramPrefs.PREF_SAVED_FOLDER, NicegramPrefs.PREF_SAVED_FOLDER_DEFAULT)
     }
 }

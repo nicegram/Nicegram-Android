@@ -12,6 +12,7 @@
     <string name="NicegramUndoTranslate">Anulează traducere</string>
     <string name="NicegramTranslationUnavailable">Ne pare rău, traducere indisponibilă</string>
     <string name="NicegramForwardAsCopy">Redirecționează copie</string>
+    <string name="NicegramForwardToSave">Salvează în Cloud</string>
     <string name="NicegramSkipReadHistory">Sari citire istorial</string>
     <string name="NicegramOlderThan">Mai vechi de</string>
     <string name="NicegramNewerThan">Mai noi de</string>
@@ -20,5 +21,6 @@
     <string name="NicegramShowRegistrationDate">Arată data înregistrării</string>
     <string name="NicegramOpenLinksInBrowser">Deschideți în navigator</string>
     <string name="NicegramQuickTranslateButton">Butonul Traducere Rapidă</string>
+    <string name="NicegramHidePhoneNumber">Ascunde telefonul din setări</string>
     <string name="NicegramDialogPolicy">Politica de Confidențialitate Nicegram</string>
 </resources>

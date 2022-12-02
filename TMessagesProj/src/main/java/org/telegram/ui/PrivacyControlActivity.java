@@ -709,7 +709,9 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
         sectionRow = rowCount++;
         everybodyRow = rowCount++;
         myContactsRow = rowCount++;
-        if (rulesType != PRIVACY_RULES_TYPE_LASTSEEN && rulesType != PRIVACY_RULES_TYPE_CALLS && rulesType != PRIVACY_RULES_TYPE_P2P &&
+        if (rulesType != PRIVACY_RULES_TYPE_LASTSEEN &&
+                rulesType != PRIVACY_RULES_TYPE_INVITE && // ng Nobody group invitation
+                rulesType != PRIVACY_RULES_TYPE_CALLS && rulesType != PRIVACY_RULES_TYPE_P2P &&
                 rulesType != PRIVACY_RULES_TYPE_FORWARDS && rulesType != PRIVACY_RULES_TYPE_PHONE && rulesType != PRIVACY_RULES_TYPE_VOICE_MESSAGES) {
             nobodyRow = -1;
         } else {

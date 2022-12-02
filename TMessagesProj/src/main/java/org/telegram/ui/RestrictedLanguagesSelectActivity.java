@@ -109,11 +109,15 @@ public class RestrictedLanguagesSelectActivity extends BaseFragment implements N
                     RecyclerView.Adapter adapter = listView.getAdapter();
                     int offset = !searching ? 1 : 0;
                     for (String lng : selectedLanguages)
-                        if (!newSelectedLanguages.contains(lng))
+                        if (!newSelectedLanguages.contains(lng)) {
                             adapter.notifyItemChanged(langPos(lng) + offset);
+                            if (lng.equals("zh")) adapter.notifyItemChanged(langPos(lng) + offset + 1); // ng tmp fix fo chinese
+                        }
                     for (String lng : newSelectedLanguages)
-                        if (!selectedLanguages.contains(lng))
+                        if (!selectedLanguages.contains(lng)) {
                             adapter.notifyItemChanged(langPos(lng) + offset);
+                            if (lng.equals("zh")) adapter.notifyItemChanged(langPos(lng) + offset + 1); // ng tmp fix fo chinese
+                        }
                 }
                 selectedLanguages = newSelectedLanguages;
             }
@@ -226,7 +230,7 @@ public class RestrictedLanguagesSelectActivity extends BaseFragment implements N
                 LocaleController.LocaleInfo currentLocaleInfo = LocaleController.getInstance().getCurrentLocaleInfo();
                 String langCode = localeInfo.pluralLangCode;
                 if (langCode != null && langCode.equals(currentLocaleInfo.pluralLangCode)) {
-                    AndroidUtilities.shakeView(((TextCheckbox2Cell) view).checkbox, 2, 0);
+                    AndroidUtilities.shakeView(((TextCheckbox2Cell) view).checkbox);
                     return;
                 }
                 boolean value = selectedLanguages.contains(langCode);

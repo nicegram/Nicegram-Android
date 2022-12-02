@@ -4,6 +4,7 @@
     <string name="MentionAllUsers">Menziona tutti gli utenti</string>
     <string name="For20OrLessChats">Per chat con meno di 20 persone</string>
     <string name="NicegramSettings">Impostazioni di Nicegram</string>
+    <string name="NicegramReplyPrivately">Rispondi in privato</string>
     <string name="NicegramRegistered">Iscritto</string>
     <string name="NicegramGetRegistrationDate">Ottieni data registrazione</string>
     <string name="NicegramGetIdCopied">ID copiato negli appunti</string>
@@ -12,6 +13,7 @@
     <string name="NicegramUndoTranslate">Annulla traduzione</string>
     <string name="NicegramTranslationUnavailable">Traduzione non disponibile</string>
     <string name="NicegramForwardAsCopy">Inoltra come copia</string>
+    <string name="NicegramForwardToSave">Salva nel cloud</string>
     <string name="NicegramSkipReadHistory">Salta la cronologia di lettura</string>
     <string name="NicegramOlderThan">Più vecchio di</string>
     <string name="NicegramNewerThan">Più recente di</string>
@@ -32,6 +34,11 @@
     <string name="NicegramMentionAll">\@MentionAll</string>
     <string name="NicegramMentionAllDesc">Informa rapidamente tutti i membri del gruppo e assicurati che tutti leggano il tuo messaggio</string>
     <string name="NicegramQuickTranslateButton">Bottone di traduzione rapida</string>
+    <string name="NicegramStartWithRearCamera">Inizia con la camera posteriore</string>
+    <string name="NicegramDownloadVideosToGallery">Scarica i video nella Galleria</string>
+    <string name="NicegramHidePhoneNumber">Nascondi il numero di telefono nelle impostazioni</string>
+    <string name="NicegramHidePhoneNumberDesc">Il tuo numero verrà nascosto solo nell\'interfaccia. Per nasconderlo dagli altri, apri le impostazioni della Privacy.</string>
+    <string name="NicegramSelectAllFromThisUser">Seleziona tutto da questo utente</string>
     <string name="NicegramDialogPolicy">Informativa sulla privacy di Nicegram</string>
     <string name="NicegramDialogPolicyText">Nicegram è un client Telegram non ufficiale, e molti dei servizi che ottieni utilizzando Nicegram sono in realtà forniti dalla società Telegram.\n\nLeggi la nostra Informativa sulla privacy prima di utilizzare l\'app.\n\nFacendo clic su continua confermi di aver letto e di accettare l\'Informativa sulla privacy di Nicegram.</string>
     <string name="NicegramContinue">Continua</string>
@@ -46,4 +53,6 @@
     <string name="NicegramOnbroadingText4">Approfitta delle innovazioni del team di Nicegram e ottieni una eSIM con accesso a Internet in 133 paesi. Puoi inoltre registrare nuovi account Telegram al numero di telefono del piano dati della eSIM.</string>
     <string name="NicegramOnbroadingTitle5">Il client di messaggistica più sicuro</string>
     <string name="NicegramOnbroadingText5">Client di messaggistica sicuro con crittografia avanzata, chiamate audio e video di gruppo, canali pubblici, gruppi e bot, spazio di archiviazione cloud illimitato per le chat, condivisione di file multimediali e documenti.</string>
+    <string name="NicegramDoubleBottom">Doppio Fondo</string>
+    <string name="NicegramDoubleBottomAnotherCode">Si prega di impostare un altro codice di accesso diverso da quello utilizzato per il blocco del codice stesso.</string>
 </resources>

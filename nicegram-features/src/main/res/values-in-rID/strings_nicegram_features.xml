@@ -4,11 +4,14 @@
     <string name="MentionAllUsers">Sebut semua pemain</string>
     <string name="For20OrLessChats">Untuk obrolan dengan kurang dari 20 orang</string>
     <string name="NicegramSettings">Pengaturan Nicegram</string>
+    <string name="NicegramRestrict">Batasi</string>
     <string name="NicegramRegistered">Terdaftar</string>
     <string name="NicegramGetIdCopied">Id tersalin ke papan salin</string>
     <string name="NicegramLoading">Memuat…</string>
     <string name="NicegramRegDateError">Maaf, tidak bisa mendapatkan tanggal pendaftaran</string>
     <string name="NicegramUndoTranslate">Urungkan terjemahan</string>
+    <string name="NicegramToLanguage">Ke Bahasa: %1$s</string>
+    <string name="NicegramLanguageDeterminateError">Kami tidak dapat menentukan bahasa yang Anda inginkan untuk menerjemahkan teks. Silakan pilih secara manual dan coba lagi.</string>
     <string name="NicegramTranslationUnavailable">Maaf, terjemahan tidak tersedia</string>
     <string name="NicegramForwardAsCopy">Teruskan sebagai salinan</string>
     <string name="NicegramSkipReadHistory">Lewati baca history</string>
@@ -28,6 +31,7 @@
     <string name="NicegramSpeech2TextDesc">Dapatkan pesan suara apa pun yang ditranskripsi dalam hitungan detik dan hemat banyak waktu luang anda </string>
     <string name="NicegramMentionAll">\@SebutkanSemua</string>
     <string name="NicegramMentionAllDesc">Sangat cepat memberitahu anggota grup dan pastikan semua orang akan membaca pesan anda</string>
+    <string name="NicegramHideReactions">Sembunyikan reaksi</string>
     <string name="NicegramDialogPolicy">Kebijakan Privasi Nicegram</string>
     <string name="NicegramDialogPolicyText">Nicegram adalah unofficial Telegram client dan banyak layanan yang Anda dapatkan dengan menggunakan Nicegram, sebenarnya disediakan oleh perusahaan Telegram.\n\nHarap baca Kebijakan Privasi kami sebelum menggunakan aplikasi.\n\nDengan mengeklik lanjutkan, Anda mengonfirmasi bahwa Anda telah membaca dan menyetujui Kebijakan Privasi Nicegram.</string>
     <string name="NicegramGetStarted">Memulai</string>
@@ -41,4 +45,13 @@
     <string name="NicegramOnbroadingText4">Manfaatkan inovasi dari tim Nicegram dan dapatkan eSIM dengan akses internet di 133 negara. Anda juga dapat mendaftarkan akun Telegram baru dengan nomor telepon dari paket data eSIM.</string>
     <string name="NicegramOnbroadingTitle5">Perpesanan yang Paling Aman</string>
     <string name="NicegramOnbroadingText5">Perpesanan aman dengan Enkripsi yang Kuat, Panggilan Audio dan Video Grup, Saluran Publik, Grup dan Bot, Penyimpanan Cloud Tanpa Batas untuk Obrolan, Berbagi Media dan Dokumen.</string>
+    <string name="NicegramDoubleBottomDesc">Untuk mengaktifkan fitur ini, Anda harus memiliki lebih dari satu akun dan mengaktifkan Kunci Kode Sandi (buka Pengaturan → Privasi &amp; Keamanan → Kunci Kode Sandi)</string>
+    <string name="QuickReplies">Balasan cepat</string>
+    <string name="QuickRepliesDesc">Anda dapat menambahkan jumlah balasan yang tidak terbatas menggunakan tombol di bawah ini. Untuk menggunakan balasan cepat, masukkan **simbol \"&amp;\"** ke bidang input pesan.</string>
+    <string name="QuickRepliesEnterText">Masukkan teks </string>
+    <string name="QuickRepliesAddNew">Tambahkan baru</string>
+    <string name="NicegramIgnoredLanguages">Bahasa yang diabaikan</string>
+    <string name="NicegramImmediateLockIn">Segera</string>
+    <string name="NicegramSaveFolderOnExit">Simpan folder saat keluar</string>
+    <string name="NicegramRoundVideos">Video bulat</string>
 </resources>

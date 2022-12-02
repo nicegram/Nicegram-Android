@@ -4,6 +4,7 @@
     <string name="MentionAllUsers">Mention all users</string>
     <string name="For20OrLessChats">For chats with less than 20 people</string>
     <string name="NicegramSettings">Nicegram settings</string>
+    <string name="NicegramRestrict">Restrict</string>
     <string name="NicegramReplyPrivately">Reply Privately</string>
     <string name="NicegramRegistered">Registered</string>
     <string name="NicegramGetRegistrationDate">Get Registration Date</string>
@@ -11,6 +12,8 @@
     <string name="NicegramLoading">Loading…</string>
     <string name="NicegramRegDateError">Sorry, can\'t get registration date</string>
     <string name="NicegramUndoTranslate">Undo translate</string>
+    <string name="NicegramToLanguage">To Language: %1$s</string>
+    <string name="NicegramLanguageDeterminateError">We were unable to determinate the language you wish to translate the text into. Please select it manually and try again.</string>
     <string name="NicegramTranslationUnavailable">Sorry, translation unavailable</string>
     <string name="NicegramForwardAsCopy">Forward as copy</string>
     <string name="NicegramForwardToSave">Save to Cloud</string>
@@ -36,7 +39,10 @@
     <string name="NicegramQuickTranslateButton">Quick Translate button</string>
     <string name="NicegramStartWithRearCamera">Start with rear camera</string>
     <string name="NicegramDownloadVideosToGallery">Download videos to Gallery</string>
-    <string name="NicegramHidePhoneNumber">Hide phone number</string>
+    <string name="NicegramHidePhoneNumber">Hide phone in settings</string>
+    <string name="NicegramHidePhoneNumberDesc">Your number will be hidden in the UI only. To hide it from others, please use Privacy settings.</string>
+    <string name="NicegramHideReactions">Hide reactions</string>
+    <string name="NicegramSelectAllFromThisUser">Select All From This User</string>
 
     <string name="NicegramDialogPolicy">Nicegram Privacy Policy</string>
     <string name="NicegramDialogPolicyText">Nicegram is an unofficial Telegram client and many of the services that you get by using Nicegram, is actually provided by Telegram company.\n\nPlease read our Privacy Policy before using the app.\n\nBy clicking continue you confirm that you have read and agree to Nicegram Privacy Policy.</string>
@@ -58,6 +64,15 @@
     <string name="NicegramDoubleBottom">Double bottom</string>
     <string name="NicegramDoubleBottomDesc">To enable this feature, you should have more than one account and switch on Passcode Lock (go to Settings → Privacy &amp; Security → Passcode Lock)</string>
     <string name="NicegramDoubleBottomAnotherCode">Please set another passcode different from that you use for Passcode Lock</string>
+
+    <string name="QuickReplies">Quick replies</string>
+    <string name="QuickRepliesDesc">You can add an unlimited number of replies using the button below. To use the quick reply, enter the **symbol "&amp;"** to the message input field.</string>
+    <string name="QuickRepliesEnterText">Enter text</string>
+    <string name="QuickRepliesAddNew">Add new</string>
+    <string name="NicegramIgnoredLanguages">Ignored languages</string>
+    <string name="NicegramImmediateLockIn">Immediate</string>
+    <string name="NicegramSaveFolderOnExit">Save folder on exit</string>
+    <string name="NicegramRoundVideos">Round videos</string>
 
     <string name="NicegramIconDefault" translatable="false">Default</string>
     <string name="NicegramIconMonoBlack" translatable="false">Mono Black</string>

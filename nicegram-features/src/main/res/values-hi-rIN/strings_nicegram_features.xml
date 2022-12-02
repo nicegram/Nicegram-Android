@@ -4,11 +4,14 @@
     <string name="MentionAllUsers">सभी यूजर्स का मेंशन करें </string>
     <string name="For20OrLessChats">20 लोगों से कम के चैट के लिए </string>
     <string name="NicegramSettings">नाइसग्राम की सेटिंग्स </string>
+    <string name="NicegramRestrict">रोक लगाएं</string>
     <string name="NicegramRegistered">रजिस्टर किया गया </string>
     <string name="NicegramGetIdCopied">आईडी क्लिपबोर्ड पे कॉपी हो गई </string>
     <string name="NicegramLoading">लोडिंग....</string>
     <string name="NicegramRegDateError">क्षमा करें , रजिस्ट्रेशन तारीख नहीं मिल सकती </string>
     <string name="NicegramUndoTranslate">ट्रांसलेशन  को अनडू करें</string>
+    <string name="NicegramToLanguage">भाषा के लिए: %1$s</string>
+    <string name="NicegramLanguageDeterminateError">हम उस भाषा का निर्धारण करने में कामयाब नहीं थे जिस भाषा में आप अनुवाद करना चाहते हैं। कृपया इसे मैन्युअल रूप से चुनें और दोबारा कोशिश करें।</string>
     <string name="NicegramTranslationUnavailable">क्षमा करें ट्रांसलेशन उपलब्ध नहीं है</string>
     <string name="NicegramForwardAsCopy">कॉपी करके फॉरवर्ड करें </string>
     <string name="NicegramSkipReadHistory">स्किप रीड हिस्ट्री </string>
@@ -28,6 +31,7 @@
     <string name="NicegramSpeech2TextDesc">सेकंड्स में कोई भी वॉइस मैसेज का ट्रांसक्रिप्शन पाएं और अपना बहुत सारा समय बचाएं </string>
     <string name="NicegramMentionAll">\@सबको मेंशन करो </string>
     <string name="NicegramMentionAllDesc">फटाफट सभी ग्रुप मेंबर्स को इनफॉर्म करें और सुनिश्चित करें कि सब आपका संदेश पढ़ेंगे </string>
+    <string name="NicegramHideReactions">प्रतिक्रियाएं छुपाएं</string>
     <string name="NicegramDialogPolicy">नाइसग्रेम की प्राइवेसी पॉलिसी </string>
     <string name="NicegramDialogPolicyText">नाइसग्रेम टेलीग्राम का  एक अनऑफिशियल क्लाइंट है और नाइसग्रेम का इस्तेमाल करके आपको जो बहुत सारी सर्विसेज मिलती हैं वह दरअसल में टेलीग्राम कंपनी द्वारा दी जाती है । \n\nकृपया एप्प इस्तेमाल करने से पहले हमारी प्राइवेसी पॉलिसी पढ़ें। \n\n कंटिन्यू पे क्लिक करके आप यह  कन्फर्म करते हैं कि आपने पढ़ी हैं और आपको नाइसग्रेम की प्राइवेसी पॉलिसी मंजूर है । </string>
     <string name="NicegramGetStarted">शुरू हो जाइए</string>
@@ -42,4 +46,14 @@
     <string name="NicegramOnbroadingText4">Nicegram टीम के इन्नोवेशन का फायदा उठाएं और eSIM के साथ 133 देशों में इन्टरनेट का एक्सेस पाएं । eSim डेटा प्लैन के फोन नम्बर के  साथ आप अपना नया Telegram एकाउंट भी रजिस्टर कर सकते हैं ।</string>
     <string name="NicegramOnbroadingTitle5">सबसे सुरक्षित मेसेंजर </string>
     <string name="NicegramOnbroadingText5">अपने मैसेंजर को मजबूत एनक्रिप्शन , ग्रुप ऑडियो और वीडियो कॉल , पब्लिक चैनल्स, ग्रुप्स और बॉट्स, चैट्स,मीडिया के लिए असीमित क्लाउड स्टोरेज ,डॉक्यूमेंट शेयरिंग जैसी सुविधाओं से सिक्योर (सुरक्षित) करें ।</string>
+    <string name="NicegramDoubleBottomDesc">इस सुविधा को कामयाब बनाने के लिए, आपके पास एक से ज़्यादा खाते होने चाहिए और पासकोड लॉक पर स्विच करना चाहिए (सेटिंग → Privacy &amp; → पासकोड लॉक पर जाएं)</string>
+    <string name="QuickReplies">तुरंत के जवाब</string>
+    <string name="QuickRepliesDesc">आप नीचे दिए गए बटन का इस्तेमाल करके अनगिनत संख्या में जवाब जोड़ सकते हैं। तुरंत जवाब का इस्तेमाल करने के लिए, 
+मैसेज  इनपुट फ़ील्ड में**symbol \"&amp;\"**  दर्ज करें।</string>
+    <string name="QuickRepliesEnterText">टेक्स्ट दर्ज करें</string>
+    <string name="QuickRepliesAddNew">नया जोड़ें</string>
+    <string name="NicegramIgnoredLanguages">उपेक्षित भाषाएं</string>
+    <string name="NicegramImmediateLockIn">तुरंत</string>
+    <string name="NicegramSaveFolderOnExit">बाहर निकलने पर फ़ोल्डर सेव कर लें</string>
+    <string name="NicegramRoundVideos"> राउंड वीडियो</string>
 </resources>

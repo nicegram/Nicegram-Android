@@ -44,7 +44,10 @@
         <entry key="nicegram-features/src/main/res/layout/dialog_fragment_nicegram_premium.xml" value="0.335" />
         <entry key="nicegram-features/src/main/res/layout/fragment_ng_onboarding.xml" value="0.25" />
         <entry key="nicegram-features/src/main/res/layout/fragment_nicegram_premium.xml" value="0.5390625" />
+        <entry key="nicegram-features/src/main/res/layout/item_add_new.xml" value="0.5375" />
         <entry key="nicegram-features/src/main/res/layout/item_ng_onboarding.xml" value="0.26481481481481484" />
+        <entry key="nicegram-features/src/main/res/layout/item_quick_reply.xml" value="0.5390625" />
+        <entry key="nicegram-features/src/main/res/layout/view_quick_replies.xml" value="0.34156976744186046" />
         <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_default.xml" value="0.1985" />
         <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_default_round.xml" value="0.125" />
         <entry key="nicegram-features/src/main/res/mipmap-anydpi-v26/ic_launcher_default_white.xml" value="0.271" />
