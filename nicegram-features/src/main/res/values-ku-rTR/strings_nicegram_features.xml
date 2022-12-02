@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="NicegramGetRegistrationDate">دەستکەوتنی بەرواری تۆمارکردن</string>
+    <string name="NicegramForwardToSave">هەڵگرتن لە کڵاود</string>
+    <string name="NicegramOpenLinksInBrowser">کردنەوەی بەستەرەکان لە وێبگەڕ</string>
+    <string name="NicegramQuickTranslateButton">دوگمەی وەرگێڕانی خێرا</string>
+    <string name="NicegramStartWithRearCamera">دەستپێکردن بە کامێرای پشتەوە</string>
+    <string name="NicegramHidePhoneNumber">شاردنەوەی تەلەفۆن لە ڕێکخستنەکان</string>
+    <string name="NicegramHidePhoneNumberDesc">ژمارەکەت تەنها لە ڕووکارەکە دەرناکەوێت. بۆ ئەوەی لە ئەوانەی دیکەی بشاریتەوە، تکایە ڕێکخستنەکانی پارێزراوی بەکاربێنە.</string>
+</resources>

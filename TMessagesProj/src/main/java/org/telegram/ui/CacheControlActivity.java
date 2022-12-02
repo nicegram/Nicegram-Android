@@ -110,6 +110,8 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
 
     long fragmentCreateTime;
 
+    private boolean updateDatabaseSize;
+
     @Override
     public boolean onFragmentCreate() {
         super.onFragmentCreate();
@@ -537,7 +539,7 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
                             CheckBoxCell cell = (CheckBoxCell) v;
                             int num = (Integer) cell.getTag();
                             if (enabledCount == 1 && clearViewData[num].clear) {
-                                AndroidUtilities.shakeView(((CheckBoxCell) v).getCheckBoxView(), 2, 0);
+                                AndroidUtilities.shakeView(((CheckBoxCell) v).getCheckBoxView());
                                 return;
                             }
 
@@ -630,6 +632,7 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
             progressDialog = null;
             if (listAdapter != null) {
                 databaseSize = MessagesStorage.getInstance(currentAccount).getDatabaseSize();
+                updateDatabaseSize = true;
                 listAdapter.notifyDataSetChanged();
             }
         }
@@ -675,25 +678,28 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
                     view = slideChooseView;
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+                    // region ng advanced cache
                     slideChooseView.setCallback(index -> {
-                        if (index == 0) {
-                            SharedConfig.setKeepMedia(3);
-                        } else if (index == 1) {
-                            SharedConfig.setKeepMedia(0);
-                        } else if (index == 2) {
-                            SharedConfig.setKeepMedia(1);
-                        } else if (index == 3) {
+                        if (index <= 4) {
+                            SharedConfig.setKeepMedia(index);
+                        } else {
                             SharedConfig.setKeepMedia(2);
                         }
                     });
                     int keepMedia = SharedConfig.keepMedia;
                     int index;
-                    if (keepMedia == 3) {
-                        index = 0;
+                    if (keepMedia <= 4) {
+                        index = keepMedia;
                     } else {
-                        index = keepMedia + 1;
+                        index = 2;
                     }
-                    slideChooseView.setOptions(index, LocaleController.formatPluralString("Days", 3), LocaleController.formatPluralString("Weeks", 1), LocaleController.formatPluralString("Months", 1), LocaleController.getString("KeepMediaForever", R.string.KeepMediaForever));
+                    slideChooseView.setOptions(index,
+                            LocaleController.formatPluralString("Hours", 1),
+                            LocaleController.formatPluralString("Days", 1),
+                            LocaleController.formatPluralString("Days", 3),
+                            LocaleController.formatPluralString("Months", 1),
+                            LocaleController.getString("KeepMediaForever", R.string.KeepMediaForever));
+                    // endregion ng advanced cache
                     break;
                 case 1:
                 default:
@@ -709,7 +715,8 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
                 case 0:
                     TextSettingsCell textCell = (TextSettingsCell) holder.itemView;
                     if (position == databaseRow) {
-                        textCell.setTextAndValue(LocaleController.getString("ClearLocalDatabase", R.string.ClearLocalDatabase), AndroidUtilities.formatFileSize(databaseSize), false);
+                        textCell.setTextAndValue(LocaleController.getString("ClearLocalDatabase", R.string.ClearLocalDatabase), AndroidUtilities.formatFileSize(databaseSize), updateDatabaseSize, false);
+                        updateDatabaseSize = false;
                     } else if (position == migrateOldFolderRow) {
                         textCell.setTextAndValue(LocaleController.getString("MigrateOldFolder", R.string.MigrateOldFolder), null, false);
                     }

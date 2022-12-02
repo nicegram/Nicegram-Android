@@ -4,14 +4,18 @@
     <string name="MentionAllUsers">Wzmianka o wszystkich użytkownikach</string>
     <string name="For20OrLessChats">Dla czatów z mniej niż 20 osobami</string>
     <string name="NicegramSettings">Ustawienia Nicegram</string>
+    <string name="NicegramRestrict">Ogranicz</string>
     <string name="NicegramRegistered">Zarejestrowany</string>
     <string name="NicegramGetRegistrationDate">Uzyskaj datę rejestracji</string>
     <string name="NicegramGetIdCopied">Id skopiowany do schowka</string>
     <string name="NicegramLoading">Wczytywanie…</string>
     <string name="NicegramRegDateError">Nie można uzyskać daty rejestracji</string>
     <string name="NicegramUndoTranslate">Cofnij tłumaczenie</string>
+    <string name="NicegramToLanguage">Na język: %1$s</string>
+    <string name="NicegramLanguageDeterminateError">Nie udało się określić języka, na który chcesz przetłumaczyć ten tekst. Wybierz język ręcznie i spróbuj ponownie.</string>
     <string name="NicegramTranslationUnavailable">Tłumaczenie niedostępne</string>
     <string name="NicegramForwardAsCopy">Przekaż jako kopię</string>
+    <string name="NicegramForwardToSave">Zapisz w chmurze</string>
     <string name="NicegramSkipReadHistory">Pomiń historię czytania</string>
     <string name="NicegramOlderThan">Starsze niż</string>
     <string name="NicegramNewerThan">Nowsze niż</string>
@@ -32,6 +36,11 @@
     <string name="NicegramMentionAll">\@Wspomnij wszystkich</string>
     <string name="NicegramMentionAllDesc">Szybko poinformuj wszystkich członków grupy i upewnij się, że wszyscy przeczytają twoją wiadomość</string>
     <string name="NicegramQuickTranslateButton">Przycisk Szybkie tłumaczenie</string>
+    <string name="NicegramStartWithRearCamera">Uruchom z tylną kamerą</string>
+    <string name="NicegramDownloadVideosToGallery">Pobierz filmy do galerii</string>
+    <string name="NicegramHidePhoneNumber">Ukryj numer telefonu w ustawieniach</string>
+    <string name="NicegramHidePhoneNumberDesc">Twój numer zostanie ukryty tylko w interfejsie użytkownika. Aby ukryć go przed innymi, użyj ustawień prywatności.</string>
+    <string name="NicegramHideReactions">Ukryj reakcje</string>
     <string name="NicegramDialogPolicy">Polityka prywatności Nicegram</string>
     <string name="NicegramDialogPolicyText">Nicegram to nieoficjalny klient Telegrama, a wiele usług, z których korzystasz za pomocą Nicegrama, jest faktycznie dostarczanych przez firmę Telegram.\n\nPrzed użyciem aplikacji należy zapoznać się z naszą Polityką prywatności.\n\nNaciskając dalej, potwierdzasz przeczytanie i akceptujesz Politykę prywatności Nicegram.</string>
     <string name="NicegramContinue">Kontynuuj</string>
@@ -46,4 +55,13 @@
     <string name="NicegramOnbroadingText4">Skorzystaj z innowacji zespołu Nicegram i zdobądź eSIM z dostępem do Internetu w 133 krajach. Możesz również zarejestrować nowe konta Telegram na numer telefonu planu danych eSIM.</string>
     <string name="NicegramOnbroadingTitle5">Najbezpieczniejszy komunikator</string>
     <string name="NicegramOnbroadingText5">Bezpieczny komunikator z silnym szyfrowaniem, grupowym rozmowami audio i wideo, publicznymi kanałami, grupami i botami, nieograniczonym przechowywaniem w chmurze, udostępnianiem czatów, multimediów i dokumentów.</string>
+    <string name="NicegramDoubleBottomDesc">Aby włączyć tę funkcję, musisz mieć więcej niż jedno konto i włączyć opcję Blokada hasłem (wybierz Ustawienia → Prywatność i bezpieczeństwo → Blokada hasłem)</string>
+    <string name="QuickReplies">Szybkie odpowiedzi</string>
+    <string name="QuickRepliesDesc">Możesz dodać nieograniczoną liczbę odpowiedzi za pomocą poniższego przycisku. Aby użyć szybkiej odpowiedzi, wprowadź **symbol \"&amp;\"** w polu wprowadzania wiadomości.</string>
+    <string name="QuickRepliesEnterText">Wprowadź tekst</string>
+    <string name="QuickRepliesAddNew">Dodaj nowe</string>
+    <string name="NicegramIgnoredLanguages">Zignorowane języki</string>
+    <string name="NicegramImmediateLockIn">Natychmiast</string>
+    <string name="NicegramSaveFolderOnExit">Zapisz folder przy zakończeniu</string>
+    <string name="NicegramRoundVideos">Zapętlone filmy</string>
 </resources>

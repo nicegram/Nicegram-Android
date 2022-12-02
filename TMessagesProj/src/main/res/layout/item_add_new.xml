@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="0dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="16dp"
+        android:drawablePadding="16dp"
+        android:gravity="center_vertical"
+        android:includeFontPadding="false"
+        android:text="@string/QuickRepliesAddNew"
+        android:textColor="#3a95d5"
+        android:textSize="16sp"
+        android:drawableStart="@drawable/ng_ic_add"
+        android:drawableTint="#3a95d5" />
+
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:layout_marginStart="36dp"
+        android:layout_gravity="bottom"
+        android:background="#eee" />
+</FrameLayout>

@@ -65,6 +65,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 
 import app.nicegram.MentionAllHelper;
+import app.nicegram.QuickRepliesHelper;
 
 public class MentionsAdapter extends RecyclerListView.SelectionAdapter implements NotificationCenter.NotificationCenterDelegate {
 
@@ -86,6 +87,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
     private ArrayList<TLObject> searchResultUsernames;
     private LongSparseArray<TLObject> searchResultUsernamesMap;
     private Runnable searchGlobalRunnable;
+    private ArrayList<String> searchResultQuickReplies;
     private ArrayList<String> searchResultHashtags;
     private ArrayList<String> searchResultCommands;
     private ArrayList<String> searchResultCommandsHelp;
@@ -469,6 +471,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
     public void clearRecentHashtags() {
         searchAdapterHelper.clearRecentHashtags();
         searchResultHashtags.clear();
+        searchResultQuickReplies.clear();
         notifyDataSetChanged();
         if (delegate != null) {
             delegate.needChangePanelVisibility(false);
@@ -757,6 +760,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                     cancelDelayRunnable = null;
                 }
                 searchResultHashtags = null;
+                searchResultQuickReplies = null;
                 stickers = null;
                 searchResultUsernames = null;
                 searchResultUsernamesMap = null;
@@ -1048,6 +1052,13 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                             resultLength = result.length() + 1;
                             break;
                         }
+                    } else if (ch == '&') { // ng quick reply
+                        foundType = 99;
+                        resultStartPosition = a;
+                        resultLength = a;
+                        resultLength = result.length() + 1;
+                        result.insert(0, ch);
+                        break;
                     }
                 }
                 result.insert(0, ch);
@@ -1078,7 +1089,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                     if (user == null) {
                         continue;
                     }
-                    if (!TextUtils.isEmpty(user.username) && (usernameString.length() == 0 || user.username.toLowerCase().startsWith(usernameString))) {
+                    String username = UserObject.getPublicUsername(user);
+                    if (!TextUtils.isEmpty(username) && (usernameString.length() == 0 || username.toLowerCase().startsWith(usernameString))) {
                         newResult.add(user);
                         newResultsHashMap.put(user.id, user);
                         newMap.put(user.id, user);
@@ -1115,7 +1127,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                         }
                         firstName = chat.title;
                         lastName = null;
-                        username = chat.username;
+                        username = ChatObject.getPublicUsername(chat);
                         object = chat;
                         id = -chat.id;
                     } else {
@@ -1132,7 +1144,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                         }
                         firstName = user.first_name;
                         lastName = user.last_name;
-                        username = user.username;
+                        username = UserObject.getPublicUsername(user);
                         object = user;
                         id = user.id;
                     }
@@ -1179,6 +1191,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 }
             });
             searchResultHashtags = null;
+            searchResultQuickReplies = null;
             stickers = null;
             searchResultCommands = null;
             searchResultCommandsHelp = null;
@@ -1266,6 +1279,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 }
             }
             searchResultHashtags = newResult;
+            searchResultQuickReplies = null;
             stickers = null;
             searchResultUsernames = null;
             searchResultUsernamesMap = null;
@@ -1275,6 +1289,27 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             searchResultSuggestions = null;
             notifyDataSetChanged();
             delegate.needChangePanelVisibility(!searchResultHashtags.isEmpty());
+        } else if (foundType == 99) {
+            ArrayList<String> newResult = new ArrayList<>();
+            String quickReplyString = result.toString().toLowerCase().substring(1);
+            ArrayList<String> quickReplies = new ArrayList<>(QuickRepliesHelper.INSTANCE.getSavedReplies(currentAccount));
+            for (int a = 0; a < quickReplies.size(); a++) {
+                String reply = quickReplies.get(a);
+                if (reply.toLowerCase().startsWith(quickReplyString)) {
+                    newResult.add(reply);
+                }
+            }
+            searchResultHashtags = null;
+            searchResultQuickReplies = newResult;
+            stickers = null;
+            searchResultUsernames = null;
+            searchResultUsernamesMap = null;
+            searchResultCommands = null;
+            searchResultCommandsHelp = null;
+            searchResultCommandsUsers = null;
+            searchResultSuggestions = null;
+            notifyDataSetChanged();
+            delegate.needChangePanelVisibility(!searchResultQuickReplies.isEmpty());
         } else if (foundType == 2) {
             ArrayList<String> newResult = new ArrayList<>();
             ArrayList<String> newResultHelp = new ArrayList<>();
@@ -1292,6 +1327,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 }
             }
             searchResultHashtags = null;
+            searchResultQuickReplies = null;
             stickers = null;
             searchResultUsernames = null;
             searchResultUsernamesMap = null;
@@ -1310,6 +1346,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             MediaDataController.getInstance(currentAccount).getEmojiSuggestions(lastSearchKeyboardLanguage, result.toString(), false, (param, alias) -> {
                 searchResultSuggestions = param;
                 searchResultHashtags = null;
+                searchResultQuickReplies = null;
                 stickers = null;
                 searchResultUsernames = null;
                 searchResultUsernamesMap = null;
@@ -1321,6 +1358,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             }, true);
         } else if (foundType == 4) {
             searchResultHashtags = null;
+            searchResultQuickReplies = null;
             searchResultUsernames = null;
             searchResultUsernamesMap = null;
             searchResultSuggestions = null;
@@ -1401,6 +1439,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             return searchResultCommands.size();
         } else if (searchResultSuggestions != null) {
             return searchResultSuggestions.size();
+        } else if (searchResultQuickReplies != null) {
+            return searchResultQuickReplies.size();
         }
         return 0;
     }
@@ -1422,6 +1462,9 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         }
         if (searchResultHashtags != null) {
             searchResultHashtags.clear();
+        }
+        if (searchResultQuickReplies != null) {
+            searchResultQuickReplies.clear();
         }
         if (searchResultCommands != null) {
             searchResultCommands.clear();
@@ -1505,6 +1548,11 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 }
             }
             return searchResultCommands.get(i);
+        } else if (searchResultQuickReplies != null) {
+            if (i < 0 || i >= searchResultQuickReplies.size()) {
+                return null;
+            }
+            return searchResultQuickReplies.get(i);
         }
         return null;
     }
@@ -1618,6 +1666,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 ((MentionCell) holder.itemView).setEmojiSuggestion(searchResultSuggestions.get(position));
             } else if (searchResultCommands != null) {
                 ((MentionCell) holder.itemView).setBotCommand(searchResultCommands.get(position), searchResultCommandsHelp.get(position), searchResultCommandsUsers != null ? searchResultCommandsUsers.get(position) : null);
+            } else if (searchResultQuickReplies != null) {
+                ((MentionCell) holder.itemView).setText(searchResultQuickReplies.get(position));
             }
             ((MentionCell) holder.itemView).setDivider(USE_DIVIDERS && (isReversed ? position > 0 : position < getItemCount() - 1));
         }
