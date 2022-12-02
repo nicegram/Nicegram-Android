@@ -3,10 +3,13 @@
     package="com.appvillis.nicegram">
     <application>
         <activity android:name=".presentation.NicegramPremiumActivity"
+            android:exported="false"
             android:theme="@style/AppTheme"
             android:screenOrientation="portrait"/>
 
         <activity android:name=".presentation.NicegramOnboardingActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
             android:theme="@style/AppTheme"
             android:screenOrientation="portrait"/>
     </application>

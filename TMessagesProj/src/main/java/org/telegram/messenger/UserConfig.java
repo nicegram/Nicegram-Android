@@ -27,8 +27,8 @@ import java.util.List;
 public class UserConfig extends BaseController {
 
     public static int selectedAccount;
-    public final static int MAX_ACCOUNT_DEFAULT_COUNT = 10;
-    public final static int MAX_ACCOUNT_COUNT = 10;
+    public final static int MAX_ACCOUNT_DEFAULT_COUNT = 30;
+    public final static int MAX_ACCOUNT_COUNT = 30;
 
     private final Object sync = new Object();
     private boolean configLoaded;
@@ -72,8 +72,10 @@ public class UserConfig extends BaseController {
 
     public String premiumGiftsStickerPack;
     public String genericAnimationsStickerPack;
+    public String defaultTopicIcons;
     public long lastUpdatedPremiumGiftsStickerPack;
     public long lastUpdatedGenericAnimations;
+    public long lastUpdatedDefaultTopicIcons;
 
     public volatile byte[] savedPasswordHash;
     public volatile byte[] savedSaltedPassword;
@@ -409,7 +411,7 @@ public class UserConfig extends BaseController {
         }
     }
 
-    private SharedPreferences getPreferences() {
+    public SharedPreferences getPreferences() {
         if (currentAccount == 0) {
             return ApplicationLoader.applicationContext.getSharedPreferences("userconfing", Context.MODE_PRIVATE);
         } else {

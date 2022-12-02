@@ -116,12 +116,15 @@ object NicegramNetwork {
     }
 
     var chatsUnblocked = false
+    var unblockReasons = mutableListOf<String>()
 
     fun getSettings(userId: Long) {
         ioScope.launch {
             try {
                 val result = nicegramAppApi.getSettings(userId)
                 chatsUnblocked = result.settings.syncChats
+                unblockReasons.clear()
+                unblockReasons.addAll(result.reasons)
             } catch (e: Exception) {
                 if (BuildConfig.DEBUG) e.printStackTrace()
             }

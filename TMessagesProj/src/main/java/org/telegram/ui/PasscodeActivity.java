@@ -50,11 +50,16 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.core_resources.widgets.ToastView;
+import com.google.android.exoplayer2.util.Log;
+import com.mediapark.wcdbce.views.ToastViewHelper;
+
 import app.nicegram.NicegramDoubleBottom;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
@@ -321,29 +326,33 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                         builder.setTitle(LocaleController.getString("AutoLock", R.string.AutoLock));
                         final NumberPicker numberPicker = new NumberPicker(getParentActivity());
                         numberPicker.setMinValue(0);
-                        numberPicker.setMaxValue(4);
+                        numberPicker.setMaxValue(5); // ng immediate auto lock
                         if (SharedConfig.autoLockIn == 0) {
                             numberPicker.setValue(0);
                         } else if (SharedConfig.autoLockIn == 60) {
-                            numberPicker.setValue(1);
-                        } else if (SharedConfig.autoLockIn == 60 * 5) {
                             numberPicker.setValue(2);
-                        } else if (SharedConfig.autoLockIn == 60 * 60) {
+                        } else if (SharedConfig.autoLockIn == 60 * 5) {
                             numberPicker.setValue(3);
-                        } else if (SharedConfig.autoLockIn == 60 * 60 * 5) {
+                        } else if (SharedConfig.autoLockIn == 60 * 60) {
                             numberPicker.setValue(4);
+                        } else if (SharedConfig.autoLockIn == 60 * 60 * 5) {
+                            numberPicker.setValue(5);
+                        } else if (SharedConfig.autoLockIn == 1) { // ng immediate auto lock
+                            numberPicker.setValue(1);
                         }
                         numberPicker.setFormatter(value -> {
                             if (value == 0) {
                                 return LocaleController.getString("AutoLockDisabled", R.string.AutoLockDisabled);
-                            } else if (value == 1) {
-                                return LocaleController.formatString("AutoLockInTime", R.string.AutoLockInTime, LocaleController.formatPluralString("Minutes", 1));
                             } else if (value == 2) {
-                                return LocaleController.formatString("AutoLockInTime", R.string.AutoLockInTime, LocaleController.formatPluralString("Minutes", 5));
+                                return LocaleController.formatString("AutoLockInTime", R.string.AutoLockInTime, LocaleController.formatPluralString("Minutes", 1));
                             } else if (value == 3) {
-                                return LocaleController.formatString("AutoLockInTime", R.string.AutoLockInTime, LocaleController.formatPluralString("Hours", 1));
+                                return LocaleController.formatString("AutoLockInTime", R.string.AutoLockInTime, LocaleController.formatPluralString("Minutes", 5));
                             } else if (value == 4) {
+                                return LocaleController.formatString("AutoLockInTime", R.string.AutoLockInTime, LocaleController.formatPluralString("Hours", 1));
+                            } else if (value == 5) {
                                 return LocaleController.formatString("AutoLockInTime", R.string.AutoLockInTime, LocaleController.formatPluralString("Hours", 5));
+                            } else if (value == 1) {
+                                return LocaleController.getString(R.string.NicegramImmediateLockIn); // ng immediate auto lock
                             }
                             return "";
                         });
@@ -352,14 +361,16 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                             which = numberPicker.getValue();
                             if (which == 0) {
                                 SharedConfig.autoLockIn = 0;
-                            } else if (which == 1) {
-                                SharedConfig.autoLockIn = 60;
                             } else if (which == 2) {
-                                SharedConfig.autoLockIn = 60 * 5;
+                                SharedConfig.autoLockIn = 60;
                             } else if (which == 3) {
-                                SharedConfig.autoLockIn = 60 * 60;
+                                SharedConfig.autoLockIn = 60 * 5;
                             } else if (which == 4) {
+                                SharedConfig.autoLockIn = 60 * 60;
+                            } else if (which == 5) {
                                 SharedConfig.autoLockIn = 60 * 60 * 5;
+                            } else if (which == 1) { // ng immediate auto lock
+                                SharedConfig.autoLockIn = 1;
                             }
                             listAdapter.notifyItemChanged(position);
                             UserConfig.getInstance(currentAccount).saveConfig(false);
@@ -984,7 +995,8 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     codeFieldContainer.codeField[0].requestFocus();
                 }
                 onPasscodeError();
-                Toast.makeText(getParentActivity(), LocaleController.getString("NicegramDoubleBottomAnotherCode"), Toast.LENGTH_LONG).show();
+                ToastView toastView = ToastView.Companion.newInstance(getParentActivity(), LocaleController.getString("NicegramDoubleBottomAnotherCode"), R.drawable.toast_error_icon, true);
+                ToastViewHelper.INSTANCE.showViewToast(toastView, fragmentView, true, true, AndroidUtilities.dp(24));
                 return;
             }
         }
@@ -1073,6 +1085,13 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     SharedConfig.allowScreenCapture = true;
                     SharedConfig.passcodeType = currentPasswordType;
                     SharedConfig.saveConfig();
+
+                    // region ng dbot
+                    if (NicegramDoubleBottom.INSTANCE.isDbotPasscode(firstPassword)) {
+                        if (BuildConfig.DEBUG) Log.d("Double Bottom","Same passcode as DB...Disabling db");
+                        NicegramDoubleBottom.INSTANCE.disableDbot(getContext());
+                    }
+                    // endregion ng dbot
                 }
             } catch (Exception e) {
                 FileLog.e(e);
@@ -1242,6 +1261,8 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                         String val;
                         if (SharedConfig.autoLockIn == 0) {
                             val = LocaleController.formatString("AutoLockDisabled", R.string.AutoLockDisabled);
+                        } else if (SharedConfig.autoLockIn == 1) {
+                            val = LocaleController.getString(R.string.NicegramImmediateLockIn);
                         } else if (SharedConfig.autoLockIn < 60 * 60) {
                             val = LocaleController.formatString("AutoLockInTime", R.string.AutoLockInTime, LocaleController.formatPluralString("Minutes", SharedConfig.autoLockIn / 60));
                         } else if (SharedConfig.autoLockIn < 60 * 60 * 24) {

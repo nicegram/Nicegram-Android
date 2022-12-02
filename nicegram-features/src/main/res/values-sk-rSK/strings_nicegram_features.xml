@@ -12,6 +12,7 @@
     <string name="NicegramUndoTranslate">Vrátiť späť preklad</string>
     <string name="NicegramTranslationUnavailable">Ľutujeme, preklad nie je k dispozícii</string>
     <string name="NicegramForwardAsCopy">Preposlať ako kópiu</string>
+    <string name="NicegramForwardToSave">Uložiť na Cloud</string>
     <string name="NicegramSkipReadHistory">Preskočiť históriu čítania</string>
     <string name="NicegramOlderThan">Starší než</string>
     <string name="NicegramNewerThan">Novší než</string>

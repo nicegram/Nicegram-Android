@@ -32,20 +32,9 @@ dependencies {
     kapt 'com.google.dagger:hilt-compiler:2.40.5'
 }
 
-def getProps(String propName) {
-    def propsFile = rootProject.file('local.properties')
-    if (propsFile.exists()) {
-        def props = new Properties()
-        props.load(new FileInputStream(propsFile))
-        return props[propName]
-    } else {
-        return ""
-    }
-}
-
 android {
-    compileSdkVersion 31
-    buildToolsVersion '31.0.0'
+    compileSdkVersion 33
+    buildToolsVersion '33.0.0'
 
     defaultConfig.applicationId = APP_PACKAGE
 
@@ -198,7 +187,7 @@ android {
 
     defaultConfig {
         minSdkVersion 23
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionName APP_VERSION_NAME
         ndkVersion "21.4.7075529"
 

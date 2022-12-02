@@ -38,17 +38,18 @@ class NicegramPremiumFragment : BaseFragment(R.layout.fragment_nicegram_premium)
             .setStartDelay(1000)
             .setDuration(500)
             .setListener(object : Animator.AnimatorListener {
-                override fun onAnimationStart(animation: Animator?) {
+                override fun onAnimationStart(animation: Animator) {
                 }
 
-                override fun onAnimationEnd(animation: Animator?) {
+                override fun onAnimationEnd(animation: Animator) {
+                    if (getView() == null) return
                     binding?.subscribeButton?.isEnabled = true
                 }
 
-                override fun onAnimationCancel(animation: Animator?) {
+                override fun onAnimationCancel(animation: Animator) {
                 }
 
-                override fun onAnimationRepeat(animation: Animator?) {
+                override fun onAnimationRepeat(animation: Animator) {
                 }
             })
     }

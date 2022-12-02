@@ -22,11 +22,12 @@ object NicegramTranslator {
     }
 
     fun translate(text: String, toLanguage: String, callback: (translatedText: String?) -> Unit) {
+        val toLang = getLangCodeForGoogleTranslate(toLanguage)
         var resultText = ""
         val chunks = text.chunked(MAX_TEXT_SIZE)
         ioScope.launch {
             chunks.forEach { textChunk ->
-                val url = TRANSLATE_URL.format(toLanguage, URLEncoder.encode(textChunk.replace("\n", NEW_LINE_REPLACEMENT), "utf-8"))
+                val url = TRANSLATE_URL.format(toLang, URLEncoder.encode(textChunk.replace("\n", NEW_LINE_REPLACEMENT), "utf-8"))
 
                 try {
                     val document = Jsoup
@@ -49,6 +50,15 @@ object NicegramTranslator {
             }
 
             uiScope.launch { callback(if (resultText.isEmpty()) null else resultText) }
+        }
+    }
+
+    private fun getLangCodeForGoogleTranslate(shortName: String) : String {
+        return when(shortName){
+            "zh_hant_raw" -> "zh-TW"
+            "zh_hans_raw" -> "zh-CN"
+            "pt_br" -> "pt" // "Portuguese (Brazil)" isn't supported in googleTranslate
+            else -> shortName
         }
     }
 }

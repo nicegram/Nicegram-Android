@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="NicegramGetRegistrationDate">دریافت تاریخ ثبت نام</string>
+    <string name="NicegramForwardToSave">ذخیره در فضای ابری</string>
+    <string name="NicegramOpenLinksInBrowser">بازکردن لینک ها در مرورگر</string>
+    <string name="NicegramQuickTranslateButton">دکمه ترجمه سریع</string>
+    <string name="NicegramHidePhoneNumber">پنهان کردن شماره موبایل در تنظیمات</string>
+    <string name="NicegramHidePhoneNumberDesc">شماره شما فقط در رابط کاربری پنهان خواهد شد. برای پنهان کردن آن از دید دیگران ، لطفاً از تنظیمات حریم خصوصی استفاده کنید.</string>
+</resources>

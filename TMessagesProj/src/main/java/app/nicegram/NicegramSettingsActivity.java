@@ -48,20 +48,25 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int downloadVideosToGallery;
     private int hidePhoneNumberRow;
     private int doubleBottomRow;
+    private int quickRepliesRow;
+    private int hideReactionsRow;
     private int rowCount = 0;
 
     @Override
     public boolean onFragmentCreate() {
         nicegramSectionRow = -1;
         unblockGuideRow = rowCount++;
-        skipReadHistoryRow = rowCount++;
-        showProfileIdRow = rowCount++;
-        showRegDateRow = rowCount++;
-        openLinksRow = rowCount++;
         startWithRearCameraRow = rowCount++;
         downloadVideosToGallery = rowCount++;
         hidePhoneNumberRow = rowCount++;
+        quickRepliesRow = rowCount++;
         if (!NicegramDoubleBottom.INSTANCE.getLoggedToDbot()) doubleBottomRow = rowCount++;
+        else doubleBottomRow = -1;
+        showProfileIdRow = rowCount++;
+        showRegDateRow = rowCount++;
+        hideReactionsRow = rowCount++;
+        skipReadHistoryRow = rowCount++;
+        openLinksRow = rowCount++;
 
         return super.onFragmentCreate();
     }
@@ -101,7 +106,13 @@ public class NicegramSettingsActivity extends BaseFragment {
             if (getParentActivity() == null) {
                 return;
             }
-            if (position == startWithRearCameraRow) {
+            if (position == hideReactionsRow) {
+                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, NicegramPrefs.PREF_HIDE_REACTIONS_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, !enabled);
+                editor.apply();
+            } else if (position == startWithRearCameraRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
                 enabled = preferences.getBoolean(NicegramPrefs.PREF_START_WITH_REAR_CAMERA, NicegramPrefs.PREF_START_WITH_REAR_CAMERA_DEFAULT);
@@ -157,6 +168,8 @@ public class NicegramSettingsActivity extends BaseFragment {
                         presentFragment(new PasscodeActivity(PasscodeActivity.TYPE_SETUP_CODE, true), true);
                     }
                 }
+            } else if (position == quickRepliesRow) {
+                presentFragment(new QuickRepliesNgFragment());
             }
             if (view instanceof TextCheckCell && position != doubleBottomRow) {
                 ((TextCheckCell) view).setChecked(!enabled);
@@ -243,13 +256,19 @@ public class NicegramSettingsActivity extends BaseFragment {
                     } else if (position == downloadVideosToGallery) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramDownloadVideosToGallery"), preferences.getBoolean(NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY, NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY_DEFAULT), false);
                     } else if (position == hidePhoneNumberRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("NicegramHidePhoneNumber"), preferences.getBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, NicegramPrefs.PREF_HIDE_PHONE_NUMBER_DEFAULT), false);
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramHidePhoneNumber"), LocaleController.getString("NicegramHidePhoneNumberDesc"), preferences.getBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, NicegramPrefs.PREF_HIDE_PHONE_NUMBER_DEFAULT), true, false);
+                    } else if (position == hideReactionsRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("NicegramHideReactions"), preferences.getBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, NicegramPrefs.PREF_HIDE_REACTIONS_DEFAULT), false);
                     }
                     break;
                 }
                 case 2: {
                     TextCell textCell = (TextCell) holder.itemView;
-                    textCell.setText(LocaleController.getString("NicegramUnblockGuide"), false);
+                    if (position == unblockGuideRow) {
+                        textCell.setText(LocaleController.getString("NicegramUnblockGuide"), false);
+                    } else if (position == quickRepliesRow) {
+                        textCell.setText("Quick replies", false);
+                    }
                     break;
                 }
             }
@@ -262,12 +281,10 @@ public class NicegramSettingsActivity extends BaseFragment {
             } else if (position == skipReadHistoryRow || position == openLinksRow ||
                     position == showRegDateRow || position == showProfileIdRow ||
                     position == startWithRearCameraRow || position == downloadVideosToGallery ||
-                    position == hidePhoneNumberRow) {
+                    position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow) {
                 return 1;
-            } else if (position == unblockGuideRow) {
+            } else if (position == unblockGuideRow || position == quickRepliesRow) {
                 return 2;
-            } else if (position == doubleBottomRow) {
-                return 1;
             } else {
                 return 0;
             }
