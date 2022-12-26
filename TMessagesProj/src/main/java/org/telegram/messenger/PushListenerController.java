@@ -25,6 +25,8 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
+import app.nicegram.PrefsHelper;
+
 public class PushListenerController {
     public static final int PUSH_TYPE_FIREBASE = 2,
         PUSH_TYPE_HUAWEI = 13;
@@ -391,7 +393,13 @@ public class PushListenerController {
                             }
 
                             if (loc_key.startsWith("REACT_") || loc_key.startsWith("CHAT_REACT_")) {
-                                processNotification = true;
+                                // region ng hide reactions
+                                if (PrefsHelper.INSTANCE.hideReactions(currentAccount)) {
+                                    processNotification = false;
+                                } else {
+                                    processNotification = true;
+                                }
+                                // endregion ng hide reactions
                             }
 
                             if (processNotification) {

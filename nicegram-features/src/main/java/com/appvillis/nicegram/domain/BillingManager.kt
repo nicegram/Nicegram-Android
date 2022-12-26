@@ -2,9 +2,10 @@ package com.appvillis.nicegram.domain
 
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.SkuDetails
+import com.appvillis.feature_powerball.domain.SocialInfoProvider
 import kotlinx.coroutines.flow.Flow
 
-interface BillingManager {
+interface BillingManager : SocialInfoProvider {
     fun initializeBilling()
     fun restore()
 
