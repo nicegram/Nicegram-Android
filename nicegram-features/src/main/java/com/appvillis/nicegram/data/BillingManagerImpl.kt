@@ -3,10 +3,12 @@ package com.appvillis.nicegram.data
 import android.content.Context
 import android.util.Log
 import com.android.billingclient.api.*
+import com.appvillis.feature_powerball.domain.SocialInfoProvider
 import com.appvillis.nicegram.domain.BillingManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import timber.log.Timber
 
 class BillingManagerImpl(
@@ -123,6 +125,9 @@ class BillingManagerImpl(
             if (it.purchaseState == Purchase.PurchaseState.PURCHASED) {
                 if (!it.isAcknowledged) acknowledge(it)
                 _userHasActiveSub = true
+                appCoroutineScope.launch {
+                    _premiumInfo.emit(SocialInfoProvider.PremiumInfo(it.purchaseToken, it.skus[0]))
+                }
             }
         }
     }
@@ -157,7 +162,20 @@ class BillingManagerImpl(
             if (it.purchaseState == Purchase.PurchaseState.PURCHASED) {
                 if (!it.isAcknowledged) acknowledge(it)
                 _userHasActiveSub = true
+                appCoroutineScope.launch {
+                    _premiumInfo.emit(SocialInfoProvider.PremiumInfo(it.purchaseToken, it.skus[0]))
+                }
+            }
+        }
+
+        if (!_userHasActiveSub) {
+            appCoroutineScope.launch {
+                _premiumInfo.emit(null)
             }
         }
     }
+
+    private val _premiumInfo = MutableStateFlow<SocialInfoProvider.PremiumInfo?>(null)
+    override val premiumInfo: Flow<SocialInfoProvider.PremiumInfo?>
+        get() = _premiumInfo
 }
