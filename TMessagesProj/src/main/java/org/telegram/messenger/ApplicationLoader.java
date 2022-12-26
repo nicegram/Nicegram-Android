@@ -34,6 +34,8 @@ import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStat
 import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase;
 import com.appvillis.feature_nicegram_assistant.domain.SetNicegramOnboardingStatusUseCase;
 import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository;
+import com.appvillis.feature_powerball.domain.GetPowerballMetadataUseCase;
+import com.appvillis.feature_powerball.domain.PowerballRepository;
 import com.appvillis.nicegram.NicegramAssistantHelper;
 import androidx.annotation.NonNull;
 import androidx.multidex.MultiDex;
@@ -105,6 +107,10 @@ public class ApplicationLoader extends Application {
     public SpecialOffersRepository specialOffersRepository;
     @Inject
     public BillingManager billingManager;
+    @Inject
+    public PowerballRepository powerballRepository;
+    @Inject
+    public GetPowerballMetadataUseCase getPowerballMetadataUseCase;
 
     private static ApplicationLoader appInstance = null;
     public static ApplicationLoader getInstance() {
@@ -568,6 +574,8 @@ public class ApplicationLoader extends Application {
     private void initNicegram() {
         NicegramDoubleBottom.INSTANCE.init(this);
 
+        powerballRepository.setSocialInfoProvider(billingManager);
+        powerballRepository.refreshTickets();
         billingManager.initializeBilling();
         userRepository.initialize();
         specialOffersRepository.initialize();
@@ -578,6 +586,7 @@ public class ApplicationLoader extends Application {
         NicegramFeaturesHelper.INSTANCE.setNicegramFeaturesOnboardingUseCase(nicegramFeaturesOnboardingUseCase);
         NicegramAssistantHelper.INSTANCE.setGetSpecialOfferUseCase(getSpecialOfferUseCase);
         NicegramAssistantHelper.INSTANCE.setAppSessionControlUseCase(appSessionControlUseCase);
+        NicegramAssistantHelper.INSTANCE.setPowerballMetadataUseCase(getPowerballMetadataUseCase);
 
         NicegramBillingHelper.INSTANCE.setBillingManager(billingManager);
 

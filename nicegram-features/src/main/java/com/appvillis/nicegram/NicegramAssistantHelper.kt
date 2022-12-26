@@ -4,11 +4,13 @@ import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStat
 import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase
 import com.appvillis.feature_nicegram_assistant.domain.SetNicegramOnboardingStatusUseCase
 import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository
+import com.appvillis.feature_powerball.domain.GetPowerballMetadataUseCase
 import com.appvillis.rep_user.domain.AppSessionControlUseCase
 
 object NicegramAssistantHelper {
     var getNicegramOnboardingStatusUseCase: GetNicegramOnboardingStatusUseCase? = null
     var setNicegramOnboardingStatusUseCase: SetNicegramOnboardingStatusUseCase? = null
+    var powerballMetadataUseCase: GetPowerballMetadataUseCase? = null
     var getSpecialOfferUseCase: GetSpecialOfferUseCase? = null
     var appSessionControlUseCase: AppSessionControlUseCase? = null
 
