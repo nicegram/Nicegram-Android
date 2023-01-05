@@ -27,8 +27,8 @@ import java.util.List;
 public class UserConfig extends BaseController {
 
     public static int selectedAccount;
-    public final static int MAX_ACCOUNT_DEFAULT_COUNT = 30;
-    public final static int MAX_ACCOUNT_COUNT = 30;
+    public final static int MAX_ACCOUNT_DEFAULT_COUNT = 100;
+    public final static int MAX_ACCOUNT_COUNT = 100;
 
     private final Object sync = new Object();
     private boolean configLoaded;
