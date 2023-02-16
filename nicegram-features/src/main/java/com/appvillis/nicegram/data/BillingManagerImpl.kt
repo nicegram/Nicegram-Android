@@ -31,6 +31,8 @@ class BillingManagerImpl(
     override val subPurchasedFlow: Flow<Unit>
         get() = _subPurchasedFlow
 
+    override var userHasGiftedPremium = false
+
     private var _userHasActiveSub = false
         set(value) {
             field = value

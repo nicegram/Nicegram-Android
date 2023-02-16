@@ -12,6 +12,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.util.Base64;
+import android.util.LongSparseArray;
+import android.util.SparseArray;
+import android.util.SparseLongArray;
 
 import app.nicegram.NicegramDoubleBottom;
 
@@ -27,8 +30,8 @@ import java.util.List;
 public class UserConfig extends BaseController {
 
     public static int selectedAccount;
-    public final static int MAX_ACCOUNT_DEFAULT_COUNT = 100;
-    public final static int MAX_ACCOUNT_COUNT = 100;
+    public static int MAX_ACCOUNT_DEFAULT_COUNT = 100;
+    public static int MAX_ACCOUNT_COUNT = 100;
 
     private final Object sync = new Object();
     private boolean configLoaded;
@@ -80,6 +83,10 @@ public class UserConfig extends BaseController {
     public volatile byte[] savedPasswordHash;
     public volatile byte[] savedSaltedPassword;
     public volatile long savedPasswordTime;
+    LongSparseArray<SaveToGallerySettingsHelper.DialogException> userSaveGalleryExceptions;
+    LongSparseArray<SaveToGallerySettingsHelper.DialogException> chanelSaveGalleryExceptions;
+    LongSparseArray<SaveToGallerySettingsHelper.DialogException> groupsSaveGalleryExceptions;
+
 
     private static volatile UserConfig[] Instance = new UserConfig[UserConfig.MAX_ACCOUNT_COUNT];
     public static UserConfig getInstance(int num) {
@@ -290,6 +297,7 @@ public class UserConfig extends BaseController {
             SharedPreferences preferences = getPreferences();
             if (currentAccount == 0) {
                 selectedAccount = preferences.getInt("selectedAccount", 0);
+                if (selectedAccount >= UserConfig.MAX_ACCOUNT_COUNT) selectedAccount = 0; // ng
             }
             registeredForPush = preferences.getBoolean("registeredForPush", false);
             lastSendMessageId = preferences.getInt("lastSendMessageId", -210000);
@@ -419,6 +427,48 @@ public class UserConfig extends BaseController {
         }
     }
 
+    public LongSparseArray<SaveToGallerySettingsHelper.DialogException> getSaveGalleryExceptions(int type) {
+        if (type == SharedConfig.SAVE_TO_GALLERY_FLAG_PEER) {
+            if (userSaveGalleryExceptions == null) {
+                userSaveGalleryExceptions = SaveToGallerySettingsHelper.loadExceptions(ApplicationLoader.applicationContext.getSharedPreferences(SaveToGallerySettingsHelper.USERS_PREF_NAME + "_" + currentAccount, Context.MODE_PRIVATE));
+            }
+            return userSaveGalleryExceptions;
+        } else if (type == SharedConfig.SAVE_TO_GALLERY_FLAG_GROUP) {
+            if (groupsSaveGalleryExceptions == null) {
+                groupsSaveGalleryExceptions = SaveToGallerySettingsHelper.loadExceptions(ApplicationLoader.applicationContext.getSharedPreferences(SaveToGallerySettingsHelper.GROUPS_PREF_NAME + "_" + currentAccount, Context.MODE_PRIVATE));
+            }
+            return groupsSaveGalleryExceptions;
+        } else  if (type == SharedConfig.SAVE_TO_GALLERY_FLAG_CHANNELS) {
+            if (chanelSaveGalleryExceptions == null) {
+                chanelSaveGalleryExceptions = SaveToGallerySettingsHelper.loadExceptions(ApplicationLoader.applicationContext.getSharedPreferences(SaveToGallerySettingsHelper.CHANNELS_PREF_NAME + "_" + currentAccount, Context.MODE_PRIVATE));
+            }
+            return chanelSaveGalleryExceptions;
+        }
+        return null;
+    }
+
+    public void updateSaveGalleryExceptions(int type, LongSparseArray<SaveToGallerySettingsHelper.DialogException> exceptions) {
+        if (type == SharedConfig.SAVE_TO_GALLERY_FLAG_PEER) {
+            userSaveGalleryExceptions = exceptions;
+            SaveToGallerySettingsHelper.saveExceptions(
+                    ApplicationLoader.applicationContext.getSharedPreferences(SaveToGallerySettingsHelper.USERS_PREF_NAME + "_" + currentAccount, Context.MODE_PRIVATE),
+                    userSaveGalleryExceptions
+            );
+        } else if (type == SharedConfig.SAVE_TO_GALLERY_FLAG_GROUP) {
+            groupsSaveGalleryExceptions = exceptions;
+            SaveToGallerySettingsHelper.saveExceptions(
+                    ApplicationLoader.applicationContext.getSharedPreferences(SaveToGallerySettingsHelper.GROUPS_PREF_NAME + "_" + currentAccount, Context.MODE_PRIVATE),
+                    groupsSaveGalleryExceptions
+            );
+        } else  if (type == SharedConfig.SAVE_TO_GALLERY_FLAG_CHANNELS) {
+            chanelSaveGalleryExceptions = exceptions;
+            SaveToGallerySettingsHelper.saveExceptions(
+                    ApplicationLoader.applicationContext.getSharedPreferences(SaveToGallerySettingsHelper.CHANNELS_PREF_NAME + "_" + currentAccount, Context.MODE_PRIVATE),
+                    chanelSaveGalleryExceptions
+            );
+        }
+    }
+
     public void clearConfig() {
         getPreferences().edit().clear().apply();
 
@@ -520,16 +570,7 @@ public class UserConfig extends BaseController {
     }
 
     public Long getEmojiStatus() {
-        if (currentUser == null) {
-            return null;
-        }
-        if (currentUser.emoji_status instanceof TLRPC.TL_emojiStatusUntil && ((TLRPC.TL_emojiStatusUntil) currentUser.emoji_status).until > (int) (System.currentTimeMillis() / 1000)) {
-            return ((TLRPC.TL_emojiStatusUntil) currentUser.emoji_status).document_id;
-        }
-        if (currentUser.emoji_status instanceof TLRPC.TL_emojiStatus) {
-            return ((TLRPC.TL_emojiStatus) currentUser.emoji_status).document_id;
-        }
-        return null;
+        return UserObject.getEmojiStatusDocumentId(currentUser);
     }
 
 

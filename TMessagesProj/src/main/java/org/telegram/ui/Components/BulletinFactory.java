@@ -154,6 +154,15 @@ public final class BulletinFactory {
         return create(layout, text.length() < 20 ? Bulletin.DURATION_SHORT : Bulletin.DURATION_LONG);
     }
 
+    public Bulletin createSimpleBulletin(int iconRawId, CharSequence text, int maxLines) {
+        final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(getContext(), resourcesProvider);
+        layout.setAnimation(iconRawId, 36, 36);
+        layout.textView.setText(text);
+        layout.textView.setSingleLine(false);
+        layout.textView.setMaxLines(maxLines);
+        return create(layout, text.length() < 20 ? Bulletin.DURATION_SHORT : Bulletin.DURATION_LONG);
+    }
+
     public Bulletin createSimpleBulletin(int iconRawId, CharSequence text, CharSequence subtext) {
         final Bulletin.TwoLineLottieLayout layout = new Bulletin.TwoLineLottieLayout(getContext(), resourcesProvider);
         layout.setAnimation(iconRawId, 36, 36);
@@ -170,6 +179,7 @@ public final class BulletinFactory {
         final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(getContext(), resourcesProvider);
         layout.setAnimation(iconRawId, 36, 36);
         layout.textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+        layout.textView.setTextDirection(View.TEXT_DIRECTION_LOCALE);
         layout.textView.setSingleLine(false);
         layout.textView.setMaxLines(3);
         layout.textView.setText(text);
@@ -291,12 +301,28 @@ public final class BulletinFactory {
         return createEmojiBulletin(MediaDataController.getInstance(UserConfig.selectedAccount).getEmojiAnimatedSticker(emoji), text, button, onButtonClick);
     }
 
+    public Bulletin createEmojiBulletin(TLRPC.Document document, CharSequence text) {
+        final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(getContext(), resourcesProvider);
+        if (MessageObject.isTextColorEmoji(document)) {
+            layout.imageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_undo_infoColor), PorterDuff.Mode.SRC_IN));
+        }
+        layout.setAnimation(document, 36, 36);
+        layout.textView.setText(text);
+        layout.textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+        layout.textView.setSingleLine(false);
+        layout.textView.setMaxLines(3);
+        return create(layout, Bulletin.DURATION_LONG);
+    }
+
     public Bulletin createEmojiBulletin(TLRPC.Document document, CharSequence text, CharSequence button, Runnable onButtonClick) {
         final Bulletin.LottieLayout layout = new Bulletin.LottieLayout(getContext(), resourcesProvider);
         if (MessageObject.isTextColorEmoji(document)) {
             layout.imageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_undo_infoColor), PorterDuff.Mode.SRC_IN));
         }
         layout.setAnimation(document, 36, 36);
+        if (layout.imageView.getImageReceiver() != null) {
+            layout.imageView.getImageReceiver().setRoundRadius(AndroidUtilities.dp(4));
+        }
         layout.textView.setText(text);
         layout.textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
         layout.textView.setSingleLine(false);
@@ -351,7 +377,7 @@ public final class BulletinFactory {
             if (loadingSpan != null && bulletin.getLayout() instanceof Bulletin.LoadingLottieLayout) {
                 loadingSpan.setView(((Bulletin.LoadingLottieLayout) bulletin.getLayout()).textLoadingView);
             }
-            MediaDataController.getInstance(UserConfig.selectedAccount).getStickerSet(inputStickerSet, false, set -> {
+            MediaDataController.getInstance(UserConfig.selectedAccount).getStickerSet(inputStickerSet, null, false, set -> {
                 CharSequence message;
                 if (set != null && set.set != null) {
                     if (inTopic) {
