@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RawRes
 import androidx.annotation.StringRes
+import androidx.core.view.isInvisible
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -27,27 +28,27 @@ class NicegramOnboardingFragment : BaseFragment(R.layout.fragment_ng_onboarding)
     private val adapter by lazy {
         OnboardingAdapter(
             LayoutInflater.from(requireContext()), listOf(
-                OnboardingItem(
+                OnboardingVH.OnboardingItem(
                     R.string.NicegramOnbroadingTitle1,
                     R.string.NicegramOnbroadingText1,
                     R.raw.ng_onboarding_1
                 ),
-                OnboardingItem(
+                OnboardingVH.OnboardingItem(
                     R.string.NicegramOnbroadingTitle2,
                     R.string.NicegramOnbroadingText2,
                     R.raw.ng_onboarding_2
                 ),
-                OnboardingItem(
+                OnboardingVH.OnboardingItem(
                     R.string.NicegramOnbroadingTitle3,
                     R.string.NicegramOnbroadingText3,
                     R.raw.ng_onboarding_3
                 ),
-                OnboardingItem(
+                OnboardingVH.OnboardingItem(
                     R.string.NicegramOnbroadingTitle4,
                     R.string.NicegramOnbroadingText4,
                     R.raw.ng_onboarding_4
                 ),
-                OnboardingItem(
+                OnboardingVH.OnboardingItem(
                     R.string.NicegramOnbroadingTitle5,
                     R.string.NicegramOnbroadingText5,
                     R.raw.ng_onboarding_5
@@ -69,8 +70,7 @@ class NicegramOnboardingFragment : BaseFragment(R.layout.fragment_ng_onboarding)
                 binding.continueButton.isEnabled = false
                 binding.continueButton.isClickable = false
                 requireActivity().onBackPressed()
-            }
-            else binding.viewPager.currentItem++
+            } else binding.viewPager.currentItem++
         }
     }
 
@@ -80,6 +80,8 @@ class NicegramOnboardingFragment : BaseFragment(R.layout.fragment_ng_onboarding)
         binding.viewPager.isUserInputEnabled = false
 
         binding.indicatorView.attachTo(binding.viewPager)
+        binding.indicatorView.isInvisible = true
+        binding.indicatorView.postDelayed( { binding.indicatorView.isInvisible = false }, 1000)
 
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -95,31 +97,15 @@ class NicegramOnboardingFragment : BaseFragment(R.layout.fragment_ng_onboarding)
         super.onResume()
 
         adapter.holders.forEach {
-            if (adapter.currentItem == it.key) it.value.startVideo()
+            if (binding.viewPager.currentItem == it.key) it.value.startVideo()
         }
     }
-
-    override fun onPause() {
-        super.onPause()
-
-        adapter.holders.forEach {
-            if (adapter.currentItem == it.key) it.value.startVideo()
-        }
-    }
-
 
     class OnboardingAdapter(
         private val inflater: LayoutInflater,
-        private val items: List<OnboardingItem>
+        private val items: List<OnboardingVH.OnboardingItem>
     ) : RecyclerView.Adapter<OnboardingVH>() {
-        var currentItem = 0
-            set(value) {
-                field = value
-                notifyItemChanged(value)
-            }
-
         val holders = mutableMapOf<Int, OnboardingVH>()
-
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
             OnboardingVH(ItemNgOnboardingBinding.inflate(inflater, parent, false))
@@ -127,20 +113,31 @@ class NicegramOnboardingFragment : BaseFragment(R.layout.fragment_ng_onboarding)
         override fun onBindViewHolder(holder: OnboardingVH, position: Int) {
             holders[position] = holder
             holder.bind(items[position], position != 0)
+            holder.itemView.setOnClickListener { holder.binding.videoView.start() }
         }
 
         override fun getItemCount() = items.size
     }
 
-    class OnboardingVH(private val binding: ItemNgOnboardingBinding) :
+    class OnboardingVH(val binding: ItemNgOnboardingBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
+        var videoViewIsPrepared = false
+        var seekTo = 0
+
         fun startVideo() {
-            binding.videoView.post { binding.videoView.start() }
+            binding.videoView.post {
+                if (videoViewIsPrepared) {
+                    binding.videoView.start()
+                    if (seekTo > 0) binding.videoView.seekTo(seekTo)
+                }
+            }
         }
 
         fun pauseVideo() {
-            binding.videoView.post { binding.videoView.pause() }
+            binding.videoView.post {
+                binding.videoView.pause()
+            }
         }
 
         fun bind(item: OnboardingItem, needSeek: Boolean) {
@@ -151,17 +148,19 @@ class NicegramOnboardingFragment : BaseFragment(R.layout.fragment_ng_onboarding)
 
             if (binding.videoView.tag != path) {
                 binding.videoView.tag = path
-                binding.videoView.setVideoURI(Uri.parse(path))
                 binding.videoView.setOnPreparedListener {
-                    if (needSeek) binding.videoView.seekTo(500)
+                    seekTo = if (needSeek) 500 else 0
+                    videoViewIsPrepared = true
                 }
+                videoViewIsPrepared = false
+                binding.videoView.postDelayed({ binding.videoView.setVideoURI(Uri.parse(path)) }, 0)
             }
         }
-    }
 
-    class OnboardingItem(
-        @StringRes val title: Int,
-        @StringRes val desc: Int,
-        @RawRes val video: Int
-    )
+        class OnboardingItem(
+            @StringRes val title: Int,
+            @StringRes val desc: Int,
+            @RawRes val video: Int
+        )
+    }
 }

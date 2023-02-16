@@ -14,6 +14,7 @@ interface BillingManager : SocialInfoProvider {
     val sub: Sub?
 
     val userHasActiveSub: Boolean
+    var userHasGiftedPremium: Boolean
 
     val subPurchasedFlow: Flow<Unit>
 

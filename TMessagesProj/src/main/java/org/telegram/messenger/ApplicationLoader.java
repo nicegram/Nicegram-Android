@@ -42,8 +42,12 @@ import androidx.multidex.MultiDex;
 
 import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.NicegramFeaturesHelper;
+import com.appvillis.nicegram.ReviewHelper;
 import com.appvillis.nicegram.domain.BillingManager;
+import com.appvillis.nicegram.domain.CollectGroupInfoUseCase;
 import com.appvillis.nicegram.domain.NicegramFeaturesOnboardingUseCase;
+import com.appvillis.nicegram.domain.NicegramSessionCounter;
+import com.appvillis.nicegram.domain.RemoteConfigRepo;
 import com.appvillis.nicegram.network.NicegramNetwork;
 import com.appvillis.rep_user.domain.AppSessionControlUseCase;
 import com.appvillis.rep_user.domain.UserRepository;
@@ -111,6 +115,10 @@ public class ApplicationLoader extends Application {
     public PowerballRepository powerballRepository;
     @Inject
     public GetPowerballMetadataUseCase getPowerballMetadataUseCase;
+    @Inject
+    public RemoteConfigRepo remoteConfigRepo;
+    @Inject
+    public NicegramSessionCounter nicegramSessionCounter;
 
     private static ApplicationLoader appInstance = null;
     public static ApplicationLoader getInstance() {
@@ -284,6 +292,11 @@ public class ApplicationLoader extends Application {
 
     @Override
     public void onCreate() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            UserConfig.MAX_ACCOUNT_COUNT = 30;
+            UserConfig.MAX_ACCOUNT_DEFAULT_COUNT = 30;
+        }
+
         applicationLoaderInstance = this;
         appInstance = this;
         try {
@@ -325,6 +338,7 @@ public class ApplicationLoader extends Application {
         AndroidUtilities.runOnUIThread(ApplicationLoader::startPushService);
 
         LauncherIconController.tryFixLauncherIconIfNeeded();
+        ProxyRotationController.init();
     }
 
     public static void startPushService() {
@@ -574,8 +588,11 @@ public class ApplicationLoader extends Application {
     private void initNicegram() {
         NicegramDoubleBottom.INSTANCE.init(this);
 
+        nicegramSessionCounter.increaseSessionCount();
+        ReviewHelper.INSTANCE.setNicegramSessionCounter(nicegramSessionCounter);
+
+        remoteConfigRepo.initialize();
         powerballRepository.setSocialInfoProvider(billingManager);
-        powerballRepository.refreshTickets();
         billingManager.initializeBilling();
         userRepository.initialize();
         specialOffersRepository.initialize();
