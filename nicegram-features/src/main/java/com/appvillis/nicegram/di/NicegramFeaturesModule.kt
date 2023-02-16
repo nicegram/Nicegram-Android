@@ -2,12 +2,8 @@ package com.appvillis.nicegram.di
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.appvillis.nicegram.data.BillingManagerImpl
-import com.appvillis.nicegram.data.NicegramFeaturesPrefsRepositoryImpl
-import com.appvillis.nicegram.domain.BillingManager
-import com.appvillis.nicegram.domain.GetBillingSkusUseCase
-import com.appvillis.nicegram.domain.NicegramFeaturesOnboardingUseCase
-import com.appvillis.nicegram.domain.NicegramFeaturesPrefsRepository
+import com.appvillis.nicegram.data.*
+import com.appvillis.nicegram.domain.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -57,4 +53,21 @@ object NicegramFeaturesModule {
     @Singleton
     fun provideNicegramFeaturesOnboardingUseCase(nicegramFeaturesPrefsRepository: NicegramFeaturesPrefsRepository) =
         NicegramFeaturesOnboardingUseCase(nicegramFeaturesPrefsRepository)
+
+    @Provides
+    @Singleton
+    fun provideRemoteConfigRepo(): RemoteConfigRepo = RemoteConfigRepoImpl()
+
+
+    @Provides
+    @Singleton
+    fun provideCollectGroupInfoUseCase(remoteConfigRepo: RemoteConfigRepo, groupCollectRepo: GroupCollectRepo) = CollectGroupInfoUseCase(remoteConfigRepo, groupCollectRepo)
+
+    @Provides
+    @Singleton
+    fun provideGroupCollectRepo(@Named(PREFS_NAME) prefs: SharedPreferences): GroupCollectRepo = GroupCollectRepoImpl(prefs)
+
+    @Provides
+    @Singleton
+    fun provideNicegramSessionCounter(@Named(PREFS_NAME) prefs: SharedPreferences): NicegramSessionCounter = NicegramSessionCounterImpl(prefs)
 }

@@ -15,7 +15,6 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 
     <application
-        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher_default"
         android:roundIcon="@mipmap/ic_launcher_default_round"
         android:label="@string/AppNameBeta"

@@ -10,8 +10,10 @@ import android.widget.Toast;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.NicegramConsts;
 import com.appvillis.nicegram.NicegramPrefs;
+import com.appvillis.nicegram.network.NicegramNetwork;
 
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -33,6 +35,9 @@ import org.telegram.ui.PasscodeActivity;
 
 import java.util.ArrayList;
 
+import kotlin.Unit;
+import kotlin.jvm.functions.Function1;
+
 public class NicegramSettingsActivity extends BaseFragment {
 
     private RecyclerListView listView;
@@ -48,6 +53,7 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int downloadVideosToGallery;
     private int hidePhoneNumberRow;
     private int doubleBottomRow;
+    private int restoreRow;
     private int quickRepliesRow;
     private int hideReactionsRow;
     private int rowCount = 0;
@@ -62,6 +68,7 @@ public class NicegramSettingsActivity extends BaseFragment {
         quickRepliesRow = rowCount++;
         if (!NicegramDoubleBottom.INSTANCE.getLoggedToDbot()) doubleBottomRow = rowCount++;
         else doubleBottomRow = -1;
+        restoreRow = rowCount++;
         showProfileIdRow = rowCount++;
         showRegDateRow = rowCount++;
         hideReactionsRow = rowCount++;
@@ -170,6 +177,15 @@ public class NicegramSettingsActivity extends BaseFragment {
                 }
             } else if (position == quickRepliesRow) {
                 presentFragment(new QuickRepliesNgFragment());
+            } else if (position == restoreRow) {
+                NicegramNetwork.INSTANCE.restorePremium(getAccountInstance().getUserConfig().clientUserId, success -> {
+                    if (success) {
+                        NicegramBillingHelper.INSTANCE.setGiftedPremium(true);
+                    } else {
+                        Toast.makeText(getParentActivity(), R.string.NicegramRequestIsPending, Toast.LENGTH_LONG).show();
+                    }
+                    return null;
+                });
             }
             if (view instanceof TextCheckCell && position != doubleBottomRow) {
                 ((TextCheckCell) view).setChecked(!enabled);
@@ -267,7 +283,9 @@ public class NicegramSettingsActivity extends BaseFragment {
                     if (position == unblockGuideRow) {
                         textCell.setText(LocaleController.getString("NicegramUnblockGuide"), false);
                     } else if (position == quickRepliesRow) {
-                        textCell.setText("Quick replies", false);
+                        textCell.setText(LocaleController.getString("QuickReplies"), false);
+                    } else if (position == restoreRow) {
+                        textCell.setText(LocaleController.getString("NicegramRestorePremium"), false);
                     }
                     break;
                 }
@@ -283,7 +301,7 @@ public class NicegramSettingsActivity extends BaseFragment {
                     position == startWithRearCameraRow || position == downloadVideosToGallery ||
                     position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow) {
                 return 1;
-            } else if (position == unblockGuideRow || position == quickRepliesRow) {
+            } else if (position == unblockGuideRow || position == quickRepliesRow || position == restoreRow) {
                 return 2;
             } else {
                 return 0;

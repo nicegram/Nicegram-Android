@@ -74,6 +74,9 @@
     <string name="NicegramSaveFolderOnExit">Save folder on exit</string>
     <string name="NicegramRoundVideos">Round videos</string>
 
+    <string name="NicegramRestorePremium">Restore premium</string>
+    <string name="NicegramRequestIsPending">Your request is pending. Please, wait until Nicegram Bot approves it</string>
+
     <string name="NicegramIconDefault" translatable="false">Default</string>
     <string name="NicegramIconMonoBlack" translatable="false">Mono Black</string>
     <string name="NicegramIconFilled" translatable="false">Filled</string>

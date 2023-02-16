@@ -82,7 +82,9 @@
     </queries>
 
     <application
-        android:allowBackup="false"
+        android:allowBackup="true"
+        android:restoreAnyVersion="true"
+        android:backupAgent=".BackupAgent"
         android:hardwareAccelerated="@bool/useHardwareAcceleration"
         android:largeHeap="true"
         android:theme="@style/Theme.TMessages.Start"
