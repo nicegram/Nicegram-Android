@@ -68,4 +68,9 @@
     <string name="NicegramImmediateLockIn">Inmediato</string>
     <string name="NicegramSaveFolderOnExit">Guardar carpeta al salir</string>
     <string name="NicegramRoundVideos">Vídeos redondos</string>
+    <string name="NicegramRestorePremium">Restaurar prémium</string>
+    <string name="NicegramRequestIsPending">Su solicitud está en curso. Por favor, espere hasta que Nicegram Bot lo apruebe</string>
+    <string name="NicegramShareChannelInfo">Comparta información del canal</string>
+    <string name="NicegramShareChannelInfoDesc">Contribuya a la Wikipedia más completa de canales y grupos de Telegram enviando automáticamente la información del canal y el enlace a nuestra base de datos. No conectamos su perfil y canal de Telegram y no compartimos sus datos personales.</string>
+    <string name="NicegarmBypassCopyProtection">Ignorar la protección contra copias</string>
 </resources>

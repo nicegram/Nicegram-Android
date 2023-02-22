@@ -4,6 +4,7 @@
     <string name="MentionAllUsers">Menziona tutti gli utenti</string>
     <string name="For20OrLessChats">Per chat con meno di 20 persone</string>
     <string name="NicegramSettings">Impostazioni di Nicegram</string>
+    <string name="NicegramRestrict">Limita</string>
     <string name="NicegramReplyPrivately">Rispondi in privato</string>
     <string name="NicegramRegistered">Iscritto</string>
     <string name="NicegramGetRegistrationDate">Ottieni data registrazione</string>
@@ -11,6 +12,8 @@
     <string name="NicegramLoading">Caricamento in corso…</string>
     <string name="NicegramRegDateError">Impossibile ottenere la data di iscrizione</string>
     <string name="NicegramUndoTranslate">Annulla traduzione</string>
+    <string name="NicegramToLanguage">Alla lingua: %1$s</string>
+    <string name="NicegramLanguageDeterminateError">Non siamo in grado di determinare la lingua in cui desideri tradurre il testo. Selezionala manualmente e riprova.</string>
     <string name="NicegramTranslationUnavailable">Traduzione non disponibile</string>
     <string name="NicegramForwardAsCopy">Inoltra come copia</string>
     <string name="NicegramForwardToSave">Salva nel cloud</string>
@@ -38,11 +41,12 @@
     <string name="NicegramDownloadVideosToGallery">Scarica i video nella Galleria</string>
     <string name="NicegramHidePhoneNumber">Nascondi il numero di telefono nelle impostazioni</string>
     <string name="NicegramHidePhoneNumberDesc">Il tuo numero verrà nascosto solo nell\'interfaccia. Per nasconderlo dagli altri, apri le impostazioni della Privacy.</string>
+    <string name="NicegramHideReactions">Nascondi reazioni</string>
     <string name="NicegramSelectAllFromThisUser">Seleziona tutto da questo utente</string>
     <string name="NicegramDialogPolicy">Informativa sulla privacy di Nicegram</string>
     <string name="NicegramDialogPolicyText">Nicegram è un client Telegram non ufficiale, e molti dei servizi che ottieni utilizzando Nicegram sono in realtà forniti dalla società Telegram.\n\nLeggi la nostra Informativa sulla privacy prima di utilizzare l\'app.\n\nFacendo clic su continua confermi di aver letto e di accettare l\'Informativa sulla privacy di Nicegram.</string>
     <string name="NicegramContinue">Continua</string>
-    <string name="NicegramGetStarted">Iniziare</string>
+    <string name="NicegramGetStarted">Inizia</string>
     <string name="NicegramOnbroadingTitle1">Il client numero 1 per Telegram</string>
     <string name="NicegramOnbroadingText1">Unisciti a oltre 2 milioni di utenti Nicegram e accedi al client Telegram più potente e sicuro per le aziende.</string>
     <string name="NicegramOnbroadingTitle2">Esperienza di messaggistica avanzata</string>
@@ -54,5 +58,19 @@
     <string name="NicegramOnbroadingTitle5">Il client di messaggistica più sicuro</string>
     <string name="NicegramOnbroadingText5">Client di messaggistica sicuro con crittografia avanzata, chiamate audio e video di gruppo, canali pubblici, gruppi e bot, spazio di archiviazione cloud illimitato per le chat, condivisione di file multimediali e documenti.</string>
     <string name="NicegramDoubleBottom">Doppio Fondo</string>
-    <string name="NicegramDoubleBottomAnotherCode">Si prega di impostare un altro codice di accesso diverso da quello utilizzato per il blocco del codice stesso.</string>
+    <string name="NicegramDoubleBottomDesc">Per abilitare questa funzione, devi avere più di un account e attivare Blocco con codice (Impostazioni → Privacy e sicurezza → Blocco con codice)</string>
+    <string name="NicegramDoubleBottomAnotherCode">Si prega di impostare un altro codice di accesso diverso da quello utilizzato per il blocco del codice stesso</string>
+    <string name="QuickReplies">Risposte rapide</string>
+    <string name="QuickRepliesDesc">Puoi aggiungere risposte illimitate usando il pulsante qui sotto. Per la risposta rapida, inserire il **simbolo \"&amp;\"** nel campo di input messaggio.</string>
+    <string name="QuickRepliesEnterText">Digita testo</string>
+    <string name="QuickRepliesAddNew">Aggiungi nuovo</string>
+    <string name="NicegramIgnoredLanguages">Lingue ignorate</string>
+    <string name="NicegramImmediateLockIn">Immediato</string>
+    <string name="NicegramSaveFolderOnExit">Salva cartella selezionata all\'uscita</string>
+    <string name="NicegramRoundVideos">Videomessaggi</string>
+    <string name="NicegramRestorePremium">Ripristina Premium</string>
+    <string name="NicegramRequestIsPending">La tua richiesta è in fase di elaborazione. Per favore, attendi che il Bot di Nicegram la approvi</string>
+    <string name="NicegramShareChannelInfo">Condividi informazioni sul canale</string>
+    <string name="NicegramShareChannelInfoDesc">Contribuisci alla wikipedia più completa di canali e gruppi di Telegram inviando automaticamente le informazioni e i link dei canali al nostro database. Non colleghiamo il tuo profilo e canale Telegram e non condividiamo i tuoi dati personali.</string>
+    <string name="NicegarmBypassCopyProtection">Aggira la protezione dalla copia</string>
 </resources>

@@ -20,7 +20,7 @@ class CollectGroupInfoUseCase(
     fun collectInfo(
         groupId: Long,
         inviteLinks: List<InviteLink>,
-        iconBase64: String,
+        iconBase64: String?,
         restrictions: List<Restriction>,
         verified: Boolean,
         about: String?,

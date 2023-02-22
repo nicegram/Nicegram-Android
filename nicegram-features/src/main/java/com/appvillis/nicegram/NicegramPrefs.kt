@@ -14,6 +14,8 @@ object NicegramPrefs {
     const val PREF_CHAT_LANGUAGE_TO_TRANSLATE = "ChatLanguageToTranslate_"
     const val PREF_SAVE_FOLDER_ON_EXIT = "SaveFolderOnExit"
     const val PREF_SAVED_FOLDER = "SavedFolder"
+    const val PREF_SHARE_CHANNEL_INFO = "ShareChannelInfo"
+    const val PREF_BYPASS_COPY_PROTECTION = "BypassCopyProtection"
 
     const val PREF_MENTION_ALL_ENABLED_DEFAULT = true
     const val PREF_SKIP_READ_HISTORY_DEFAULT = false
@@ -28,4 +30,6 @@ object NicegramPrefs {
     const val PREF_HIDE_PHONE_NUMBER_DEFAULT = false
     const val PREF_HIDE_REACTIONS_DEFAULT = false
     const val PREF_CHAT_LANGUAGE_TO_TRANSLATE_DEFAULT = ""
+    const val PREF_SHARE_CHANNEL_INFO_DEFAULT = true
+    const val PREF_BYPASS_COPY_PROTECTION_DEFAULT = true
 }

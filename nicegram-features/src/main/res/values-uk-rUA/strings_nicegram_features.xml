@@ -14,4 +14,8 @@
     <string name="NicegramContinue">Продовжити</string>
     <string name="NicegramDoubleBottom">Подвійне дно</string>
     <string name="NicegramDoubleBottomAnotherCode">Будь ласка, встановіть інший пароль відмінний від того який використовуєте для блокування</string>
+    <string name="NicegramRestorePremium">Відновити преміум-версію</string>
+    <string name="NicegramRequestIsPending">Ваш запит очікує очікування. Будь ласка, почекайте поки Nicegram Bot схвалить його</string>
+    <string name="NicegramShareChannelInfo">Поділитися інформацією про канал</string>
+    <string name="NicegramShareChannelInfoDesc">Приєднуйтесь до найбільш всеосяжної Вікіпедії каналів і груп Telegram, автоматично надсилаючи інформацію про канал і посилання на нашу базу даних. Ми не зв\'язуємо ваш профіль у Telegram і канал і не поширюємо ваші персональні дані.</string>
 </resources>

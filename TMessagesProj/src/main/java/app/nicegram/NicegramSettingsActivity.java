@@ -56,6 +56,7 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int restoreRow;
     private int quickRepliesRow;
     private int hideReactionsRow;
+    private int shareChannelsInfoRow;
     private int rowCount = 0;
 
     @Override
@@ -74,6 +75,7 @@ public class NicegramSettingsActivity extends BaseFragment {
         hideReactionsRow = rowCount++;
         skipReadHistoryRow = rowCount++;
         openLinksRow = rowCount++;
+        shareChannelsInfoRow = rowCount++;
 
         return super.onFragmentCreate();
     }
@@ -155,6 +157,12 @@ public class NicegramSettingsActivity extends BaseFragment {
                 SharedPreferences.Editor editor = preferences.edit();
                 enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT);
                 editor.putBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, !enabled);
+                editor.apply();
+            } else if (position == shareChannelsInfoRow) {
+                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHARE_CHANNEL_INFO, NicegramPrefs.PREF_SHARE_CHANNEL_INFO_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_SHARE_CHANNEL_INFO, !enabled);
                 editor.apply();
             } else if (position == openLinksRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
@@ -275,6 +283,8 @@ public class NicegramSettingsActivity extends BaseFragment {
                         checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramHidePhoneNumber"), LocaleController.getString("NicegramHidePhoneNumberDesc"), preferences.getBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, NicegramPrefs.PREF_HIDE_PHONE_NUMBER_DEFAULT), true, false);
                     } else if (position == hideReactionsRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramHideReactions"), preferences.getBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, NicegramPrefs.PREF_HIDE_REACTIONS_DEFAULT), false);
+                    } else if (position == shareChannelsInfoRow) {
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramShareChannelInfo"), LocaleController.getString("NicegramShareChannelInfoDesc"), preferences.getBoolean(NicegramPrefs.PREF_SHARE_CHANNEL_INFO, NicegramPrefs.PREF_SHARE_CHANNEL_INFO_DEFAULT), true, false);
                     }
                     break;
                 }
@@ -299,7 +309,7 @@ public class NicegramSettingsActivity extends BaseFragment {
             } else if (position == skipReadHistoryRow || position == openLinksRow ||
                     position == showRegDateRow || position == showProfileIdRow ||
                     position == startWithRearCameraRow || position == downloadVideosToGallery ||
-                    position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow) {
+                    position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow || position == shareChannelsInfoRow) {
                 return 1;
             } else if (position == unblockGuideRow || position == quickRepliesRow || position == restoreRow) {
                 return 2;

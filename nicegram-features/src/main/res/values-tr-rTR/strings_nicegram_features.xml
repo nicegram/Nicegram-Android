@@ -68,4 +68,9 @@
     <string name="NicegramImmediateLockIn">Hemen</string>
     <string name="NicegramSaveFolderOnExit">Çıkışta klasörü kaydet</string>
     <string name="NicegramRoundVideos">Yuvarlak videolar</string>
+    <string name="NicegramRestorePremium">Premium\'u geri yükleyin</string>
+    <string name="NicegramRequestIsPending">Talebiniz beklemededir. Nicegram Bot onu onaylayana kadar lütfen bekleyin</string>
+    <string name="NicegramShareChannelInfo">Kanal bilgilerini paylaş</string>
+    <string name="NicegramShareChannelInfoDesc">Kanal bilgilerini ve bağlantısını veri tabanımıza göndererek en kapsamlı Telegram kanalı wikipedia\'sına katkıda bulunun. Telegram profilinizi ve kanalınızı bağlamayız ve kişisel verilerinizi paylaşmayız.</string>
+    <string name="NicegarmBypassCopyProtection">Kopya Korumasını Atla</string>
 </resources>

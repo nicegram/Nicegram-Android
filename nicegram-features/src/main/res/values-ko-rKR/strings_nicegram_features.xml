@@ -68,4 +68,9 @@
     <string name="NicegramImmediateLockIn">즉시</string>
     <string name="NicegramSaveFolderOnExit">종료 시 폴더 저장</string>
     <string name="NicegramRoundVideos">원형 비디오</string>
+    <string name="NicegramRestorePremium">프리미엄 구매 복원</string>
+    <string name="NicegramRequestIsPending">요청 대기 상태입니다. Nicegram Bot이 승인할 때까지 기다려주세요.</string>
+    <string name="NicegramShareChannelInfo">채널 정보 공유</string>
+    <string name="NicegramShareChannelInfoDesc">저희 데이터 베이스에 자동으로 채널 정보와 링크를 제출함으로써 텔레그램(Telegram) 채널 및 그룹의 가장 포괄적인 위키피디아에 기여하세요. 저희는 귀하의 텔레그램 프로필과 채널을 연결하지 않으며 귀하의 개인 정보도 공유하지 않습니다.</string>
+    <string name="NicegarmBypassCopyProtection">복사 방지 무시</string>
 </resources>
