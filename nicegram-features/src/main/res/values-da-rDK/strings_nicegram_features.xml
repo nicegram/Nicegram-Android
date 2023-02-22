@@ -13,4 +13,6 @@
     <string name="NicegramSelectAllFromThisUser">Alle von diesem Benutzer auswählen</string>
     <string name="NicegramDoubleBottom">Double Bottom</string>
     <string name="NicegramDoubleBottomAnotherCode">Bitte legen Sie einen anderen als den für die Passcode-Sperre verwendeten Passcode fest.</string>
+    <string name="NicegramRestorePremium">Prämie wiederherstellen</string>
+    <string name="NicegramRequestIsPending">Ihre Anfrage ist in Bearbeitung. Bitte warten Sie, bis Nicegram Bot Ihre Anfrage genehmigt hat.</string>
 </resources>

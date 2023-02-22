@@ -5,6 +5,7 @@
     <string name="For20OrLessChats">Dla czatów z mniej niż 20 osobami</string>
     <string name="NicegramSettings">Ustawienia Nicegram</string>
     <string name="NicegramRestrict">Ogranicz</string>
+    <string name="NicegramReplyPrivately">Odpowiedz prywatnie</string>
     <string name="NicegramRegistered">Zarejestrowany</string>
     <string name="NicegramGetRegistrationDate">Uzyskaj datę rejestracji</string>
     <string name="NicegramGetIdCopied">Id skopiowany do schowka</string>
@@ -41,6 +42,7 @@
     <string name="NicegramHidePhoneNumber">Ukryj numer telefonu w ustawieniach</string>
     <string name="NicegramHidePhoneNumberDesc">Twój numer zostanie ukryty tylko w interfejsie użytkownika. Aby ukryć go przed innymi, użyj ustawień prywatności.</string>
     <string name="NicegramHideReactions">Ukryj reakcje</string>
+    <string name="NicegramSelectAllFromThisUser">Zaznacz wszystkie od tego użytkownika</string>
     <string name="NicegramDialogPolicy">Polityka prywatności Nicegram</string>
     <string name="NicegramDialogPolicyText">Nicegram to nieoficjalny klient Telegrama, a wiele usług, z których korzystasz za pomocą Nicegrama, jest faktycznie dostarczanych przez firmę Telegram.\n\nPrzed użyciem aplikacji należy zapoznać się z naszą Polityką prywatności.\n\nNaciskając dalej, potwierdzasz przeczytanie i akceptujesz Politykę prywatności Nicegram.</string>
     <string name="NicegramContinue">Kontynuuj</string>
@@ -64,4 +66,6 @@
     <string name="NicegramImmediateLockIn">Natychmiast</string>
     <string name="NicegramSaveFolderOnExit">Zapisz folder przy zakończeniu</string>
     <string name="NicegramRoundVideos">Zapętlone filmy</string>
+    <string name="NicegramShareChannelInfo">Udostępnij informacje o kanale</string>
+    <string name="NicegarmBypassCopyProtection">Omiń ochronę przed kopiowaniem</string>
 </resources>

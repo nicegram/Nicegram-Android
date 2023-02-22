@@ -56,4 +56,5 @@
     <string name="NicegramImmediateLockIn">तुरंत</string>
     <string name="NicegramSaveFolderOnExit">बाहर निकलने पर फ़ोल्डर सेव कर लें</string>
     <string name="NicegramRoundVideos"> राउंड वीडियो</string>
+    <string name="NicegarmBypassCopyProtection">बायपास कॉपी प्रोटेक्शन</string>
 </resources>

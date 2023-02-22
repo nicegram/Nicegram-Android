@@ -2,9 +2,12 @@ package app.nicegram
 
 import android.content.SharedPreferences
 import com.appvillis.nicegram.NicegramPrefs
+import com.appvillis.nicegram.domain.RemoteConfigRepo
 import org.telegram.messenger.MessagesController
 
 object PrefsHelper {
+    var remoteConfigRepo: RemoteConfigRepo? = null
+
     fun shouldSkipRead(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(NicegramPrefs.PREF_SKIP_READ_HISTORY, NicegramPrefs.PREF_SKIP_READ_HISTORY_DEFAULT)
@@ -18,6 +21,11 @@ object PrefsHelper {
     fun showRegDate(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT)
+    }
+
+    fun shareChannelInfo(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_SHARE_CHANNEL_INFO, NicegramPrefs.PREF_SHARE_CHANNEL_INFO_DEFAULT)
     }
 
     fun openLinksInBrowser(currentAccount: Int): Boolean {
@@ -72,6 +80,12 @@ object PrefsHelper {
     fun saveFolderOnExit(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT, NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT_DEFAULT)
+    }
+
+    fun bypassCopyProtection(currentAccount: Int): Boolean {
+        val remote = remoteConfigRepo?.allowCopyProtectedContent ?: true
+        return remote && MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_BYPASS_COPY_PROTECTION, NicegramPrefs.PREF_BYPASS_COPY_PROTECTION_DEFAULT)
     }
 
     fun setCurrentFolder(currentAccount: Int, folder: Int) {

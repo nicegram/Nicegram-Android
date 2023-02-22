@@ -40,7 +40,8 @@ public class LauncherIconController {
         FILLED("Filled", R.drawable.preview_ic_filled, R.drawable.preview_ic_filled, R.string.NicegramIconFilled),
         FILLED_BLACK("FilledBlack", R.drawable.preview_ic_filled_black, R.drawable.preview_ic_filled_black, R.string.NicegramIconFilledBlack),
         NICEGRAM("Nicegram", R.drawable.preview_ic_nicegram, R.drawable.preview_ic_nicegram, R.string.NicegramIconNicegram),
-        NICEGRAM_LIGHT("NicegramLight", R.drawable.preview_ic_nicegram_light, R.drawable.preview_ic_nicegram_light, R.string.NicegramIconNicegramLight);
+        NICEGRAM_LIGHT("NicegramLight", R.drawable.preview_ic_nicegram_light, R.drawable.preview_ic_nicegram_light, R.string.NicegramIconNicegramLight),
+        NICEGRAM_SPECIAL("NicegramSpecial", R.drawable.preview_ic_modern, R.drawable.preview_ic_modern, R.string.NicegramIconSpecial);
 
         public final String key;
         public final int background;

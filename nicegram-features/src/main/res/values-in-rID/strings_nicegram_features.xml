@@ -54,4 +54,5 @@
     <string name="NicegramImmediateLockIn">Segera</string>
     <string name="NicegramSaveFolderOnExit">Simpan folder saat keluar</string>
     <string name="NicegramRoundVideos">Video bulat</string>
+    <string name="NicegarmBypassCopyProtection">Lewati Perlindungan Salinan</string>
 </resources>

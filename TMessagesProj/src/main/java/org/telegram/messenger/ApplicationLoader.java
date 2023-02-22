@@ -42,6 +42,7 @@ import androidx.multidex.MultiDex;
 
 import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.NicegramFeaturesHelper;
+import app.nicegram.NicegramGroupCollectHelper;
 import com.appvillis.nicegram.ReviewHelper;
 import com.appvillis.nicegram.domain.BillingManager;
 import com.appvillis.nicegram.domain.CollectGroupInfoUseCase;
@@ -65,6 +66,7 @@ import java.io.File;
 import javax.inject.Inject;
 
 import app.nicegram.NicegramDoubleBottom;
+import app.nicegram.PrefsHelper;
 
 public class ApplicationLoader extends Application {
 
@@ -101,6 +103,8 @@ public class ApplicationLoader extends Application {
     public GetNicegramOnboardingStatusUseCase getNicegramOnboardingStatusUseCase;
     @Inject
     public SetNicegramOnboardingStatusUseCase setNicegramOnboardingStatusUseCase;
+    @Inject
+    public CollectGroupInfoUseCase collectGroupInfoUseCase;
     @Inject
     public AppSessionControlUseCase appSessionControlUseCase;
     @Inject
@@ -604,8 +608,9 @@ public class ApplicationLoader extends Application {
         NicegramAssistantHelper.INSTANCE.setGetSpecialOfferUseCase(getSpecialOfferUseCase);
         NicegramAssistantHelper.INSTANCE.setAppSessionControlUseCase(appSessionControlUseCase);
         NicegramAssistantHelper.INSTANCE.setPowerballMetadataUseCase(getPowerballMetadataUseCase);
-
+        NicegramGroupCollectHelper.INSTANCE.setCollectGroupInfoUseCase(collectGroupInfoUseCase);
         NicegramBillingHelper.INSTANCE.setBillingManager(billingManager);
+        PrefsHelper.INSTANCE.setRemoteConfigRepo(remoteConfigRepo);
 
         new Handler().postDelayed(() -> NicegramNetwork.INSTANCE.getSettings(UserConfig.getInstance(UserConfig.selectedAccount).clientUserId), 3000);
     }
