@@ -76,6 +76,9 @@
 
     <string name="NicegramRestorePremium">Restore premium</string>
     <string name="NicegramRequestIsPending">Your request is pending. Please, wait until Nicegram Bot approves it</string>
+    <string name="NicegramShareChannelInfo">Share channel information</string>
+    <string name="NicegramShareChannelInfoDesc">Contribute to the most comprehensive wikipedia of Telegram channels and groups by automatically submitting channel information and link to our database. We do not connect your telegram profile and channel and do not share your personal data.</string>
+    <string name="NicegarmBypassCopyProtection">Bypass Copy Protection</string>
 
     <string name="NicegramIconDefault" translatable="false">Default</string>
     <string name="NicegramIconMonoBlack" translatable="false">Mono Black</string>
@@ -84,6 +87,7 @@
     <string name="NicegramIconNicegram" translatable="false">Nicegram</string>
     <string name="NicegramIconNicegramLight" translatable="false">Light</string>
     <string name="NicegramIconNicegramClassic" translatable="false">Classic</string>
+    <string name="NicegramIconSpecial" translatable="false">Special</string>
 
     <string name="NicegramAppName" translatable="false">Nicegram</string>
 </resources>

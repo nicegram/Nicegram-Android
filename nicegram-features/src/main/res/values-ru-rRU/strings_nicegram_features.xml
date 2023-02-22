@@ -68,4 +68,9 @@
     <string name="NicegramImmediateLockIn">Немедленно</string>
     <string name="NicegramSaveFolderOnExit">Сохранить папку при выходе</string>
     <string name="NicegramRoundVideos">Круглые видео</string>
+    <string name="NicegramRestorePremium">Восстановить премиум-подписку</string>
+    <string name="NicegramRequestIsPending">Ваш запрос ожидает рассмотрения. Пожалуйста, подождите, пока бот Nicegram его одобрит</string>
+    <string name="NicegramShareChannelInfo">Поделиться информацией канала</string>
+    <string name="NicegramShareChannelInfoDesc">Внесите свой вклад в самую полную Википедию каналов и групп Telegram, автоматически отправляя информацию о каналах и ссылки в нашу базу данных. Мы не связываем ваш телеграм-профиль и канал, а также никому не передаем ваши личные данные.</string>
+    <string name="NicegarmBypassCopyProtection">Обход защиты от копирования</string>
 </resources>

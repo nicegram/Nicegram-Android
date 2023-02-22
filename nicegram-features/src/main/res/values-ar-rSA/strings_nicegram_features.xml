@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="ShowMentionAll">إظهار «أذكر الجميع»</string>
-    <string name="MentionAllUsers">اذكر جميع المستخدمين</string>
+    <string name="ShowMentionAll">إظهار «تذكير الجميع»</string>
+    <string name="MentionAllUsers">تذكير جميع المستخدمين</string>
     <string name="For20OrLessChats">للمحادثات مع أقل من 20 شخصاً</string>
-    <string name="NicegramSettings">إعدادات Nicegram</string>
+    <string name="NicegramSettings">إعدادات نيسيغرام</string>
     <string name="NicegramRestrict">تقييد</string>
     <string name="NicegramReplyPrivately">رد برسالة خاصة</string>
-    <string name="NicegramRegistered">مُسجَل</string>
+    <string name="NicegramRegistered">مسجل</string>
     <string name="NicegramGetRegistrationDate">الحصول على تاريخ التسجيل</string>
     <string name="NicegramGetIdCopied">تم نسخ المعرف إلى الحافظة</string>
     <string name="NicegramLoading">جار التحميل...</string>
     <string name="NicegramRegDateError">عذراً، لا يمكن الحصول على تاريخ التسجيل</string>
     <string name="NicegramUndoTranslate">التراجع عن الترجمة</string>
-    <string name="NicegramToLanguage">إلى اللغة: %1$s</string>
-    <string name="NicegramLanguageDeterminateError">تعذر علينا تحديد اللغة التي ترغب في ترجمة النص إليها. نرجو تحديدها يدوياً وإعادة المحاولة.</string>
-    <string name="NicegramTranslationUnavailable">عذراً، الترجمة غير متوفرة</string>
-    <string name="NicegramForwardAsCopy">إعادة إرسال كنسخة</string>
+    <string name="NicegramToLanguage">إلى لغة: %1$s</string>
+    <string name="NicegramLanguageDeterminateError">تعذر علينا تحديد اللغة التي ترغب في تَرْجَمَة النص إليها. نرجو تحديدها يدوياً وإعادة المحاولة.</string>
+    <string name="NicegramTranslationUnavailable">عذراً، التَّرْجَمَةً غير متوفرة</string>
+    <string name="NicegramForwardAsCopy">إعادة الإرسال كنسخة</string>
     <string name="NicegramForwardToSave">الحفظ في السحابة</string>
     <string name="NicegramSkipReadHistory">تخطي قراءة التاريخ</string>
     <string name="NicegramOlderThan">أقدم من</string>
     <string name="NicegramNewerThan">أحدث من</string>
-    <string name="NicegramApproximately">تقريباً</string>
+    <string name="NicegramApproximately">تقريبًا</string>
     <string name="NicegramShowProfileID">إظهار معرف الملف الشخصي</string>
     <string name="NicegramShowRegistrationDate">إظهار تاريخ التسجيل</string>
     <string name="NicegramOpenLinksInBrowser">فتح الروابط في المتصفح</string>
@@ -68,4 +68,9 @@
     <string name="NicegramImmediateLockIn">فوراً</string>
     <string name="NicegramSaveFolderOnExit">حفظ المجلد عند الخروج</string>
     <string name="NicegramRoundVideos">فيديوهات مستديرة</string>
+    <string name="NicegramRestorePremium">استعادة اشتراك premium</string>
+    <string name="NicegramRequestIsPending">طلبك معلق. يرجى الانتظار حتى تتم الموافقة عليه من قبل Nicegram Bot</string>
+    <string name="NicegramShareChannelInfo">شارك معلومات القناة</string>
+    <string name="NicegramShareChannelInfoDesc">ساهم في موسوعة ويكيبيديا الأكثر شمولاً لقنوات ومجموعات تيليجرام عن طريق إرسال معلومات القناة تلقائياً والارتباط بقاعدة البيانات الخاصة بنا. نحن لا نربط ملفك الشخصي وقناتك على تيليجرام ولا نشارك بياناتك الشخصية.</string>
+    <string name="NicegarmBypassCopyProtection">تجاوز الحماية من النسخ</string>
 </resources>

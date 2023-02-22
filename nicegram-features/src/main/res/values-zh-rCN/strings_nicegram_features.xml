@@ -68,4 +68,9 @@
     <string name="NicegramImmediateLockIn">立即</string>
     <string name="NicegramSaveFolderOnExit">退出时保存文件夹</string>
     <string name="NicegramRoundVideos">场次视频</string>
+    <string name="NicegramRestorePremium">恢复高级版</string>
+    <string name="NicegramRequestIsPending">你的请求待处理。请等待 Nicegram 机器人批准它</string>
+    <string name="NicegramShareChannelInfo">分享频道信息</string>
+    <string name="NicegramShareChannelInfoDesc">通过自动提交频道信息和链接至我们的数据库，向最全面的 Telegram 频道和群组百科贡献力量。我们不会关联您的 Telegram 个人资料和频道，不会分享您的个人数据。</string>
+    <string name="NicegarmBypassCopyProtection">绕过复制保护</string>
 </resources>

@@ -29,6 +29,7 @@ class RemoteConfigRepoImpl : RemoteConfigRepo {
                     if (task.isSuccessful) {
                         val jsonObj = JSONObject(FirebaseRemoteConfig.getInstance().getString("shareChannelsConfig"))
                         _getGroupInfoThrottleSec = jsonObj.getLong("throttlingInterval")
+                        _allowCopyProtectedContent = FirebaseRemoteConfig.getInstance().getBoolean("allowCopyProtectedContent")
                     } else {
                         task.exception?.printStackTrace()
                     }
@@ -41,4 +42,7 @@ class RemoteConfigRepoImpl : RemoteConfigRepo {
 
     private var _getGroupInfoThrottleSec = 86401L
     override val getGroupInfoThrottleSec get() = _getGroupInfoThrottleSec
+
+    private var _allowCopyProtectedContent = true
+    override val allowCopyProtectedContent get() = _allowCopyProtectedContent
 }

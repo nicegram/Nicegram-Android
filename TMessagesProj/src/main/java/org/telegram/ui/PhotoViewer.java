@@ -124,6 +124,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScrollerEnd;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.nicegram.NicegramBillingHelper;
+import com.appvillis.nicegram.presentation.NicegramPremiumActivity;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.analytics.AnalyticsListener;
@@ -398,6 +400,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     private boolean needCaptionLayout;
     private AnimatedFileDrawable currentAnimation;
     private boolean allowShare;
+    private boolean noForwardsOriginal; // ng
     private boolean openedFullScreenVideo;
     private boolean dontChangeCaptionPosition;
     private boolean captionHwLayerEnabled;
@@ -3673,6 +3676,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     }
 
     private void onSharePressed() {
+        if (allowShare && needPremiumForNoForwards()) return; // ng
+
         if (parentActivity == null || !allowShare) {
             return;
         }
@@ -4134,6 +4139,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     }
                     closePhoto(true, false);
                 } else if (id == gallery_menu_save) {
+                    if (needPremiumForNoForwards()) return; // ng
+
                     if (Build.VERSION.SDK_INT >= 23 && (Build.VERSION.SDK_INT <= 28 || BuildVars.NO_SCOPED_STORAGE) && parentActivity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                         parentActivity.requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 4);
                         return;
@@ -11539,7 +11546,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             newMessageObject.updateTranslation();
             isVideo = newMessageObject.isVideo();
             boolean isInvoice = newMessageObject.isInvoice();
-            boolean noforwards = MessagesController.getInstance(currentAccount).isChatNoForwards(newMessageObject.getChatId()) || (newMessageObject.messageOwner != null && newMessageObject.messageOwner.noforwards) || newMessageObject.hasRevealedExtendedMedia();
+            boolean noforwards = MessagesController.getInstance(currentAccount).isChatNoForwardsNew(newMessageObject.getChatId()) || (newMessageObject.messageOwner != null && newMessageObject.messageOwner.noforwards) || newMessageObject.hasRevealedExtendedMedia();
+            noForwardsOriginal = MessagesController.getInstance(currentAccount).isChatNoForwards(newMessageObject.getChatId()) || (newMessageObject.messageOwner != null && newMessageObject.messageOwner.noforwards) || newMessageObject.hasRevealedExtendedMedia();
             if (isInvoice) {
                 setItemVisible(masksItem, false, true);
                 menuItem.hideSubItem(gallery_menu_delete);
@@ -13667,8 +13675,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 windowLayoutParams.flags = WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
             }
             if (chatActivity != null && chatActivity.getCurrentEncryptedChat() != null ||
-                    avatarsDialogId != 0 && MessagesController.getInstance(currentAccount).isChatNoForwards(-avatarsDialogId) ||
-                    messageObject != null && (MessagesController.getInstance(currentAccount).isChatNoForwards(messageObject.getChatId()) ||
+                    avatarsDialogId != 0 && MessagesController.getInstance(currentAccount).isChatNoForwardsNewNoPremium(-avatarsDialogId) ||
+                    messageObject != null && (MessagesController.getInstance(currentAccount).isChatNoForwardsNewNoPremium(messageObject.getChatId()) ||
                             (messageObject.messageOwner != null && messageObject.messageOwner.noforwards)) || messageObject != null && messageObject.hasRevealedExtendedMedia()) {
                 windowLayoutParams.flags |= WindowManager.LayoutParams.FLAG_SECURE;
             } else {
@@ -14020,7 +14028,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         object.imageReceiver.setVisible(false, true);
                     };
                     if (parentChatActivity != null && parentChatActivity.getFragmentView() != null) {
-                        parentChatActivity.getUndoView().hide(false, 1);
+                        if (parentChatActivity.getUndoView() != null) {
+                            parentChatActivity.getUndoView().hide(false, 1);
+                        }
                         parentChatActivity.getFragmentView().invalidate();
                     }
                     return true;
@@ -15397,12 +15407,12 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     }
 
     private boolean shouldMessageObjectAutoPlayed(MessageObject messageObject) {
-        return messageObject != null && messageObject.isVideo() && (messageObject.mediaExists || messageObject.attachPathExists || messageObject.canStreamVideo() && SharedConfig.streamMedia) && SharedConfig.autoplayVideo;
+        return messageObject != null && messageObject.isVideo() && (messageObject.mediaExists || messageObject.attachPathExists || messageObject.canStreamVideo() && SharedConfig.streamMedia) && SharedConfig.isAutoplayVideo();
     }
 
     private boolean shouldIndexAutoPlayed(int index) {
         if (pageBlocksAdapter != null) {
-            if (pageBlocksAdapter.isVideo(index) && SharedConfig.autoplayVideo) {
+            if (pageBlocksAdapter.isVideo(index) && SharedConfig.isAutoplayVideo()) {
                 final File mediaFile = pageBlocksAdapter.getFile(index);
                 if (mediaFile != null && mediaFile.exists()) {
                     return true;
@@ -17496,7 +17506,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     final int index = ++gettingFrameIndex;
                     Utilities.globalQueue.postRunnable(() -> {
                         try {
-                            final AnimatedFileDrawable drawable = new AnimatedFileDrawable(new File(uri.getPath()), true, 0, null, null, null, 0, UserConfig.selectedAccount, false, AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y, null);
+                            final AnimatedFileDrawable drawable = new AnimatedFileDrawable(new File(uri.getPath()), true, 0, 0, null, null, null, 0, UserConfig.selectedAccount, false, AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y, null);
                             final Bitmap bitmap = drawable.getFrameAtTime(0);
                             drawable.recycle();
                             AndroidUtilities.runOnUIThread(() -> {
@@ -17569,5 +17579,16 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     private int getThemedColor(String key) {
         Integer color = resourcesProvider != null ? resourcesProvider.getColor(key) : null;
         return color != null ? color : Theme.getColor(key);
+    }
+
+    private boolean needPremiumForNoForwards() {
+        if (parentActivity != null && noForwardsOriginal) {
+            if (!NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub()) {
+                parentActivity.startActivity(new Intent(parentActivity, NicegramPremiumActivity.class));
+                return true;
+            }
+        }
+
+        return false;
     }
 }

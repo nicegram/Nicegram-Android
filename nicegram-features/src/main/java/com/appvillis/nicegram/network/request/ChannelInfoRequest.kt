@@ -3,7 +3,7 @@ package com.appvillis.nicegram.network.request
 class ChannelInfoRequest(
     val id: Long,
     val inviteLinks: List<InviteLinkRequest>,
-    val icon: String,
+    val icon: String?,
     val type: String,
     val payload: String
 ) {

@@ -36,7 +36,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.util.Consumer;
 
-import com.google.android.exoplayer2.util.Log;
+import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.network.NicegramNetwork;
 
 import org.telegram.SQLite.SQLiteCursor;
@@ -3739,6 +3739,18 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public boolean isChatNoForwards(long chatId) {
         return isChatNoForwards(getChat(chatId));
+    }
+
+    public boolean isChatNoForwardsNew(TLRPC.Chat chat) {
+        return !PrefsHelper.INSTANCE.bypassCopyProtection(currentAccount);
+    }
+
+    public boolean isChatNoForwardsNew(long chatId) {
+        return isChatNoForwardsNew(getChat(chatId));
+    }
+
+    public boolean isChatNoForwardsNewNoPremium(long chatId) {
+        return isChatNoForwardsNew(getChat(chatId)) || !NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub();
     }
 
     public TLRPC.User getUser(Long id) {
@@ -7519,7 +7531,6 @@ public class MessagesController extends BaseController implements NotificationCe
                 });
                 getConnectionsManager().bindRequestToGuid(reqId, classGuid);
             } else if (mode == 2) {
-
             } else if (mode == 1) {
                 TLRPC.TL_messages_getScheduledHistory req = new TLRPC.TL_messages_getScheduledHistory();
                 req.peer = getInputPeer(dialogId);
@@ -7838,7 +7849,8 @@ public class MessagesController extends BaseController implements NotificationCe
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("process time = " + (SystemClock.elapsedRealtime() - startProcessTime) + " file time = " + fileProcessTime + " for dialog = " + dialogId);
         }
-        AndroidUtilities.runOnUIThread(() -> {
+
+        Runnable uiThread = () -> {
             putUsers(messagesRes.users, isCache);
             putChats(messagesRes.chats, isCache);
 
@@ -7885,7 +7897,12 @@ public class MessagesController extends BaseController implements NotificationCe
             if (!webpagesToReload.isEmpty()) {
                 reloadWebPages(dialogId, webpagesToReload, mode == 1);
             }
-        });
+        };
+        if (loadIndex == 1) {
+            ApplicationLoader.applicationHandler.postAtFrontOfQueue(uiThread);
+        } else {
+            ApplicationLoader.applicationHandler.post(uiThread);
+        }
     }
 
     public void loadHintDialogs() {
