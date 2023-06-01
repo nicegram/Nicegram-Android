@@ -98,3 +98,5 @@ agconnect-services.json
 output.json
 
 NicegramNetworkConsts.kt
+nicegram-assistant-android/
+.gitmodules
