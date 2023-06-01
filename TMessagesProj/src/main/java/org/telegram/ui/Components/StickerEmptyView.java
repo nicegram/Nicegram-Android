@@ -15,12 +15,12 @@ import androidx.annotation.NonNull;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DocumentObject;
 import org.telegram.messenger.ImageLocation;
+import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.ui.ActionBar.AdjustPanLayoutHelper;
 import org.telegram.ui.ActionBar.Theme;
 
 public class StickerEmptyView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
@@ -79,7 +79,9 @@ public class StickerEmptyView extends FrameLayout implements NotificationCenter.
             public void setVisibility(int visibility) {
                 if (getVisibility() == View.GONE && visibility == View.VISIBLE) {
                     setSticker();
-                    stickerView.getImageReceiver().startAnimation();
+                    if (LiteMode.isEnabled(LiteMode.FLAGS_ANIMATED_STICKERS)) {
+                        stickerView.getImageReceiver().startAnimation();
+                    }
                 } else if (visibility == View.GONE) {
                     stickerView.getImageReceiver().clearImage();
                 }
@@ -139,9 +141,9 @@ public class StickerEmptyView extends FrameLayout implements NotificationCenter.
         lastH = getMeasuredHeight();
     }
 
-    String colorKey1 = Theme.key_emptyListPlaceholder;
+    int colorKey1 = Theme.key_emptyListPlaceholder;
 
-    public void setColors(String titleKey, String subtitleKey, String key1, String key2) {
+    public void setColors(int titleKey, int subtitleKey, int key1, int key2) {
         title.setTag(titleKey);
         title.setTextColor(getThemedColor(titleKey));
 
@@ -233,6 +235,10 @@ public class StickerEmptyView extends FrameLayout implements NotificationCenter.
                 document = set.documents.get(stickerType);
             }
             imageFilter = "130_130";
+        }
+
+        if (!LiteMode.isEnabled(LiteMode.FLAGS_ANIMATED_STICKERS)) {
+            imageFilter += "_firstframe";
         }
 
         if (document != null) {
@@ -362,9 +368,8 @@ public class StickerEmptyView extends FrameLayout implements NotificationCenter.
         }
     }
 
-    private int getThemedColor(String key) {
-        Integer color = resourcesProvider != null ? resourcesProvider.getColor(key) : null;
-        return color != null ? color : Theme.getColor(key);
+    private int getThemedColor(int key) {
+        return Theme.getColor(key, resourcesProvider);
     }
 
     public void setStickerType(int stickerType) {

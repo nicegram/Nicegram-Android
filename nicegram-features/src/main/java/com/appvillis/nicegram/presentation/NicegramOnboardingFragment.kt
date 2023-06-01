@@ -17,6 +17,7 @@ import com.appvillis.nicegram.R
 import com.appvillis.nicegram.databinding.FragmentNgOnboardingBinding
 import com.appvillis.nicegram.databinding.ItemNgOnboardingBinding
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
 
 @AndroidEntryPoint
 class NicegramOnboardingFragment : BaseFragment(R.layout.fragment_ng_onboarding) {
@@ -53,6 +54,11 @@ class NicegramOnboardingFragment : BaseFragment(R.layout.fragment_ng_onboarding)
                     R.string.NicegramOnbroadingText5,
                     R.raw.ng_onboarding_5
                 ),
+                OnboardingVH.OnboardingItem(
+                    R.string.NicegramOnbroadingTitle6,
+                    R.string.NicegramOnbroadingText6,
+                    R.raw.ng_onboarding_6
+                ),
             )
         )
     }
@@ -81,7 +87,7 @@ class NicegramOnboardingFragment : BaseFragment(R.layout.fragment_ng_onboarding)
 
         binding.indicatorView.attachTo(binding.viewPager)
         binding.indicatorView.isInvisible = true
-        binding.indicatorView.postDelayed( { binding.indicatorView.isInvisible = false }, 1000)
+        binding.indicatorView.postDelayed({ binding.indicatorView.isInvisible = false }, 1000)
 
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
@@ -153,7 +159,13 @@ class NicegramOnboardingFragment : BaseFragment(R.layout.fragment_ng_onboarding)
                     videoViewIsPrepared = true
                 }
                 videoViewIsPrepared = false
-                binding.videoView.postDelayed({ binding.videoView.setVideoURI(Uri.parse(path)) }, 0)
+                binding.videoView.postDelayed({
+                    try {
+                        binding.videoView.setVideoURI(Uri.parse(path))
+                    } catch (e: Exception) {
+                        Timber.e(e)
+                    }
+                }, 0)
             }
         }
 

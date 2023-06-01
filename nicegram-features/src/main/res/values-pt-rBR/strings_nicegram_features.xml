@@ -25,11 +25,11 @@
     <string name="NicegramShowRegistrationDate">Mostrar data de cadastro</string>
     <string name="NicegramOpenLinksInBrowser">Abrir Link no Navegador</string>
     <string name="NicegramUnblockGuide">Desbloquear Guia</string>
-    <string name="NicegramPremiumFeatures">Recursos Premium</string>
+    <string name="NicegramPremiumFeatures">Nicegram\nCaracterísticas do Prémium</string>
     <string name="NicegramPrivacyPolicy">Política de privacidade</string>
     <string name="NicegramEULA">EULA</string>
     <string name="NicegramSubRenews">A assinatura renova automaticamente</string>
-    <string name="NicegramSubPerMonth"><![CDATA[<b>Assine por %s</b> por mês]]></string>
+    <string name="NicegramSubPerMonth">Assine por %s / mês</string>
     <string name="NicegramBuildInTranslator">Tradutor integrado</string>
     <string name="NicegramBuildInTranslatorDesc">Traduza instantaneamente qualquer mensagem no aplicativo sem alternar para tradutores de terceiros</string>
     <string name="NicegramSpeech2Text">Voz para Texto</string>
@@ -57,6 +57,8 @@
     <string name="NicegramOnbroadingText4">Aproveite as inovações da equipe do Nicegram e receba um eSIM com acesso à internet em 133 países. Você também pode cadastrar novas contas no Telegram utilizando o número de telefone do plano de dados do eSIM.</string>
     <string name="NicegramOnbroadingTitle5">O Aplicativo de Mensagens Mais Seguro</string>
     <string name="NicegramOnbroadingText5">Proteja o Aplicativo de Mensagens com Criptografia de Alta Segurança, Chamadas de Áudio e Vídeo em Grupo, Canais Públicos, Grupos e Bots, Armazenamento Ilimitado em Nuvem para as Conversas, compartilhamento de Mídia e Documentos.</string>
+    <string name="NicegramOnbroadingTitle6">Conheça a Lily</string>
+    <string name="NicegramOnbroadingText6">Seu assistente pessoal de IA Chatbot para simplificar sua vida!</string>
     <string name="NicegramDoubleBottom">Fundo Duplo</string>
     <string name="NicegramDoubleBottomDesc">Para ativar o recurso, deve-se ter mais de uma conta e ativar Bloqueio por Código (em Configurações→Privacidade e Segurança→Bloqueio por Código)</string>
     <string name="NicegramDoubleBottomAnotherCode">Por favor, defina outra senha, diferente da que você usa como senha de bloqueio</string>
@@ -73,4 +75,7 @@
     <string name="NicegramShareChannelInfo">Compartilhar informações do canal</string>
     <string name="NicegramShareChannelInfoDesc">Contribua para a wikipedia mais abrangente de canais e grupos do Telegram enviando automaticamente informações do canal e link para o nosso banco de dados. Não conectamos o seu perfil e canal do Telegram e não compartilhamos os seus dados pessoais.</string>
     <string name="NicegarmBypassCopyProtection">Ignorar proteção contra cópia</string>
+    <string name="NicegarmTutorial_HelpBtnText">Como posso receber o código?</string>
+    <string name="NicegarmTutorial_Dialog_Title">A partir de fevereiro de 2023, siga os passos abaixo para receber o código:</string>
+    <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. Entra no <font color="#0A84FF">Telegram</font><br/>2. Entra no <font color="#A134C7">Nicegram</font><br/>3. Digite o código que você receberá no <font color="#0A84FF">Telegram</font>]]></string>
 </resources>

@@ -250,7 +250,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
     }
 
     {
-        tiersGradientTools = new PremiumGradient.PremiumGradientTools(Theme.key_premiumGradient1, Theme.key_premiumGradient2, null, null);
+        tiersGradientTools = new PremiumGradient.PremiumGradientTools(Theme.key_premiumGradient1, Theme.key_premiumGradient2, -1, -1);
         tiersGradientTools.exactly = true;
         tiersGradientTools.x1 = 0;
         tiersGradientTools.y1 = 0f;
@@ -307,8 +307,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
 
             @Override
             public boolean dispatchTouchEvent(MotionEvent ev) {
-                float iconX = backgroundView.getX() + backgroundView.imageView.getX();
-                float iconY = backgroundView.getY() + backgroundView.imageView.getY();
+                float iconX = backgroundView.getX() + backgroundView.imageFrameLayout.getX();
+                float iconY = backgroundView.getY() + backgroundView.imageFrameLayout.getY();
                 AndroidUtilities.rectTmp.set(iconX, iconY, iconX + backgroundView.imageView.getMeasuredWidth(), iconY + backgroundView.imageView.getMeasuredHeight());
                 if ((AndroidUtilities.rectTmp.contains(ev.getX(), ev.getY()) || iconInterceptedTouch) && !listView.scrollingByUser) {
                     ev.offsetLocation(-iconX, -iconY);
@@ -664,10 +664,13 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
 
         if (tier == null) {
             forcePremium = true;
-            for (TLRPC.TL_premiumSubscriptionOption option : fragment.getAccountInstance().getMediaDataController().getPremiumPromo().period_options) {
-                if (option.months == 1) {
-                    tier = new SubscriptionTier(option);
-                    break;
+            TLRPC.TL_help_premiumPromo promo = fragment.getAccountInstance().getMediaDataController().getPremiumPromo();
+            if (promo != null) {
+                for (TLRPC.TL_premiumSubscriptionOption option : promo.period_options) {
+                    if (option.months == 1) {
+                        tier = new SubscriptionTier(option);
+                        break;
+                    }
                 }
             }
         }
@@ -680,7 +683,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             if (activity instanceof LaunchActivity) {
                 LaunchActivity launchActivity = (LaunchActivity) activity;
 
-                if (selectedTier.subscriptionOption.bot_url == null) {
+                if (selectedTier == null || selectedTier.subscriptionOption == null || selectedTier.subscriptionOption.bot_url == null) {
                     if (!TextUtils.isEmpty(fragment.getMessagesController().premiumBotUsername)) {
                         launchActivity.setNavigateToPremiumBot(true);
                         launchActivity.onNewIntent(new Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/" + fragment.getMessagesController().premiumBotUsername + "?start=" + source)));
@@ -1155,6 +1158,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 }
             };
             imageFrameLayout.addView(imageView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+            imageFrameLayout.setClipChildren(false);
+            setClipChildren(false);
 
             titleView = new TextView(context);
             titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 22);
@@ -1457,7 +1462,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             animated = false;
         }
         if (BuildVars.IS_BILLING_UNAVAILABLE) {
-            premiumButtonView.setButton(getPremiumButtonText(currentAccount, subscriptionTiers.get(selectedTierIndex)), v -> buyPremium(this), animated);
+            premiumButtonView.setButton(getPremiumButtonText(currentAccount, null), v -> buyPremium(this), animated);
             return;
         }
         if (!BuildVars.useInvoiceBilling() && (!BillingController.getInstance().isReady() || subscriptionTiers.isEmpty() || selectedTierIndex >= subscriptionTiers.size() || subscriptionTiers.get(selectedTierIndex).googlePlayProductDetails == null)) {
@@ -1590,11 +1595,17 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         event.data = data;
 
         TLRPC.TL_jsonObjectValue sourceObj = new TLRPC.TL_jsonObjectValue();
-        TLRPC.TL_jsonString jsonString = new TLRPC.TL_jsonString();
-        jsonString.value = source;
+        TLRPC.JSONValue sourceVal;
+        if (source != null) {
+            TLRPC.TL_jsonString jsonString = new TLRPC.TL_jsonString();
+            jsonString.value = source;
+            sourceVal = jsonString;
+        } else {
+            sourceVal = new TLRPC.TL_jsonNull();
+        }
 
         sourceObj.key = "source";
-        sourceObj.value = jsonString;
+        sourceObj.value = sourceVal;
 
         data.value.add(sourceObj);
         req.events.add(event);
@@ -1638,13 +1649,17 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         TLRPC.TL_jsonObject data = new TLRPC.TL_jsonObject();
         event.data = data;
         TLRPC.TL_jsonObjectValue item = new TLRPC.TL_jsonObjectValue();
-        TLRPC.TL_jsonString jsonString = new TLRPC.TL_jsonString();
-        jsonString.value = PremiumPreviewFragment.featureTypeToServerString(type);
+        String value = PremiumPreviewFragment.featureTypeToServerString(type);
+        if (value != null) {
+            TLRPC.TL_jsonString jsonString = new TLRPC.TL_jsonString();
+            jsonString.value = value;
+            item.value = jsonString;
+        } else {
+            item.value = new TLRPC.TL_jsonNull();
+        }
         item.key = "item";
-        item.value = jsonString;
         data.value.add(item);
         req.events.add(event);
-        event.data = data;
 
         ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
 

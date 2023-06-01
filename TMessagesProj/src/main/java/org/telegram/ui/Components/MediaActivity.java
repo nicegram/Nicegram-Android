@@ -27,7 +27,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -184,7 +183,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             }
 
             @Override
-            public boolean onMemberClick(TLRPC.ChatParticipant participant, boolean b, boolean resultOnly) {
+            public boolean onMemberClick(TLRPC.ChatParticipant participant, boolean b, boolean resultOnly, View vi) {
                 return false;
             }
 
@@ -221,9 +220,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
 
             @Override
             protected void onSearchStateChanged(boolean expanded) {
-                if (SharedConfig.smoothKeyboard) {
-                    AndroidUtilities.removeAdjustResize(getParentActivity(), classGuid);
-                }
+                AndroidUtilities.removeAdjustResize(getParentActivity(), classGuid);
                 AndroidUtilities.updateViewVisibilityAnimated(avatarContainer, !expanded, 0.95f, true);
             }
 

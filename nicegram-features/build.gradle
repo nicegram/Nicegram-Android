@@ -74,11 +74,10 @@ dependencies {
     implementation 'com.google.dagger:hilt-android:2.40.5'
     kapt 'com.google.dagger:hilt-compiler:2.40.5'
 
-    implementation (properties.getProperty("assistant.aar")) { transitive = true }
+    implementation project(":assistant-core")
 }
 repositories {
     mavenCentral()
     google()
     maven { url 'https://jitpack.io' }
-    maven { url properties.getProperty("assistant.aarMavenRepo") }
 }

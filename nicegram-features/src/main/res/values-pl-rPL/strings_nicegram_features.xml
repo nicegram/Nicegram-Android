@@ -25,11 +25,9 @@
     <string name="NicegramShowRegistrationDate">Pokaż datę rejestracji</string>
     <string name="NicegramOpenLinksInBrowser">Otwórz linki w przeglądarce</string>
     <string name="NicegramUnblockGuide">Odblokuj przewodnik</string>
-    <string name="NicegramPremiumFeatures">Funkcje Premium</string>
     <string name="NicegramPrivacyPolicy">Polityka prywatności</string>
     <string name="NicegramEULA">EULA</string>
     <string name="NicegramSubRenews">Automatyczne odnawianie subskrypcji</string>
-    <string name="NicegramSubPerMonth"><![CDATA[<b>Subskrybuj za %s</b> na miesiąc]]></string>
     <string name="NicegramBuildInTranslator">Wbudowany tłumacz</string>
     <string name="NicegramBuildInTranslatorDesc">Natychmiast przetłumacz dowolną wiadomość w aplikacji bez przełączenia na tłumaczy firm zewnętrznych</string>
     <string name="NicegramSpeech2Text">Mowa na tekst</string>

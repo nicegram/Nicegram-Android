@@ -293,7 +293,7 @@ public class AlertsCreator {
                 request instanceof TLRPC.TL_phone_inviteToGroupCall) {
             if (fragment != null && error.text.equals("CHANNELS_TOO_MUCH")) {
                 if (fragment.getParentActivity() != null) {
-                    fragment.showDialog(new LimitReachedBottomSheet(fragment, fragment.getParentActivity(), LimitReachedBottomSheet.TYPE_TO_MANY_COMMUNITIES, currentAccount));
+                    fragment.showDialog(new LimitReachedBottomSheet(fragment, fragment.getParentActivity(), LimitReachedBottomSheet.TYPE_TO0_MANY_COMMUNITIES, currentAccount));
                 } else {
                     if (request instanceof TLRPC.TL_channels_joinChannel || request instanceof TLRPC.TL_channels_inviteToChannel) {
                         fragment.presentFragment(new TooManyCommunitiesActivity(TooManyCommunitiesActivity.TYPE_JOIN));
@@ -312,7 +312,7 @@ public class AlertsCreator {
         } else if (request instanceof TLRPC.TL_messages_createChat) {
             if (error.text.equals("CHANNELS_TOO_MUCH")) {
                 if (fragment.getParentActivity() != null) {
-                    fragment.showDialog(new LimitReachedBottomSheet(fragment, fragment.getParentActivity(), LimitReachedBottomSheet.TYPE_TO_MANY_COMMUNITIES, currentAccount));
+                    fragment.showDialog(new LimitReachedBottomSheet(fragment, fragment.getParentActivity(), LimitReachedBottomSheet.TYPE_TO0_MANY_COMMUNITIES, currentAccount));
                 } else {
                     fragment.presentFragment(new TooManyCommunitiesActivity(TooManyCommunitiesActivity.TYPE_CREATE));
                 }
@@ -325,7 +325,7 @@ public class AlertsCreator {
         } else if (request instanceof TLRPC.TL_channels_createChannel) {
             if (error.text.equals("CHANNELS_TOO_MUCH")) {
                 if (fragment.getParentActivity() != null) {
-                    fragment.showDialog(new LimitReachedBottomSheet(fragment, fragment.getParentActivity(), LimitReachedBottomSheet.TYPE_TO_MANY_COMMUNITIES, currentAccount));
+                    fragment.showDialog(new LimitReachedBottomSheet(fragment, fragment.getParentActivity(), LimitReachedBottomSheet.TYPE_TO0_MANY_COMMUNITIES, currentAccount));
                 } else {
                     fragment.presentFragment(new TooManyCommunitiesActivity(TooManyCommunitiesActivity.TYPE_CREATE));
                 }
@@ -420,7 +420,7 @@ public class AlertsCreator {
                 showSimpleAlert(fragment, LocaleController.getString("JoinToGroupErrorFull", R.string.JoinToGroupErrorFull));
             } else if (error.text.equals("CHANNELS_TOO_MUCH")) {
                 if (fragment.getParentActivity() != null) {
-                    fragment.showDialog(new LimitReachedBottomSheet(fragment, fragment.getParentActivity(), LimitReachedBottomSheet.TYPE_TO_MANY_COMMUNITIES, currentAccount));
+                    fragment.showDialog(new LimitReachedBottomSheet(fragment, fragment.getParentActivity(), LimitReachedBottomSheet.TYPE_TO0_MANY_COMMUNITIES, currentAccount));
                 } else {
                     fragment.presentFragment(new TooManyCommunitiesActivity(TooManyCommunitiesActivity.TYPE_JOIN));
                 }
@@ -628,7 +628,7 @@ public class AlertsCreator {
                             localeInfo.pathToFile = "unofficial";
                         }
                     }
-                    LocaleController.getInstance().applyLanguage(localeInfo, true, false, false, true, true, UserConfig.selectedAccount, null);
+                    LocaleController.getInstance().applyLanguage(localeInfo, true, false, false, true, UserConfig.selectedAccount, null);
                     activity.rebuildAllFragments(true);
                 });
                 builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
@@ -816,7 +816,10 @@ public class AlertsCreator {
                 request.report_spam = true;
                 if (fragment.getParentActivity() != null) {
                     if (fragment instanceof ChatActivity) {
-                        fragment.getUndoView().showWithAction(0, UndoView.ACTION_REPORT_SENT, null);
+                        UndoView undoView = fragment.getUndoView();
+                        if (undoView != null) {
+                            undoView.showWithAction(0, UndoView.ACTION_REPORT_SENT, null);
+                        }
                     } else if (fragment != null) {
                         BulletinFactory.of(fragment).createReportSent(resourcesProvider).show();
                     } else {
@@ -835,7 +838,7 @@ public class AlertsCreator {
         fragment.showDialog(dialog);
         TextView button = (TextView) dialog.getButton(DialogInterface.BUTTON_POSITIVE);
         if (button != null) {
-            button.setTextColor(Theme.getColor(Theme.key_dialogTextRed2));
+            button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
         }
     }
 
@@ -924,7 +927,7 @@ public class AlertsCreator {
         fragment.showDialog(dialog);
         TextView button = (TextView) dialog.getButton(DialogInterface.BUTTON_POSITIVE);
         if (button != null) {
-            button.setTextColor(Theme.getColor(Theme.key_dialogTextRed2));
+            button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
         }
     }
 
@@ -966,8 +969,8 @@ public class AlertsCreator {
             TextView textView = new TextView(parentFragment.getParentActivity());
             Drawable drawable = parentFragment.getParentActivity().getResources().getDrawable(icons[a]);
             if (a == descriptions.length - 1) {
-                textView.setTextColor(Theme.getColor(Theme.key_dialogTextRed));
-                drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_dialogRedIcon), PorterDuff.Mode.MULTIPLY));
+                textView.setTextColor(Theme.getColor(Theme.key_text_RedBold));
+                drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_text_RedRegular), PorterDuff.Mode.MULTIPLY));
             } else {
                 textView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
                 drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_dialogIcon), PorterDuff.Mode.MULTIPLY));
@@ -1148,27 +1151,30 @@ public class AlertsCreator {
     }
 
     public static void showOpenUrlAlert(BaseFragment fragment, String url, boolean punycode, boolean ask) {
-        showOpenUrlAlert(fragment, url, punycode, true, ask, null, null);
+        showOpenUrlAlert(fragment, url, punycode, true, ask, false, null, null);
     }
 
     public static void showOpenUrlAlert(BaseFragment fragment, String url, boolean punycode, boolean ask, Theme.ResourcesProvider resourcesProvider) {
-        showOpenUrlAlert(fragment, url, punycode, true, ask, null, resourcesProvider);
+        showOpenUrlAlert(fragment, url, punycode, true, ask, false, null, resourcesProvider);
     }
 
     public static void showOpenUrlAlert(BaseFragment fragment, String url, boolean punycode, boolean tryTelegraph, boolean ask, Browser.Progress progress, Theme.ResourcesProvider resourcesProvider) {
+        showOpenUrlAlert(fragment, url, punycode, tryTelegraph, ask, false, progress, resourcesProvider);
+    }
+
+    public static void showOpenUrlAlert(BaseFragment fragment, String url, boolean punycode, boolean tryTelegraph, boolean ask, boolean forceNotInternalForApps, Browser.Progress progress, Theme.ResourcesProvider resourcesProvider) {
         if (fragment == null || fragment.getParentActivity() == null) {
             return;
         }
         long inlineReturn = (fragment instanceof ChatActivity) ? ((ChatActivity) fragment).getInlineReturn() : 0;
         if (Browser.isInternalUrl(url, null) || !ask) {
-            Browser.openUrl(fragment.getParentActivity(), Uri.parse(url), inlineReturn == 0, tryTelegraph, progress);
+            Browser.openUrl(fragment.getParentActivity(), Uri.parse(url), inlineReturn == 0, tryTelegraph, forceNotInternalForApps && checkInternalBotApp(url), progress);
         } else {
             String urlFinal;
             if (punycode) {
                 try {
                     Uri uri = Uri.parse(url);
-                    String host = IDN.toASCII(uri.getHost(), IDN.ALLOW_UNASSIGNED);
-                    urlFinal = uri.getScheme() + "://" + host + uri.getPath();
+                    urlFinal = Browser.replaceHostname(uri, IDN.toUnicode(uri.getHost(), IDN.ALLOW_UNASSIGNED));
                 } catch (Exception e) {
                     FileLog.e(e, false);
                     urlFinal = url;
@@ -1176,20 +1182,32 @@ public class AlertsCreator {
             } else {
                 urlFinal = url;
             }
+            Runnable open = () -> Browser.openUrl(fragment.getParentActivity(), Uri.parse(url), inlineReturn == 0, tryTelegraph, progress);
             AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity(), resourcesProvider);
             builder.setTitle(LocaleController.getString("OpenUrlTitle", R.string.OpenUrlTitle));
-            String format = LocaleController.getString("OpenUrlAlert2", R.string.OpenUrlAlert2);
-            int index = format.indexOf("%");
-            SpannableStringBuilder stringBuilder = new SpannableStringBuilder(String.format(format, urlFinal));
+            SpannableString link = new SpannableString(urlFinal);
+            link.setSpan(new URLSpan(urlFinal) {
+                @Override
+                public void onClick(View widget) {
+                    open.run();
+                }
+            }, 0, link.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            SpannableStringBuilder stringBuilder = new SpannableStringBuilder(LocaleController.getString("OpenUrlAlert2", R.string.OpenUrlAlert2));
+            int index = stringBuilder.toString().indexOf("%1$s");
             if (index >= 0) {
-                stringBuilder.setSpan(new URLSpan(urlFinal), index, index + urlFinal.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                stringBuilder.replace(index, index + 4, link);
             }
             builder.setMessage(stringBuilder);
             builder.setMessageTextViewClickable(false);
-            builder.setPositiveButton(LocaleController.getString("Open", R.string.Open), (dialogInterface, i) -> Browser.openUrl(fragment.getParentActivity(), Uri.parse(url), inlineReturn == 0, tryTelegraph, progress));
+            builder.setPositiveButton(LocaleController.getString("Open", R.string.Open), (dialogInterface, i) -> open.run());
             builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
             fragment.showDialog(builder.create());
         }
+    }
+
+    private static boolean checkInternalBotApp(String url) {
+        String path = Uri.parse(url).getPath();
+        return path.matches("^/\\w*/[^\\d]*(?:\\?startapp=.*?|)$");
     }
 
     public static AlertDialog createSupportAlert(BaseFragment fragment, Theme.ResourcesProvider resourcesProvider) {
@@ -1391,6 +1409,181 @@ public class AlertsCreator {
         fragment.showDialog(alertDialog);
     }
 
+    public static void createBotLaunchAlert(BaseFragment fragment, TLRPC.User user, Runnable onConfirm, Runnable onDismiss) {
+        Context context = fragment.getContext();
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+
+        TextView messageTextView = new TextView(context) {
+            @Override
+            public void setText(CharSequence text, BufferType type) {
+                text = Emoji.replaceEmoji(text, getPaint().getFontMetricsInt(), false);
+                super.setText(text, type);
+            }
+        };
+        NotificationCenter.listenEmojiLoading(messageTextView);
+        messageTextView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+        messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+        messageTextView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP);
+        messageTextView.setText(LocaleController.getString(R.string.BotWebViewStartPermission));
+
+        FrameLayout frameLayout = new FrameLayout(context);
+        builder.setCustomViewOffset(6);
+        builder.setView(frameLayout);
+
+        AvatarDrawable avatarDrawable = new AvatarDrawable();
+        avatarDrawable.setTextSize(AndroidUtilities.dp(18));
+
+        BackupImageView imageView = new BackupImageView(context);
+        imageView.setRoundRadius(AndroidUtilities.dp(20));
+        frameLayout.addView(imageView, LayoutHelper.createFrame(40, 40, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, 22, 5, 22, 0));
+
+        TextView textView = new TextView(context);
+        textView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem));
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
+        textView.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+        textView.setLines(1);
+        textView.setMaxLines(1);
+        textView.setSingleLine(true);
+        textView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
+        textView.setEllipsize(TextUtils.TruncateAt.END);
+        textView.setText(user.first_name);
+        frameLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, (LocaleController.isRTL ? 21 : 76), 11, (LocaleController.isRTL ? 76 : 21), 0));
+        frameLayout.addView(messageTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, 24, 57, 24, 1));
+
+        if (user != null) {
+            if (UserObject.isReplyUser(user)) {
+                avatarDrawable.setScaleSize(.8f);
+                avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_REPLIES);
+                imageView.setImage(null, null, avatarDrawable, user);
+            } else {
+                avatarDrawable.setScaleSize(1f);
+                avatarDrawable.setInfo(user);
+                imageView.setForUserOrChat(user, avatarDrawable);
+            }
+        }
+
+        builder.setPositiveButton(LocaleController.getString(R.string.Start), (dialogInterface, i) -> {
+            if (onConfirm != null) {
+                onConfirm.run();
+            }
+        });
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        fragment.showDialog(builder.create(), false, dialog -> {
+            if (onDismiss != null) {
+                onDismiss.run();
+            }
+        });
+    }
+
+    public static void createBotLaunchAlert(BaseFragment fragment, TLRPC.TL_messages_botApp botApp, TLRPC.User user, AtomicBoolean allowWrite, Runnable loadBotSheet) {
+        Context context = fragment.getContext();
+        CheckBoxCell[] cell = new CheckBoxCell[1];
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+
+        TextView messageTextView = new TextView(context) {
+            @Override
+            public void setText(CharSequence text, BufferType type) {
+                text = Emoji.replaceEmoji(text, getPaint().getFontMetricsInt(), false);
+                super.setText(text, type);
+            }
+        };
+        NotificationCenter.listenEmojiLoading(messageTextView);
+        messageTextView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+        messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+        messageTextView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP);
+        messageTextView.setText(LocaleController.getString(R.string.BotWebViewStartPermission));
+
+        FrameLayout frameLayout = new FrameLayout(context) {
+            @Override
+            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                if (cell[0] != null) {
+                    setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight() + cell[0].getMeasuredHeight() + AndroidUtilities.dp(7));
+                }
+            }
+        };
+        builder.setCustomViewOffset(6);
+        builder.setView(frameLayout);
+
+        AvatarDrawable avatarDrawable = new AvatarDrawable();
+        avatarDrawable.setTextSize(AndroidUtilities.dp(18));
+
+        BackupImageView imageView = new BackupImageView(context);
+        imageView.setRoundRadius(AndroidUtilities.dp(20));
+        frameLayout.addView(imageView, LayoutHelper.createFrame(40, 40, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, 22, 5, 22, 0));
+
+        TextView titleView = new TextView(context);
+        titleView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem));
+        titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
+        titleView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        titleView.setLines(1);
+        titleView.setMaxLines(1);
+        titleView.setSingleLine(true);
+        titleView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
+        titleView.setEllipsize(TextUtils.TruncateAt.END);
+        titleView.setText(user.first_name);
+
+        TextView subtitleView = new TextView(context);
+        subtitleView.setTextColor(Theme.getColor(Theme.key_dialogTextBlue));
+        subtitleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+        subtitleView.setLines(1);
+        subtitleView.setMaxLines(1);
+        subtitleView.setSingleLine(true);
+        subtitleView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
+        subtitleView.setEllipsize(TextUtils.TruncateAt.END);
+        subtitleView.setOnClickListener(v -> {
+            Bundle args = new Bundle();
+            args.putLong("user_id", user.id);
+            if (fragment.getMessagesController().checkCanOpenChat(args, fragment)) {
+                fragment.presentFragment(new ChatActivity(args));
+            }
+
+            builder.getDismissRunnable().run();
+        });
+        SpannableString ssb = SpannableString.valueOf(LocaleController.getString(R.string.MoreAboutThisBot) + "  ");
+        ColoredImageSpan img = new ColoredImageSpan(R.drawable.attach_arrow_right);
+        img.setTopOffset(1);
+        img.setSize(AndroidUtilities.dp(10));
+        ssb.setSpan(img, ssb.length() - 1, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        subtitleView.setText(ssb);
+
+        frameLayout.addView(titleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, (LocaleController.isRTL ? 21 : 76), 0, (LocaleController.isRTL ? 76 : 21), 0));
+        frameLayout.addView(subtitleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, (LocaleController.isRTL ? 21 : 76), 28, (LocaleController.isRTL ? 76 : 21), 0));
+        frameLayout.addView(messageTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, 24, 57, 24, 1));
+
+        if (botApp.request_write_access) {
+            allowWrite.set(true);
+
+            cell[0] = new CheckBoxCell(context, 1, fragment.getResourceProvider());
+            cell[0].setBackgroundDrawable(Theme.getSelectorDrawable(false));
+            cell[0].setText(AndroidUtilities.replaceTags(LocaleController.formatString("OpenUrlOption2", R.string.OpenUrlOption2, UserObject.getUserName(user))), "", true, false);
+            cell[0].setPadding(LocaleController.isRTL ? AndroidUtilities.dp(16) : AndroidUtilities.dp(8), 0, LocaleController.isRTL ? AndroidUtilities.dp(8) : AndroidUtilities.dp(16), 0);
+            cell[0].setChecked(true, false);
+            frameLayout.addView(cell[0], LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM | Gravity.LEFT, 0, 0, 0, 0));
+            cell[0].setOnClickListener(v -> {
+                CheckBoxCell cell1 = (CheckBoxCell) v;
+                allowWrite.set(!allowWrite.get());
+                cell1.setChecked(allowWrite.get(), true);
+            });
+        }
+
+        if (user != null) {
+            if (UserObject.isReplyUser(user)) {
+                avatarDrawable.setScaleSize(.8f);
+                avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_REPLIES);
+                imageView.setImage(null, null, avatarDrawable, user);
+            } else {
+                avatarDrawable.setScaleSize(1f);
+                avatarDrawable.setInfo(user);
+                imageView.setForUserOrChat(user, avatarDrawable);
+            }
+        }
+
+        builder.setPositiveButton(LocaleController.getString(R.string.Start), (dialogInterface, i) -> loadBotSheet.run());
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        fragment.showDialog(builder.create());
+    }
+
     public static void createClearOrDeleteDialogAlert(BaseFragment fragment, boolean clear, TLRPC.Chat chat, TLRPC.User user, boolean secret, boolean canDeleteHistory, MessagesStorage.BooleanCallback onProcessRunnable) {
         createClearOrDeleteDialogAlert(fragment, clear, false, false, chat, user, secret, false, canDeleteHistory, onProcessRunnable, null);
     }
@@ -1510,7 +1703,19 @@ public class AlertsCreator {
             lastMessageIsJoined = true;
         }
 
-        if (!second && (secret && !clear || canDeleteInbox) && !UserObject.isDeleted(user) && !lastMessageIsJoined || (deleteChatForAll = checkDeleteForAll && !clear && chat != null && chat.creator)) {
+        if (user != null && user.bot) {
+            cell[0] = new CheckBoxCell(context, 1, resourcesProvider);
+            cell[0].setBackgroundDrawable(Theme.getSelectorDrawable(false));
+            cell[0].setText(LocaleController.getString(R.string.BlockBot), "", false, false);
+            cell[0].setPadding(LocaleController.isRTL ? AndroidUtilities.dp(16) : AndroidUtilities.dp(8), 0, LocaleController.isRTL ? AndroidUtilities.dp(8) : AndroidUtilities.dp(16), 0);
+            cell[0].setChecked(deleteForAll[0] = true, false);
+            frameLayout.addView(cell[0], LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM | Gravity.LEFT, 0, 0, 0, 0));
+            cell[0].setOnClickListener(v -> {
+                CheckBoxCell cell1 = (CheckBoxCell) v;
+                deleteForAll[0] = !deleteForAll[0];
+                cell1.setChecked(deleteForAll[0], true);
+            });
+        } else if (!second && (secret && !clear || canDeleteInbox) && !UserObject.isDeleted(user) && !lastMessageIsJoined || (deleteChatForAll = checkDeleteForAll && !clear && chat != null && chat.creator)) {
             cell[0] = new CheckBoxCell(context, 1, resourcesProvider);
             cell[0].setBackgroundDrawable(Theme.getSelectorDrawable(false));
             if (deleteChatForAll) {
@@ -1603,7 +1808,7 @@ public class AlertsCreator {
                                 messageTextView.setText(AndroidUtilities.replaceTags(LocaleController.getString("AreYouSureDeleteThisChatSavedMessages", R.string.AreYouSureDeleteThisChatSavedMessages)));
                             } else {
                                 if (user.bot && !user.support) {
-                                    messageTextView.setText(AndroidUtilities.replaceTags(LocaleController.formatString("AreYouSureDeleteThisChatWithBot", R.string.AreYouSureDeleteThisChatWithBot, UserObject.getUserName(user))));
+                                    messageTextView.setText(AndroidUtilities.replaceTags(LocaleController.formatString(R.string.AreYouSureDeleteThisChatWithBotWithCheckmark, UserObject.getUserName(user))));
                                 } else {
                                     messageTextView.setText(AndroidUtilities.replaceTags(LocaleController.formatString("AreYouSureDeleteThisChatWithUser", R.string.AreYouSureDeleteThisChatWithUser, UserObject.getUserName(user))));
                                 }
@@ -1683,7 +1888,7 @@ public class AlertsCreator {
         fragment.showDialog(alertDialog);
         TextView button = (TextView) alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
         if (button != null) {
-            button.setTextColor(Theme.getColor(Theme.key_dialogTextRed2));
+            button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
         }
     }
 
@@ -1794,7 +1999,7 @@ public class AlertsCreator {
         fragment.showDialog(alertDialog);
         TextView button = (TextView) alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
         if (button != null) {
-            button.setTextColor(Theme.getColor(Theme.key_dialogTextRed2));
+            button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
         }
     }
 
@@ -2158,7 +2363,7 @@ public class AlertsCreator {
         LinearLayout linearLayout = new LinearLayout(fragment.getParentActivity());
         linearLayout.setOrientation(LinearLayout.VERTICAL);
         TextView messageTextView = new TextView(fragment.getParentActivity());
-        linearLayout.addView(messageTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, 0, 24, 16, 24, 24));
+        linearLayout.addView(messageTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, 0, 21, 0, 21, 8));
         messageTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
         messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
 
@@ -2175,8 +2380,7 @@ public class AlertsCreator {
         buttonTextView.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
         buttonTextView.setBackground(Theme.createSimpleSelectorRoundRectDrawable(AndroidUtilities.dp(6), Theme.getColor(Theme.key_featuredStickers_addButton), Theme.getColor(Theme.key_featuredStickers_addButtonPressed)));
 
-        linearLayout.addView(buttonTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, 0, 24, 15, 16, 24));
-
+        linearLayout.addView(buttonTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, 0, 16, 12, 16, 8));
 
         builder.setCustomView(linearLayout);
         BottomSheet bottomSheet = builder.show();
@@ -2255,6 +2459,36 @@ public class AlertsCreator {
         return popupWindow;
     }
 
+    public static void checkRestrictedInviteUsers(int currentAccount, TLRPC.Chat currentChat, TLRPC.Updates updates) {
+        if (updates == null || updates.updates == null || currentChat == null) {
+            return;
+        }
+        ArrayList<TLRPC.User> arrayList = null;
+        for (int i = 0; i < updates.updates.size(); i++) {
+            if (updates.updates.get(i) instanceof TLRPC.TL_updateGroupInvitePrivacyForbidden) {
+                TLRPC.TL_updateGroupInvitePrivacyForbidden restrictedUpdate = (TLRPC.TL_updateGroupInvitePrivacyForbidden) updates.updates.get(i);
+                TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(restrictedUpdate.user_id);
+                if (user != null) {
+                    if (arrayList == null) {
+                        arrayList = new ArrayList<>();
+                    }
+                    arrayList.add(user);
+                }
+            }
+        }
+        if (arrayList != null) {
+            ArrayList<TLRPC.User> finalArrayList = arrayList;
+            AndroidUtilities.runOnUIThread(() -> {
+                BaseFragment lastFragment = LaunchActivity.getLastFragment();
+                if (lastFragment != null && lastFragment.getParentActivity() != null) {
+                    LimitReachedBottomSheet restricterdUsersBottomSheet = new LimitReachedBottomSheet(lastFragment, lastFragment.getParentActivity(), LimitReachedBottomSheet.TYPE_ADD_MEMBERS_RESTRICTED, currentAccount);
+                    restricterdUsersBottomSheet.setRestrictedUsers(currentChat, finalArrayList);
+                    restricterdUsersBottomSheet.show();
+                }
+            }, 200);
+        }
+    }
+
     public interface BlockDialogCallback {
         void run(boolean report, boolean delete);
     }
@@ -2313,7 +2547,7 @@ public class AlertsCreator {
         fragment.showDialog(alertDialog);
         TextView button = (TextView) alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
         if (button != null) {
-            button.setTextColor(Theme.getColor(Theme.key_dialogTextRed2));
+            button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
         }
     }
 
@@ -2724,7 +2958,11 @@ public class AlertsCreator {
                 calendar.setTimeInMillis(date);
                 int year = calendar.get(Calendar.YEAR);
                 if (year == currentYear) {
-                    return LocaleController.getInstance().formatterScheduleDay.format(date);
+                    return (
+                        LocaleController.getInstance().formatterWeek.format(date) +
+                        ", " +
+                        LocaleController.getInstance().formatterScheduleDay.format(date)
+                    );
                 } else {
                     return LocaleController.getInstance().formatterScheduleYear.format(date);
                 }
@@ -2777,7 +3015,7 @@ public class AlertsCreator {
         buttonTextView.setTextColor(datePickerColors.buttonTextColor);
         buttonTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
         buttonTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        buttonTextView.setBackground(Theme.AdaptiveRipple.filledRect(datePickerColors.buttonBackgroundColor, 4));
+        buttonTextView.setBackground(Theme.AdaptiveRipple.filledRect(datePickerColors.buttonBackgroundColor, 8));
         container.addView(buttonTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, Gravity.LEFT | Gravity.BOTTOM, 16, 15, 16, 16));
         buttonTextView.setOnClickListener(v -> {
             canceled[0] = false;
@@ -4064,7 +4302,10 @@ public class AlertsCreator {
                         TLRPC.InputPeer peer = MessagesController.getInstance(UserConfig.selectedAccount).getInputPeer(dialog_id);
                         sendReport(peer, type, message, ids);
                         if (parentFragment instanceof ChatActivity) {
-                            ((ChatActivity) parentFragment).getUndoView().showWithAction(0, UndoView.ACTION_REPORT_SENT, null);
+                            UndoView undoView = ((ChatActivity) parentFragment).getUndoView();
+                            if (undoView != null) {
+                                undoView.showWithAction(0, UndoView.ACTION_REPORT_SENT, null);
+                            }
                         }
                     }
                 });
@@ -4116,7 +4357,10 @@ public class AlertsCreator {
 
             });
             if (parentFragment instanceof ChatActivity) {
-                ((ChatActivity) parentFragment).getUndoView().showWithAction(0, UndoView.ACTION_REPORT_SENT, null);
+                UndoView undoView = ((ChatActivity) parentFragment).getUndoView();
+                if (undoView != null) {
+                    undoView.showWithAction(0, UndoView.ACTION_REPORT_SENT, null);
+                }
             } else {
                 BulletinFactory.of(parentFragment).createReportSent(resourcesProvider).show();
             }
@@ -4156,7 +4400,7 @@ public class AlertsCreator {
     }
 
     public static void showSendMediaAlert(int result, final BaseFragment fragment, Theme.ResourcesProvider resourcesProvider) {
-        if (result == 0) {
+        if (result == 0 || fragment == null || fragment.getParentActivity() == null) {
             return;
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity(), resourcesProvider);
@@ -5477,7 +5721,7 @@ public class AlertsCreator {
         fragment.showDialog(dialog);
         TextView button = (TextView) dialog.getButton(DialogInterface.BUTTON_POSITIVE);
         if (button != null) {
-            button.setTextColor(Theme.getColor(Theme.key_dialogTextRed2));
+            button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
         }
     }
 
@@ -5488,7 +5732,7 @@ public class AlertsCreator {
         Context context = fragment.getParentActivity();
         final EditTextBoldCursor editText = new EditTextBoldCursor(context);
         editText.setBackground(null);
-        editText.setLineColors(Theme.getColor(Theme.key_dialogInputField), Theme.getColor(Theme.key_dialogInputFieldActivated), Theme.getColor(Theme.key_dialogTextRed2));
+        editText.setLineColors(Theme.getColor(Theme.key_dialogInputField), Theme.getColor(Theme.key_dialogInputFieldActivated), Theme.getColor(Theme.key_text_RedBold));
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(LocaleController.getString("NewTheme", R.string.NewTheme));

@@ -29,9 +29,9 @@ import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.ChatListItemAnimator;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
@@ -95,7 +95,7 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
     private float scaleFrom;
 
     private final int currentAccount;
-    private int animationIndex = -1;
+    private AnimationNotificationsLocker notificationsLocker = new AnimationNotificationsLocker();
     MessageObject.TextLayoutBlock textLayoutBlock;
     Drawable fromMessageDrawable;
     ChatActivityEnterView enterView;
@@ -149,23 +149,24 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
         TextPaint textPaint = Theme.chat_msgTextPaint;
         int emojiSize = AndroidUtilities.dp(20);
         if (messageView.getMessageObject().getEmojiOnlyCount() != 0) {
-            switch (messageView.getMessageObject().getEmojiOnlyCount()) {
+            boolean large = messageView.getMessageObject().emojiOnlyCount == messageView.getMessageObject().animatedEmojiCount;
+            switch (Math.max(messageView.getMessageObject().emojiOnlyCount, messageView.getMessageObject().animatedEmojiCount)) {
                 case 0:
                 case 1:
                 case 2:
-                    textPaint = Theme.chat_msgTextPaintEmoji[0];
+                    textPaint = large ? Theme.chat_msgTextPaintEmoji[0] : Theme.chat_msgTextPaintEmoji[2];
                     break;
                 case 3:
-                    textPaint = Theme.chat_msgTextPaintEmoji[1];
+                    textPaint = large ? Theme.chat_msgTextPaintEmoji[1] : Theme.chat_msgTextPaintEmoji[3];
                     break;
                 case 4:
-                    textPaint = Theme.chat_msgTextPaintEmoji[2];
+                    textPaint = large ? Theme.chat_msgTextPaintEmoji[2] : Theme.chat_msgTextPaintEmoji[4];
                     break;
                 case 5:
-                    textPaint = Theme.chat_msgTextPaintEmoji[3];
+                    textPaint = large ? Theme.chat_msgTextPaintEmoji[3] : Theme.chat_msgTextPaintEmoji[5];
                     break;
                 case 6:
-                    textPaint = Theme.chat_msgTextPaintEmoji[4];
+                    textPaint = large ? Theme.chat_msgTextPaintEmoji[4] : Theme.chat_msgTextPaintEmoji[5];
                     break;
                 case 7:
                 case 8:
@@ -182,12 +183,7 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
         if (text instanceof Spannable) {
             Spannable spannable = (Spannable) text;
             Object[] objects = spannable.getSpans(0, text.length(), Object.class);
-            for (int i = 0; i < objects.length; i++) {
-                if (!(objects[i] instanceof Emoji.EmojiSpan)) {
-                    containsSpans = true;
-                    break;
-                }
-            }
+            containsSpans = objects != null && objects.length > 0;
         }
         if (editText.length() != text.length() || containsSpans) {
             crossfade = true;
@@ -379,12 +375,12 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
         animator.setDuration(ChatListItemAnimator.DEFAULT_DURATION);
 
         container.addTransition(this);
-        animationIndex = NotificationCenter.getInstance(currentAccount).setAnimationInProgress(animationIndex, null);
+        notificationsLocker.lock();
 
         animator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
-                NotificationCenter.getInstance(currentAccount).onAnimationFinish(animationIndex);
+                notificationsLocker.unlock();
                 container.removeTransition(TextMessageEnterTransition.this);
                 messageView.setEnterTransitionInProgress(false);
                 messageView.getTransitionParams().lastDrawingBackgroundRect.set(messageView.getBackgroundDrawableLeft(), messageView.getBackgroundDrawableTop(), messageView.getBackgroundDrawableRight(), messageView.getBackgroundDrawableBottom());
@@ -746,8 +742,7 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
         }
     }
 
-    private int getThemedColor(String key) {
-        Integer color = resourcesProvider != null ? resourcesProvider.getColor(key) : null;
-        return color != null ? color : Theme.getColor(key);
+    private int getThemedColor(int key) {
+        return Theme.getColor(key, resourcesProvider);
     }
 }

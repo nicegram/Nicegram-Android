@@ -1,8 +1,8 @@
 package com.appvillis.nicegram.network
 
 import android.content.Context
+import com.appvillis.feature_nicegram_billing.NicegramBillingHelper
 import com.appvillis.nicegram.BuildConfig
-import com.appvillis.nicegram.NicegramBillingHelper
 import com.appvillis.nicegram.NicegramNetworkConsts
 import com.appvillis.nicegram.NicegramNetworkConsts.API_KEY
 import com.appvillis.nicegram.NicegramNetworkConsts.BASE_URL

@@ -46,6 +46,10 @@ public class CheckBox2 extends View {
         checkBoxBase.setChecked(checked, animated);
     }
 
+    public CheckBoxBase getCheckBoxBase() {
+        return checkBoxBase;
+    }
+
     public void setNum(int num) {
         checkBoxBase.setNum(num);
     }
@@ -54,7 +58,7 @@ public class CheckBox2 extends View {
         return checkBoxBase.isChecked();
     }
 
-    public void setColor(String background, String background2, String check) {
+    public void setColor(int background, int background2, int check) {
         checkBoxBase.setColor(background, background2, check);
     }
 
@@ -115,12 +119,16 @@ public class CheckBox2 extends View {
         }
     }
 
+    public void setForbidden(boolean forbidden) {
+        checkBoxBase.setForbidden(forbidden);
+    }
+
     @Override
     public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
         super.onInitializeAccessibilityNodeInfo(info);
-        info.setClassName(CheckBox.class.getName());
-        info.setChecked(isChecked());
+        info.setClassName("android.widget.Switch");
         info.setCheckable(true);
+        info.setChecked(isChecked());
     }
 
     public void setIcon(int icon) {

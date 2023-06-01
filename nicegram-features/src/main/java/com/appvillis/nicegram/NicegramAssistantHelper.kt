@@ -1,25 +1,27 @@
 package com.appvillis.nicegram
 
+import com.appvillis.feature_ai_chat.domain.RemoteConfigRepo
 import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase
 import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase
-import com.appvillis.feature_nicegram_assistant.domain.SetNicegramOnboardingStatusUseCase
+import com.appvillis.feature_nicegram_assistant.domain.SetGrumStatusUseCase
 import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository
-import com.appvillis.feature_powerball.domain.GetPowerballMetadataUseCase
 import com.appvillis.rep_user.domain.AppSessionControlUseCase
 
 object NicegramAssistantHelper {
     var getNicegramOnboardingStatusUseCase: GetNicegramOnboardingStatusUseCase? = null
-    var setNicegramOnboardingStatusUseCase: SetNicegramOnboardingStatusUseCase? = null
-    var powerballMetadataUseCase: GetPowerballMetadataUseCase? = null
+    var setGrumStatusUseCase: SetGrumStatusUseCase? = null
     var getSpecialOfferUseCase: GetSpecialOfferUseCase? = null
     var appSessionControlUseCase: AppSessionControlUseCase? = null
+    var remoteConfigRepo: RemoteConfigRepo? = null
 
-    fun setOnboardingShown() {
-        setNicegramOnboardingStatusUseCase?.setOnBoardingWasShown(true)
+    fun canShowGrum() = remoteConfigRepo?.grumConfig?.showGrum ?: false
+
+    fun setGrumPopupShown() {
+        setGrumStatusUseCase?.setGrumPopupWasShown(true)
     }
 
-    fun wasOnboardingShown(): Boolean {
-        return getNicegramOnboardingStatusUseCase?.onboardingWasShown ?: true
+    fun wasGrumPopupShown(): Boolean {
+        return getNicegramOnboardingStatusUseCase?.grumPopupWasShown ?: true
     }
 
     fun getSpecialOffer(): SpecialOffersRepository.SpecialOffer? {

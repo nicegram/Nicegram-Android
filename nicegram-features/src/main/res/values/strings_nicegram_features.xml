@@ -25,11 +25,11 @@
     <string name="NicegramShowRegistrationDate">Show registration date</string>
     <string name="NicegramOpenLinksInBrowser">Open links in browser</string>
     <string name="NicegramUnblockGuide">Unblock guide</string>
-    <string name="NicegramPremiumFeatures">Premium Features</string>
+    <string name="NicegramPremiumFeatures">Nicegram\nPremium Features</string>
     <string name="NicegramPrivacyPolicy">Privacy policy</string>
     <string name="NicegramEULA">EULA</string>
     <string name="NicegramSubRenews">Subscription Automatically Renews</string>
-    <string name="NicegramSubPerMonth"><![CDATA[<b>Subscribe for %s</b> per month]]></string>
+    <string name="NicegramSubPerMonth">Subscribe for %s / month</string>
     <string name="NicegramBuildInTranslator">Built-in Translator</string>
     <string name="NicegramBuildInTranslatorDesc">Instantly translate any message in the app without switching to 3rd-party translators</string>
     <string name="NicegramSpeech2Text">Speech2Text</string>
@@ -60,6 +60,8 @@
     <string name="NicegramOnbroadingText4">Take advantage of the innovations from the Nicegram team and get an eSIM with Internet access in 133 countries. You can also register new Telegram accounts to the phone number of the eSIM data plan.</string>
     <string name="NicegramOnbroadingTitle5">The Most Secure Messenger</string>
     <string name="NicegramOnbroadingText5">Secure Messenger with Strong Encryption, Group Audio and Video Calls, Public Channels, Groups and Bots, Unlimited Cloud Storage for Chats, Media and Documents sharing.</string>
+    <string name="NicegramOnbroadingTitle6">Meet Lily</string>
+    <string name="NicegramOnbroadingText6">Your Personal AI Chatbot Assistant for Simplifying Your Life!</string>
 
     <string name="NicegramDoubleBottom">Double bottom</string>
     <string name="NicegramDoubleBottomDesc">To enable this feature, you should have more than one account and switch on Passcode Lock (go to Settings → Privacy &amp; Security → Passcode Lock)</string>
@@ -79,6 +81,18 @@
     <string name="NicegramShareChannelInfo">Share channel information</string>
     <string name="NicegramShareChannelInfoDesc">Contribute to the most comprehensive wikipedia of Telegram channels and groups by automatically submitting channel information and link to our database. We do not connect your telegram profile and channel and do not share your personal data.</string>
     <string name="NicegarmBypassCopyProtection">Bypass Copy Protection</string>
+
+    <string name="NicegarmTutorial_HelpBtnText">How can I receive the code?</string>
+
+    <string name="NicegarmTutorial_Dialog_Title">Starting from February 2023, follow the steps below to receive the code:</string>
+    <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. Log into <font color="#0A84FF">Telegram</font><br/>2. Log into <font color="#A134C7">Nicegram</font><br/>3. Enter the code that you will receive on <font color="#0A84FF">Telegram</font>]]></string>
+
+    <string name="NicegramMaxAccount_IncreaseTo">100 Accounts maximum</string>
+    <string name="NicegramMaxAccount_Default">The default maximum number of accounts is 10</string>
+    <string name="NicegramMaxAccount_IncreaseWarn">Increasing the maximum number of accounts might have a negative impact on the app’s launch speed and performance on certain devices. Please note that you may lose access to your newly added accounts if you decide to reduce their maximum number in the future</string>
+    <string name="NicegramMaxAccount_Increase">Increase</string>
+    <string name="NicegramMaxAccount_Reduce">Reduce</string>
+    <string name="NicegramMaxAccount_ReduceWarn">Reducing the maximum number of accounts is likely to improve the app’s performance on certain devices. However, please note that you will have to log into all your accounts again apart from your first one</string>
 
     <string name="NicegramIconDefault" translatable="false">Default</string>
     <string name="NicegramIconMonoBlack" translatable="false">Mono Black</string>

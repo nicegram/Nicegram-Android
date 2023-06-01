@@ -96,6 +96,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
     private ArrayList<TLRPC.User> searchResultCommandsUsers;
     private ArrayList<TLRPC.BotInlineResult> searchResultBotContext;
     private TLRPC.TL_inlineBotSwitchPM searchResultBotContextSwitch;
+    private TLRPC.TL_inlineBotWebView searchResultBotWebViewSwitch;
     private MentionsAdapterDelegate delegate;
     private LongSparseArray<TLRPC.BotInfo> botInfo;
     private int resultStartPosition;
@@ -199,6 +200,10 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.fileLoaded);
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.fileLoadFailed);
         }
+    }
+
+    public TLRPC.User getFoundContextBot() {
+        return foundContextBot;
     }
 
     @Override
@@ -482,6 +487,10 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         return searchResultBotContextSwitch;
     }
 
+    public TLRPC.TL_inlineBotWebView getBotWebViewSwitch() {
+        return searchResultBotWebViewSwitch;
+    }
+
     public long getContextBotId() {
         return foundContextBot != null ? foundContextBot.id : 0;
     }
@@ -685,7 +694,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         if (foundContextBot != null) {
             return foundContextBot.bot_inline_placeholder;
         } else if (searchingContextUsername != null && searchingContextUsername.equals("gif")) {
-            return "Search GIFs";
+            return LocaleController.getString("SearchGifsTitle", R.string.SearchGifsTitle);
         }
         return null;
     }
@@ -736,6 +745,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 if (searchResultBotContextSwitch == null) {
                     searchResultBotContextSwitch = res.switch_pm;
                 }
+                searchResultBotWebViewSwitch = res.switch_webview;
                 for (int a = 0; a < res.results.size(); a++) {
                     TLRPC.BotInlineResult result = res.results.get(a);
                     if (!(result.document instanceof TLRPC.TL_document) && !(result.photo instanceof TLRPC.TL_photo) && !"game".equals(result.type) && result.content == null && result.send_message instanceof TLRPC.TL_botInlineMessageMediaAuto) {
@@ -768,9 +778,9 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 searchResultSuggestions = null;
                 searchResultCommandsHelp = null;
                 searchResultCommandsUsers = null;
-                delegate.needChangePanelVisibility(!searchResultBotContext.isEmpty() || searchResultBotContextSwitch != null);
+                delegate.needChangePanelVisibility(!searchResultBotContext.isEmpty() || searchResultBotContextSwitch != null || searchResultBotWebViewSwitch != null);
                 if (added) {
-                    boolean hasTop = searchResultBotContextSwitch != null;
+                    boolean hasTop = searchResultBotContextSwitch != null || searchResultBotWebViewSwitch != null;
                     notifyItemChanged(searchResultBotContext.size() - res.results.size() + (hasTop ? 1 : 0) - 1);
                     notifyItemRangeInserted(searchResultBotContext.size() - res.results.size() + (hasTop ? 1 : 0), res.results.size());
                 } else {
@@ -1065,10 +1075,14 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             }
         }
         if (foundType == -1) {
+            contextMedia = false;
+            searchResultBotContext = null;
             delegate.needChangePanelVisibility(false);
             return;
         }
         if (foundType == 0) {
+            contextMedia = false;
+            searchResultBotContext = null;
             final ArrayList<Long> users = new ArrayList<>();
             for (int a = 0; a < Math.min(100, messageObjects.size()); a++) {
                 long from_id = messageObjects.get(a).getFromChatId();
@@ -1113,14 +1127,27 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 chat = null;
                 threadId = 0;
             }
+            TLRPC.User me = UserConfig.getInstance(currentAccount).getCurrentUser();
             if (chat != null && info != null && info.participants != null && (!ChatObject.isChannel(chat) || chat.megagroup)) {
-                for (int a = (forSearch ? -1 : 0); a < info.participants.participants.size(); a++) {
+                for (int a = -2; a < info.participants.participants.size(); a++) {
                     String username;
                     String firstName;
                     String lastName;
                     TLObject object;
                     long id;
-                    if (a == -1) {
+                    if (a == -2) {
+                        if (me == null || !usernameOnly) {
+                            continue;
+                        }
+                        firstName = me.first_name;
+                        lastName = me.last_name;
+                        username = UserObject.getPublicUsername(me);
+                        object = me;
+                        id = me.id;
+                    } else if (a == -1) {
+                        if (!forSearch) {
+                            continue;
+                        }
                         if (usernameString.length() == 0) {
                             newResult.add(chat);
                             continue;
@@ -1132,8 +1159,11 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                         id = -chat.id;
                     } else {
                         TLRPC.ChatParticipant chatParticipant = info.participants.participants.get(a);
+                        if (me != null && chatParticipant.user_id == me.id) {
+                            continue;
+                        }
                         TLRPC.User user = messagesController.getUser(chatParticipant.user_id);
-                        if (user == null || !usernameOnly && UserObject.isUserSelf(user) || newResultsHashMap.indexOfKey(user.id) >= 0) {
+                        if (user == null || UserObject.isUserSelf(user) || newResultsHashMap.indexOfKey(user.id) >= 0) {
                             continue;
                         }
                         if (usernameString.length() == 0) {
@@ -1239,7 +1269,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                                         for (int a = 0; a < res.participants.size(); a++) {
                                             TLRPC.ChannelParticipant participant = res.participants.get(a);
                                             long peerId = MessageObject.getPeerId(participant.peer);
-                                            if (searchResultUsernamesMap.indexOfKey(peerId) >= 0 || !isSearchingMentions && peerId == currentUserId) {
+                                            if (searchResultUsernamesMap.indexOfKey(peerId) >= 0 || peerId == 0 && searchResultUsernamesMap.indexOfKey(currentUserId) >= 0 || !isSearchingMentions && (peerId == currentUserId || peerId == 0)) {
                                                 continue;
                                             }
                                             if (peerId >= 0) {
@@ -1287,6 +1317,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             searchResultCommandsHelp = null;
             searchResultCommandsUsers = null;
             searchResultSuggestions = null;
+            contextMedia = false;
+            searchResultBotContext = null;
             notifyDataSetChanged();
             delegate.needChangePanelVisibility(!searchResultHashtags.isEmpty());
         } else if (foundType == 99) {
@@ -1335,6 +1367,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             searchResultCommands = newResult;
             searchResultCommandsHelp = newResultHelp;
             searchResultCommandsUsers = newResultUsers;
+            contextMedia = false;
+            searchResultBotContext = null;
             notifyDataSetChanged();
             delegate.needChangePanelVisibility(!newResult.isEmpty());
         } else if (foundType == 3) {
@@ -1427,9 +1461,9 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         if (stickers != null) {
             return stickers.size();
         } else if (searchResultBotContext != null) {
-            return searchResultBotContext.size() + (searchResultBotContextSwitch != null ? 1 : 0);
+            return searchResultBotContext.size() + (searchResultBotContextSwitch != null || searchResultBotWebViewSwitch != null ? 1 : 0);
         } else if (searchResultUsernames != null) {
-            if (canUseMentionAll())
+            if (shouldShowMentionAll())
                 return searchResultUsernames.size() + 1;
             else
                 return searchResultUsernames.size();
@@ -1457,6 +1491,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             searchResultBotContext.clear();
         }
         searchResultBotContextSwitch = null;
+        searchResultBotWebViewSwitch = null;
         if (searchResultUsernames != null) {
             searchResultUsernames.clear();
         }
@@ -1482,7 +1517,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         } else if (foundContextBot != null && !inlineMediaEnabled) {
             return 3;
         } else if (searchResultBotContext != null) {
-            if (position == 0 && searchResultBotContextSwitch != null) {
+            if (position == 0 && (searchResultBotContextSwitch != null || searchResultBotWebViewSwitch != null)) {
                 return 2;
             }
             return 1;
@@ -1496,7 +1531,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
     }
 
     public int getItemPosition(int i) {
-        if (searchResultBotContext != null && searchResultBotContextSwitch != null) {
+        if (searchResultBotContext != null && (searchResultBotContextSwitch != null || searchResultBotWebViewSwitch != null)) {
             i--;
         }
         return i;
@@ -1510,7 +1545,13 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         if (stickers != null) {
             return i >= 0 && i < stickers.size() ? stickers.get(i).sticker : null;
         } else if (searchResultBotContext != null) {
-            if (searchResultBotContextSwitch != null) {
+            if (searchResultBotWebViewSwitch != null) {
+                if (i == 0) {
+                    return searchResultBotWebViewSwitch;
+                } else {
+                    i--;
+                }
+            } else if (searchResultBotContextSwitch != null) {
                 if (i == 0) {
                     return searchResultBotContextSwitch;
                 } else {
@@ -1637,10 +1678,10 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 }
             }
         } else if (searchResultBotContext != null) {
-            boolean hasTop = searchResultBotContextSwitch != null;
+            boolean hasTop = searchResultBotContextSwitch != null || searchResultBotWebViewSwitch != null;
             if (holder.getItemViewType() == 2) {
                 if (hasTop) {
-                    ((BotSwitchCell) holder.itemView).setText(searchResultBotContextSwitch.text);
+                    ((BotSwitchCell) holder.itemView).setText(searchResultBotContextSwitch != null ? searchResultBotContextSwitch.text : searchResultBotWebViewSwitch.text);
                 }
             } else {
                 if (hasTop) {
@@ -1650,10 +1691,10 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             }
         } else {
             if (searchResultUsernames != null) {
-                if (position == 0 && canUseMentionAll()) {
+                if (position == 0 && shouldShowMentionAll()) {
                     ((MentionCell) holder.itemView).setUser(null, true);
                 } else {
-                    TLObject object = searchResultUsernames.get(canUseMentionAll() ? position - 1 : position);
+                    TLObject object = searchResultUsernames.get(shouldShowMentionAll() ? position - 1 : position);
                     if (object instanceof TLRPC.User) {
                         ((MentionCell) holder.itemView).setUser((TLRPC.User) object, false);
                     } else if (object instanceof TLRPC.Chat) {
@@ -1700,13 +1741,12 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         }
     }
 
-    private int getThemedColor(String key) {
-        Integer color = resourcesProvider != null ? resourcesProvider.getColor(key) : null;
-        return color != null ? color : Theme.getColor(key);
+    private int getThemedColor(int key) {
+        return Theme.getColor(key, resourcesProvider);
     }
 
-    private Boolean canUseMentionAll() {
+    private Boolean shouldShowMentionAll() {
         if (info == null) return false;
-        return MentionAllHelper.INSTANCE.canUseMentionAll(info.participants_count, currentAccount);
+        return MentionAllHelper.INSTANCE.shouldShowMentionAll(info.participants_count, currentAccount);
     }
 }

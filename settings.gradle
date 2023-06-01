@@ -3,3 +3,23 @@ include ':TMessagesProj_App'
 include ':TMessagesProj_AppHuawei'
 include ':TMessagesProj_AppHockeyApp'
 include ':nicegram-features'
+
+def modules = [
+        'assistant-core',
+        'feature-nicegram-assistant',
+        'feature-ai-chat',
+        'feature-nicegram-billing',
+        'feature-auth',
+        'feature-analytics',
+        'feature-ads',
+        'rep-user',
+        'lib-android-base',
+        'core-ui',
+        'core-network'
+]
+
+for (module in modules) {
+    def moduleName = ":${module}"
+    include moduleName
+    project(moduleName).projectDir = new File("nicegram-assistant-android/${module}")
+}

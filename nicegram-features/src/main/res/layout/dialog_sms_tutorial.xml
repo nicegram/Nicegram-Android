@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="304dp"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:layout_marginHorizontal="35dp"
+    android:layout_marginVertical="16dp"
+    android:background="@drawable/bg_rounded_16_dialog_bg"
+    android:padding="24dp">
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="true"
+        android:scrollbars="vertical"
+        android:fadeScrollbars="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false">
+
+            <ImageView
+                android:id="@+id/smsIv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:adjustViewBounds="true"
+                android:src="@drawable/ng_sms_tutorial"
+                app:layout_constraintBottom_toTopOf="@id/titleTv"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/titleTv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/sf_pro_text_bold"
+                android:gravity="center"
+                android:letterSpacing="-0.01"
+                android:lineSpacingExtra="3sp"
+                android:text="@string/NicegarmTutorial_Dialog_Title"
+                android:textColor="@color/ai_chat_bonus_dialog_title"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toTopOf="@id/text"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/smsIv"
+                app:layout_constraintVertical_chainStyle="packed" />
+
+            <TextView
+                android:id="@+id/text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/sf_pro_text_regular"
+                android:gravity="start"
+                android:letterSpacing="-0.01"
+                android:lineSpacingExtra="5sp"
+                android:text="@string/NicegarmTutorial_Dialog_Steps_Styled"
+                android:textColor="@color/ai_chat_bonus_dialog_text"
+                android:textSize="16sp"
+                app:layout_constraintBottom_toTopOf="@id/bottomDivider"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/titleTv" />
+
+            <View
+                android:id="@+id/bottomDivider"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="32dp"
+                android:background="@color/ai_chat_bonus_dialog_divider"
+                app:layout_constraintBottom_toTopOf="@id/okBtn"
+                app:layout_constraintTop_toBottomOf="@id/text" />
+
+            <TextView
+                android:id="@+id/okBtn"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/ng_special_offer_bg_2"
+                android:fontFamily="@font/sf_pro_text_regular"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:letterSpacing="-0.03"
+                android:stateListAnimator="@animator/scale_state_list_animator"
+                android:text="@string/Common_Ok"
+                android:textAllCaps="true"
+                android:textColor="@color/aiWhite"
+                android:textSize="14sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/bottomDivider" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

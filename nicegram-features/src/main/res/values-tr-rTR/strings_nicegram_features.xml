@@ -25,11 +25,11 @@
     <string name="NicegramShowRegistrationDate">Kayıt tarihini göster</string>
     <string name="NicegramOpenLinksInBrowser">Bağlantıları tarayıcıda aç</string>
     <string name="NicegramUnblockGuide">Engel kaldırma rehberi</string>
-    <string name="NicegramPremiumFeatures">Premium Özellikler</string>
+    <string name="NicegramPremiumFeatures">Nicegram\nPremium Özellikler</string>
     <string name="NicegramPrivacyPolicy">Gizlilik politikası</string>
     <string name="NicegramEULA">EULA</string>
     <string name="NicegramSubRenews">Abonelik Otomatik Olarak Yenilenir</string>
-    <string name="NicegramSubPerMonth"><![CDATA[<b>Ayda %s karşılığında</b> abone olun]]></string>
+    <string name="NicegramSubPerMonth">Aylık %s karşılığında abone olun</string>
     <string name="NicegramBuildInTranslator">Yerleşik Çevirmen</string>
     <string name="NicegramBuildInTranslatorDesc">Üçüncü kişi çevirmenlere geçmeden tüm mesajları anında uygulamada çevirin</string>
     <string name="NicegramSpeech2Text">Konuşmadan Metne</string>
@@ -57,6 +57,8 @@
     <string name="NicegramOnbroadingText4">Nicegram takımının yeniliklerinden faydalanın ve 133 ülkede internet erişimi olan bir eSIM\'e sahip olun.  Aynı zamanda eSIM veri planının telefon numarasına yeni Telegram hesapları da kaydedebilirsiniz.  </string>
     <string name="NicegramOnbroadingTitle5">En Güvenli Mesenger</string>
     <string name="NicegramOnbroadingText5">Güçlü Şifreleme, Grup Sesli ve Görüntülü Aramalar, Genel kanallar, Gruplar ve Botlar, Sohbetler Belgeler ve Dökümanlar için Limitsiz Bulut depolaması ile Güvenli Messenger.</string>
+    <string name="NicegramOnbroadingTitle6">Lily ile Tanışın</string>
+    <string name="NicegramOnbroadingText6">Hayatınızı Basitleştirmek için Kişisel Yapay Zeka Sohbet Robotu Asistanınız!</string>
     <string name="NicegramDoubleBottom">Çift Dip</string>
     <string name="NicegramDoubleBottomDesc">Bu özelliği etkinleştirmek için birden fazla hesabının olması ve Parola Kilidini açman gerekir (Ayarlar → Gizlilik &amp; Güvenlik → Parola Kilidi\'ne gidin)</string>
     <string name="NicegramDoubleBottomAnotherCode">Lütfen Parola Kilidi için mevcut kullandığınızdan farklı bir parola belirleyin</string>
@@ -73,4 +75,7 @@
     <string name="NicegramShareChannelInfo">Kanal bilgilerini paylaş</string>
     <string name="NicegramShareChannelInfoDesc">Kanal bilgilerini ve bağlantısını veri tabanımıza göndererek en kapsamlı Telegram kanalı wikipedia\'sına katkıda bulunun. Telegram profilinizi ve kanalınızı bağlamayız ve kişisel verilerinizi paylaşmayız.</string>
     <string name="NicegarmBypassCopyProtection">Kopya Korumasını Atla</string>
+    <string name="NicegarmTutorial_HelpBtnText">Kodu nasıl alabilirim?</string>
+    <string name="NicegarmTutorial_Dialog_Title">Şubat 2023\'ten itibaren kodu almak için aşağıdaki adımları izleyin:</string>
+    <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. <font color="#0A84FF">Telegram’da</font><br/>oturum açın 2. <font color="#A134C7">Nicegram’da</font><br/>oturum açın 3. <font color="#0A84FF">Telegram’da</font>alacağınız kodu girin]]></string>
 </resources>

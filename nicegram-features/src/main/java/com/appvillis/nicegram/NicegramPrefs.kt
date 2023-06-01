@@ -16,6 +16,10 @@ object NicegramPrefs {
     const val PREF_SAVED_FOLDER = "SavedFolder"
     const val PREF_SHARE_CHANNEL_INFO = "ShareChannelInfo"
     const val PREF_BYPASS_COPY_PROTECTION = "BypassCopyProtection"
+    const val PREF_SHOW_AI_CHAT_BOT_DIALOGS = "ShowAiChatBotDialogs"
+    const val PREF_SHOW_AI_CHAT_BOT_CHAT = "ShowAiChatBotChat"
+    const val PREF_MAX_ACCOUNTS = "MaxAccountCount"
+    const val PREF_MAX_ACCOUNTS_SET = "MaxAccountCountSet"
 
     const val PREF_MENTION_ALL_ENABLED_DEFAULT = true
     const val PREF_SKIP_READ_HISTORY_DEFAULT = false
@@ -32,4 +36,9 @@ object NicegramPrefs {
     const val PREF_CHAT_LANGUAGE_TO_TRANSLATE_DEFAULT = ""
     const val PREF_SHARE_CHANNEL_INFO_DEFAULT = true
     const val PREF_BYPASS_COPY_PROTECTION_DEFAULT = true
+    const val PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT = true
+    const val PREF_SHOW_AI_CHAT_BOT_CHAT_DEFAULT = true
+    const val PREF_MAX_ACCOUNTS_DEFAULT = 10
+    const val PREF_MAX_ACCOUNTS_MAX = 100
+    const val PREF_MAX_ACCOUNTS_SET_DEFAULT = false
 }

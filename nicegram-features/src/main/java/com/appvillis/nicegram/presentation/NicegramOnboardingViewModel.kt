@@ -7,7 +7,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NicegramOnboardingViewModel @Inject constructor(
-    private val nicegramFeaturesOnboardingUseCase: NicegramFeaturesOnboardingUseCase
+    private val nicegramFeaturesOnboardingUseCase: NicegramFeaturesOnboardingUseCase,
 ) : ViewModel() {
 
     fun onViewCreated() {

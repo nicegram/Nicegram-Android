@@ -10,9 +10,7 @@ package org.telegram.messenger;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlarmManager;
 import android.app.Application;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -29,29 +27,43 @@ import android.os.Handler;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 
+import com.appvillis.assistant_core.app.AppInit;
+import com.appvillis.core_resources.domain.TgResourceProvider;
+import com.appvillis.feature_ai_chat.domain.AiChatCommandsRepository;
+import com.appvillis.feature_ai_chat.domain.ClearDataUseCase;
+import com.appvillis.feature_ai_chat.domain.UseResultManager;
+import com.appvillis.feature_ai_chat.domain.usecases.GetBalanceTopUpRequestUseCase;
+import com.appvillis.feature_ai_chat.domain.usecases.GetChatCommandsUseCase;
+import com.appvillis.feature_analytics.domain.AnalyticsManager;
 import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase;
 import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase;
-import com.appvillis.feature_nicegram_assistant.domain.SetNicegramOnboardingStatusUseCase;
-import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository;
-import com.appvillis.feature_powerball.domain.GetPowerballMetadataUseCase;
-import com.appvillis.feature_powerball.domain.PowerballRepository;
+import com.appvillis.feature_nicegram_assistant.domain.SetGrumStatusUseCase;
+import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
+import com.appvillis.feature_nicegram_billing.domain.BillingManager;
+import com.appvillis.feature_nicegram_billing.domain.RequestInAppsUseCase;
+import com.appvillis.nicegram.AiChatBotHelper;
+import com.appvillis.nicegram.AnalyticsHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
 import androidx.annotation.NonNull;
 import androidx.multidex.MultiDex;
 
-import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.NicegramFeaturesHelper;
+
+import app.nicegram.DailyRewardsHelper;
 import app.nicegram.NicegramGroupCollectHelper;
+
+import com.appvillis.nicegram.NicegramPrefs;
 import com.appvillis.nicegram.ReviewHelper;
-import com.appvillis.nicegram.domain.BillingManager;
 import com.appvillis.nicegram.domain.CollectGroupInfoUseCase;
 import com.appvillis.nicegram.domain.NicegramFeaturesOnboardingUseCase;
 import com.appvillis.nicegram.domain.NicegramSessionCounter;
 import com.appvillis.nicegram.domain.RemoteConfigRepo;
 import com.appvillis.nicegram.network.NicegramNetwork;
 import com.appvillis.rep_user.domain.AppSessionControlUseCase;
-import com.appvillis.rep_user.domain.UserRepository;
+import com.appvillis.rep_user.domain.ClaimDailyRewardUseCase;
+import com.appvillis.rep_user.domain.GetUserStatusUseCase;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 
@@ -62,11 +74,14 @@ import org.telegram.ui.Components.ForegroundDetector;
 import org.telegram.ui.LauncherIconController;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.inject.Inject;
 
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.PrefsHelper;
+import app.nicegram.TgThemeProxyImpl;
 
 public class ApplicationLoader extends Application {
 
@@ -98,11 +113,23 @@ public class ApplicationLoader extends Application {
     private static ILocationServiceProvider locationServiceProvider;
 
     @Inject
+    public ClaimDailyRewardUseCase claimDailyRewardUseCase;
+    @Inject
+    public GetUserStatusUseCase getUserStatusUseCase;
+    @Inject
+    public GetChatCommandsUseCase getChatCommandsUseCase;
+    @Inject
+    public AiChatCommandsRepository commandsRepo;
+    @Inject
+    public GetBalanceTopUpRequestUseCase getBalanceTopUpRequestUseCase;
+    @Inject
+    public RequestInAppsUseCase requestInAppsUseCase;
+    @Inject
     public NicegramFeaturesOnboardingUseCase nicegramFeaturesOnboardingUseCase;
     @Inject
     public GetNicegramOnboardingStatusUseCase getNicegramOnboardingStatusUseCase;
     @Inject
-    public SetNicegramOnboardingStatusUseCase setNicegramOnboardingStatusUseCase;
+    public SetGrumStatusUseCase setGrumStatusUseCase;
     @Inject
     public CollectGroupInfoUseCase collectGroupInfoUseCase;
     @Inject
@@ -110,19 +137,24 @@ public class ApplicationLoader extends Application {
     @Inject
     public GetSpecialOfferUseCase getSpecialOfferUseCase;
     @Inject
-    public UserRepository userRepository;
-    @Inject
-    public SpecialOffersRepository specialOffersRepository;
-    @Inject
     public BillingManager billingManager;
     @Inject
-    public PowerballRepository powerballRepository;
-    @Inject
-    public GetPowerballMetadataUseCase getPowerballMetadataUseCase;
-    @Inject
     public RemoteConfigRepo remoteConfigRepo;
+
+    @Inject
+    public com.appvillis.feature_ai_chat.domain.RemoteConfigRepo remoteConfigRepoAi;
     @Inject
     public NicegramSessionCounter nicegramSessionCounter;
+    @Inject
+    public UseResultManager useResultManager;
+    @Inject
+    public ClearDataUseCase clearDataUseCase;
+    @Inject
+    public AppInit appInit;
+    @Inject
+    public TgResourceProvider tgResourceProvider;
+    @Inject
+    public AnalyticsManager analyticsManager;
 
     private static ApplicationLoader appInstance = null;
     public static ApplicationLoader getInstance() {
@@ -296,11 +328,6 @@ public class ApplicationLoader extends Application {
 
     @Override
     public void onCreate() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-            UserConfig.MAX_ACCOUNT_COUNT = 30;
-            UserConfig.MAX_ACCOUNT_DEFAULT_COUNT = 30;
-        }
-
         applicationLoaderInstance = this;
         appInstance = this;
         try {
@@ -311,6 +338,7 @@ public class ApplicationLoader extends Application {
 
         super.onCreate();
 
+        setMaxAccountCount(); // ng
         initNicegram();
 
         if (BuildVars.LOGS_ENABLED) {
@@ -322,7 +350,11 @@ public class ApplicationLoader extends Application {
         }
 
         NativeLoader.initNativeLibs(ApplicationLoader.applicationContext);
-        ConnectionsManager.native_setJava(false);
+        try {
+            ConnectionsManager.native_setJava(false);
+        } catch (UnsatisfiedLinkError error) {
+            throw new RuntimeException("can't load native libraries " +  Build.CPU_ABI + " lookup folder " + NativeLoader.getAbiFolder());
+        }
         new ForegroundDetector(this) {
             @Override
             public void onActivityStarted(Activity activity) {
@@ -361,10 +393,6 @@ public class ApplicationLoader extends Application {
             }
         } else {
             applicationContext.stopService(new Intent(applicationContext, NotificationsService.class));
-
-            PendingIntent pintent = PendingIntent.getService(applicationContext, 0, new Intent(applicationContext, NotificationsService.class), PendingIntent.FLAG_MUTABLE );
-            AlarmManager alarm = (AlarmManager)applicationContext.getSystemService(Context.ALARM_SERVICE);
-            alarm.cancel(pintent);
         }
     }
 
@@ -595,24 +623,87 @@ public class ApplicationLoader extends Application {
         nicegramSessionCounter.increaseSessionCount();
         ReviewHelper.INSTANCE.setNicegramSessionCounter(nicegramSessionCounter);
 
-        remoteConfigRepo.initialize();
-        powerballRepository.setSocialInfoProvider(billingManager);
-        billingManager.initializeBilling();
-        userRepository.initialize();
-        specialOffersRepository.initialize();
-        appSessionControlUseCase.increaseSessionCount();
+        appInit.initialize();
 
-        NicegramAssistantHelper.INSTANCE.setSetNicegramOnboardingStatusUseCase(setNicegramOnboardingStatusUseCase);
+        remoteConfigRepo.initialize();
+        appSessionControlUseCase.increaseSessionCount();
+        tgResourceProvider.setThemeProxy(new TgThemeProxyImpl());
+
+        AnalyticsHelper.INSTANCE.setAnalyticsManager(analyticsManager);
+
+        DailyRewardsHelper.INSTANCE.setUseCase(claimDailyRewardUseCase);
+
+        AiChatBotHelper.INSTANCE.setGetChatCommandsUseCase(getChatCommandsUseCase);
+        AiChatBotHelper.INSTANCE.setGetUserStatusUseCase(getUserStatusUseCase);
+        AiChatBotHelper.INSTANCE.setClearDataUseCase(clearDataUseCase);
+        AiChatBotHelper.INSTANCE.setRequestInAppsUseCase(requestInAppsUseCase);
+        AiChatBotHelper.INSTANCE.setGetBalanceTopUpRequestUseCase(getBalanceTopUpRequestUseCase);
+        AiChatBotHelper.INSTANCE.setUseResultManager(useResultManager);
+        AiChatBotHelper.INSTANCE.setTgResourceProvider(tgResourceProvider);
+
+        NicegramAssistantHelper.INSTANCE.setSetGrumStatusUseCase(setGrumStatusUseCase);
         NicegramAssistantHelper.INSTANCE.setGetNicegramOnboardingStatusUseCase(getNicegramOnboardingStatusUseCase);
         NicegramFeaturesHelper.INSTANCE.setNicegramFeaturesOnboardingUseCase(nicegramFeaturesOnboardingUseCase);
         NicegramAssistantHelper.INSTANCE.setGetSpecialOfferUseCase(getSpecialOfferUseCase);
         NicegramAssistantHelper.INSTANCE.setAppSessionControlUseCase(appSessionControlUseCase);
-        NicegramAssistantHelper.INSTANCE.setPowerballMetadataUseCase(getPowerballMetadataUseCase);
+        NicegramAssistantHelper.INSTANCE.setRemoteConfigRepo(remoteConfigRepoAi);
         NicegramGroupCollectHelper.INSTANCE.setCollectGroupInfoUseCase(collectGroupInfoUseCase);
         NicegramBillingHelper.INSTANCE.setBillingManager(billingManager);
         PrefsHelper.INSTANCE.setRemoteConfigRepo(remoteConfigRepo);
 
+        AnalyticsHelper.INSTANCE.logEvent(getUserStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
         new Handler().postDelayed(() -> NicegramNetwork.INSTANCE.getSettings(UserConfig.getInstance(UserConfig.selectedAccount).clientUserId), 3000);
+        new Handler().postDelayed(() -> {
+            int accountCount = 0;
+            for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+                if (UserConfig.getInstance(a).isClientActivated()) {
+                    accountCount++;
+                }
+            }
+            int accountCountToLog = accountCount;
+            if (accountCount > 1 && accountCount <= 5) {
+                accountCountToLog = 5;
+            } else if (accountCount > 1 && accountCount <= 100) {
+                accountCountToLog = (int) Math.round(accountCount / 10.0) * 10;
+            }
+            Map<String, String> paramsMap = new HashMap<>();
+            paramsMap.put("profiles_count", String.valueOf(accountCount));
+            AnalyticsHelper.INSTANCE.logEvent("user_set_"+accountCountToLog+"_profiles", paramsMap);
+        }, 5000);
+    }
+
+    private void setMaxAccountCount() {
+        for (int a = 0; a < NicegramPrefs.PREF_MAX_ACCOUNTS_MAX; a++) {
+            if (UserConfig.getInstance(a).isClientActivatedEarlyCheck()) {
+                Log.d("setMaxAccountCount", "account " + a + " is active");
+            }
+        }
+        if (PrefsHelper.INSTANCE.getMaxAccountCountWasSet(this)) {
+            Log.d("setMaxAccountCount", String.format("Max account count was set to %s", PrefsHelper.INSTANCE.getMaxAccountCount(this)));
+
+            UserConfig.MAX_ACCOUNT_COUNT = PrefsHelper.INSTANCE.getMaxAccountCount(this);
+            UserConfig.MAX_ACCOUNT_DEFAULT_COUNT = PrefsHelper.INSTANCE.getMaxAccountCount(this);
+        } else {
+            Log.d("setMaxAccountCount", "Max account count was not set before");
+
+            int accountCount = 0;
+            for (int a = 0; a < NicegramPrefs.PREF_MAX_ACCOUNTS_MAX; a++) {
+                if (UserConfig.getInstance(a).isClientActivatedEarlyCheck()) {
+                    accountCount++;
+                }
+            }
+
+            int accountsToSet = NicegramPrefs.PREF_MAX_ACCOUNTS_MAX;
+            if (accountCount <= 1) accountsToSet = NicegramPrefs.PREF_MAX_ACCOUNTS_DEFAULT;
+
+            PrefsHelper.INSTANCE.setMaxAccountCount(this, accountsToSet);
+            UserConfig.MAX_ACCOUNT_COUNT = accountsToSet;
+            UserConfig.MAX_ACCOUNT_DEFAULT_COUNT = accountsToSet;
+
+            Log.d("setMaxAccountCount", String.format("Account count is: %s, Max account count was set to %s", accountCount, PrefsHelper.INSTANCE.getMaxAccountCount(this)));
+
+            PrefsHelper.INSTANCE.setMaxAccountCountWasSet(this);
+        }
     }
 
     public static void startAppCenter(Activity context) {
