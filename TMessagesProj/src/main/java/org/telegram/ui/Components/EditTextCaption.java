@@ -181,7 +181,7 @@ public class EditTextCaption extends EditTextBoldCursor {
         editText.setSingleLine(true);
         editText.setFocusable(true);
         editText.setTransformHintToHeader(true);
-        editText.setLineColors(getThemedColor(Theme.key_windowBackgroundWhiteInputField), getThemedColor(Theme.key_windowBackgroundWhiteInputFieldActivated), getThemedColor(Theme.key_windowBackgroundWhiteRedText3));
+        editText.setLineColors(getThemedColor(Theme.key_windowBackgroundWhiteInputField), getThemedColor(Theme.key_windowBackgroundWhiteInputFieldActivated), getThemedColor(Theme.key_text_RedRegular));
         editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
         editText.setBackgroundDrawable(null);
         editText.requestFocus();
@@ -519,9 +519,8 @@ public class EditTextCaption extends EditTextBoldCursor {
         return performMenuAction(action) || super.performAccessibilityAction(action, arguments);
     }
 
-    private int getThemedColor(String key) {
-        Integer color = resourcesProvider != null ? resourcesProvider.getColor(key) : null;
-        return color != null ? color : Theme.getColor(key);
+    private int getThemedColor(int key) {
+        return Theme.getColor(key, resourcesProvider);
     }
 
     @Override
@@ -571,6 +570,7 @@ public class EditTextCaption extends EditTextBoldCursor {
                     stringBuilder.append(getText().subSequence(end, getText().length()));
                 }
                 setText(stringBuilder);
+                setSelection(start, start);
                 return true;
             } catch (Exception e) {
 

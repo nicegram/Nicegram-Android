@@ -1,5 +1,6 @@
 package app.nicegram
 
+import android.content.Context
 import android.content.SharedPreferences
 import com.appvillis.nicegram.NicegramPrefs
 import com.appvillis.nicegram.domain.RemoteConfigRepo
@@ -99,4 +100,54 @@ object PrefsHelper {
         return MessagesController.getNicegramSettings(currentAccount)
             .getInt(NicegramPrefs.PREF_SAVED_FOLDER, NicegramPrefs.PREF_SAVED_FOLDER_DEFAULT)
     }
+
+    fun setShowAiChatBotDialogs(currentAccount: Int, show: Boolean) {
+        MessagesController.getNicegramSettings(currentAccount)
+            .edit()
+            .putBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, show)
+            .apply()
+    }
+
+    fun getShowAiChatBotDialogs(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT)
+    }
+
+    fun setShowAiChatBotChat(currentAccount: Int, show: Boolean) {
+        MessagesController.getNicegramSettings(currentAccount)
+            .edit()
+            .putBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT, show)
+            .apply()
+    }
+
+    fun getShowAiChatBotChat(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT_DEFAULT)
+    }
+
+    fun getMaxAccountCountWasSet(context: Context): Boolean {
+        return getNgGlobalPrefs(context)
+            .getBoolean(NicegramPrefs.PREF_MAX_ACCOUNTS_SET, NicegramPrefs.PREF_MAX_ACCOUNTS_SET_DEFAULT)
+    }
+
+    fun setMaxAccountCountWasSet(context: Context) {
+       getNgGlobalPrefs(context)
+            .edit()
+            .putBoolean(NicegramPrefs.PREF_MAX_ACCOUNTS_SET, true)
+            .apply()
+    }
+
+    fun getMaxAccountCount(context: Context): Int {
+        return getNgGlobalPrefs(context)
+            .getInt(NicegramPrefs.PREF_MAX_ACCOUNTS, NicegramPrefs.PREF_MAX_ACCOUNTS_DEFAULT)
+    }
+
+    fun setMaxAccountCount(context: Context, count: Int) {
+        getNgGlobalPrefs(context)
+            .edit()
+            .putInt(NicegramPrefs.PREF_MAX_ACCOUNTS, count)
+            .apply()
+    }
+
+    private fun getNgGlobalPrefs(context: Context) = context.getSharedPreferences("NG_GLOBAL_PREFS", Context.MODE_PRIVATE)
 }

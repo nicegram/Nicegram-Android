@@ -682,7 +682,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
                     ignoreLayout = false;
                 }
                 fullHeight = contentSize >= totalHeight;
-                topOffset = (fullHeight || !SharedConfig.smoothKeyboard) ? 0 : totalHeight - contentSize;
+                topOffset = fullHeight ? 0 : totalHeight - contentSize;
                 ignoreLayout = true;
                 checkCurrentList(false);
                 ignoreLayout = false;
@@ -697,7 +697,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
 
                 widthSize -= backgroundPaddingLeft * 2;
 
-                int keyboardSize = SharedConfig.smoothKeyboard ? 0 : measureKeyboardHeight();
+                int keyboardSize = 0;
                 if (!commentTextView.isWaitingForKeyboardOpen() && keyboardSize <= AndroidUtilities.dp(20) && !commentTextView.isPopupShowing() && !commentTextView.isAnimatePopupClosing()) {
                     ignoreLayout = true;
                     commentTextView.hideEmojiView();
@@ -708,7 +708,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
                 if (keyboardSize <= AndroidUtilities.dp(20)) {
                     if (!AndroidUtilities.isInMultiwindow) {
                         int paddingBottom;
-                        if (SharedConfig.smoothKeyboard && keyboardVisible) {
+                        if (keyboardVisible) {
                             paddingBottom = 0;
                         } else {
                             paddingBottom = commentTextView.getEmojiPadding();
@@ -762,7 +762,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
 
                 int keyboardSize = measureKeyboardHeight();
                 int paddingBottom;
-                if (SharedConfig.smoothKeyboard && keyboardVisible) {
+                if (keyboardVisible) {
                     paddingBottom = 0;
                 } else {
                     paddingBottom = keyboardSize <= AndroidUtilities.dp(20) && !AndroidUtilities.isInMultiwindow && !AndroidUtilities.isTablet() ? commentTextView.getEmojiPadding() : 0;
@@ -1201,7 +1201,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
         FlickerLoadingView flickerLoadingView = new FlickerLoadingView(context, resourcesProvider);
         flickerLoadingView.setViewType(FlickerLoadingView.SHARE_ALERT_TYPE);
         if (darkTheme) {
-            flickerLoadingView.setColors(Theme.key_voipgroup_inviteMembersBackground, Theme.key_voipgroup_searchBackground, null);
+            flickerLoadingView.setColors(Theme.key_voipgroup_inviteMembersBackground, Theme.key_voipgroup_searchBackground, -1);
         }
         searchEmptyView = new StickerEmptyView(context, flickerLoadingView, StickerEmptyView.STICKER_TYPE_SEARCH, resourcesProvider);
         searchEmptyView.addView(flickerLoadingView, 0);
@@ -1396,7 +1396,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
             protected void showPopup(int show) {
                 super.showPopup(show);
                 if (darkTheme) {
-                    navBarColorKey = null;
+                    navBarColorKey = -1;
                     AndroidUtilities.setNavigationBarColor(ShareAlert.this.getWindow(), ShareAlert.this.getThemedColor(Theme.key_windowBackgroundGray), true, color -> {
                         ShareAlert.this.setOverlayNavBarColor(navBarColor = color);
                     });
@@ -1407,7 +1407,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
             public void hidePopup(boolean byBackButton) {
                 super.hidePopup(byBackButton);
                 if (darkTheme) {
-                    navBarColorKey = null;
+                    navBarColorKey = -1;
                     AndroidUtilities.setNavigationBarColor(ShareAlert.this.getWindow(), ShareAlert.this.getThemedColor(Theme.key_voipgroup_inviteMembersBackground), true, color -> {
                         ShareAlert.this.setOverlayNavBarColor(navBarColor = color);
                     });
@@ -2020,6 +2020,10 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
 
     protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
 
+    }
+
+    protected boolean doSend(LongSparseArray<TLRPC.Dialog> dids, TLRPC.TL_forumTopic topic) {
+        return false;
     }
 
     private int getCurrentTop() {

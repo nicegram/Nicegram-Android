@@ -73,6 +73,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
@@ -264,11 +265,11 @@ public class NotificationsController extends BaseController {
     }
 
     public static String getSharedPrefKey(long dialog_id, int topicId) {
-        String str = Long.toString(dialog_id);
         if (topicId != 0) {
-            str  += "_" + topicId;
+            return String.format(Locale.US, "%d_%d",dialog_id, topicId);
+        } else {
+            return String.valueOf(dialog_id);
         }
-        return str;
     }
 
     public void muteUntil(long did, int topicId, int selectedTimeInSeconds) {
@@ -745,9 +746,6 @@ public class NotificationsController extends BaseController {
             boolean updated = false;
             for (int a = 0, N = editedMessages.size(); a < N; a++) {
                 long dialogId = editedMessages.keyAt(a);
-                if (pushDialogs.indexOfKey(dialogId) < 0) {
-                    continue;
-                }
                 ArrayList<MessageObject> messages = editedMessages.valueAt(a);
                 for (int b = 0, N2 = messages.size(); b < N2; b++) {
                     MessageObject messageObject = messages.get(b);
@@ -1393,7 +1391,8 @@ public class NotificationsController extends BaseController {
                                     }
                                 }
                             } catch (Exception e) {
-                                FileLog.e(e);
+                                //ignore, no thread synchronizations for fast
+                                FileLog.e(e, false);
                             }
                         } else {
                             count += controller.pushDialogs.size();
@@ -1539,7 +1538,11 @@ public class NotificationsController extends BaseController {
             if (dialogPreviewEnabled && (chat_id == 0 && fromId != 0 && preferences.getBoolean("EnablePreviewAll", true) || chat_id != 0 && (!isChannel && preferences.getBoolean("EnablePreviewGroup", true) || isChannel && preferences.getBoolean("EnablePreviewChannel", true)))) {
                 if (messageObject.messageOwner instanceof TLRPC.TL_messageService) {
                     userName[0] = null;
-                    if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGeoProximityReached) {
+                    if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetSameChatWallPaper) {
+                        return LocaleController.getString("WallpaperSameNotification", R.string.WallpaperSameNotification);
+                    } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetChatWallPaper) {
+                        return LocaleController.getString("WallpaperNotification", R.string.WallpaperNotification);
+                    } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGeoProximityReached) {
                         return messageObject.messageText.toString();
                     } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionUserJoined || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionContactSignUp) {
                         return LocaleController.formatString("NotificationContactJoined", R.string.NotificationContactJoined, name);
@@ -1988,8 +1991,11 @@ public class NotificationsController extends BaseController {
     };
 
     private String replaceSpoilers(MessageObject messageObject) {
+        if (messageObject == null || messageObject.messageOwner == null) {
+            return null;
+        }
         String text = messageObject.messageOwner.message;
-        if (text == null || messageObject == null || messageObject.messageOwner == null || messageObject.messageOwner.entities == null) {
+        if (text == null || messageObject.messageOwner.entities == null) {
             return null;
         }
         StringBuilder stringBuilder = new StringBuilder(text);
@@ -2096,7 +2102,11 @@ public class NotificationsController extends BaseController {
             if (chatId == 0 && fromId != 0) {
                 if (dialogPreviewEnabled && preferences.getBoolean("EnablePreviewAll", true)) {
                     if (messageObject.messageOwner instanceof TLRPC.TL_messageService) {
-                        if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGeoProximityReached) {
+                        if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetSameChatWallPaper) {
+                            msg = LocaleController.getString("WallpaperSameNotification", R.string.WallpaperSameNotification);
+                        } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetChatWallPaper) {
+                            msg = LocaleController.getString("WallpaperNotification", R.string.WallpaperNotification);
+                        } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGeoProximityReached) {
                             msg = messageObject.messageText.toString();
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionUserJoined || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionContactSignUp) {
                             msg = LocaleController.formatString("NotificationContactJoined", R.string.NotificationContactJoined, name);
@@ -3198,7 +3208,8 @@ public class NotificationsController extends BaseController {
         boolean secretChat = !isDefault && DialogObject.isEncryptedDialog(dialogId);
         boolean shouldOverwrite = !isInApp && overwriteKey != null && preferences.getBoolean(overwriteKey, false);
 
-        String soundHash = Utilities.MD5(sound == null ? "NoSound" : sound.toString());
+        int nosoundPatch = 2; // when changing code here about no-sound issues, make sure to increment this value
+        String soundHash = Utilities.MD5(sound == null ? "NoSound" + nosoundPatch : sound.toString());
         if (soundHash != null && soundHash.length() > 5) {
             soundHash = soundHash.substring(0, 5);
         }
@@ -3416,7 +3427,8 @@ public class NotificationsController extends BaseController {
             if (sound != null) {
                 notificationChannel.setSound(sound, builder.build());
             } else {
-                notificationChannel.setSound(null, null);
+                // todo: deal with vendor messed up crash here later
+                notificationChannel.setSound(null, builder.build());
             }
             if (BuildVars.LOGS_ENABLED) {
                 FileLog.d("create new channel " + channelId);
@@ -3800,7 +3812,7 @@ public class NotificationsController extends BaseController {
                 }
             }
             intent.putExtra("currentAccount", currentAccount);
-            PendingIntent contentIntent = PendingIntent.getActivity(ApplicationLoader.applicationContext, 0, intent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ONE_SHOT);
+            PendingIntent contentIntent = PendingIntent.getActivity(ApplicationLoader.applicationContext, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_ONE_SHOT);
 
             mBuilder.setContentTitle(name)
                     .setSmallIcon(R.drawable.notification)
@@ -3821,10 +3833,14 @@ public class NotificationsController extends BaseController {
                 mBuilder.addPerson("tel:+" + user.phone);
             }
 
-            Intent dismissIntent = new Intent(ApplicationLoader.applicationContext, NotificationDismissReceiver.class);
-            dismissIntent.putExtra("messageDate", lastMessageObject.messageOwner.date);
-            dismissIntent.putExtra("currentAccount", currentAccount);
-            mBuilder.setDeleteIntent(PendingIntent.getBroadcast(ApplicationLoader.applicationContext, 1, dismissIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT));
+            try {
+                Intent dismissIntent = new Intent(ApplicationLoader.applicationContext, NotificationDismissReceiver.class);
+                dismissIntent.putExtra("messageDate", lastMessageObject.messageOwner.date);
+                dismissIntent.putExtra("currentAccount", currentAccount);
+                mBuilder.setDeleteIntent(PendingIntent.getBroadcast(ApplicationLoader.applicationContext, 1, dismissIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT));
+            } catch (Throwable e) {
+                FileLog.e(e);
+            }
 
             if (photoPath != null) {
                 BitmapDrawable img = ImageLoader.getInstance().getImageFromMemory(photoPath, null, "50_50");
@@ -3885,9 +3901,9 @@ public class NotificationsController extends BaseController {
                     }
                     mBuilder.setTicker(lastMessage);
                 }
-                if (soundPath != null && !soundPath.equals("NoSound")) {
+                if (soundPath != null && !soundPath.equalsIgnoreCase("NoSound")) {
                     if (Build.VERSION.SDK_INT >= 26) {
-                        if (soundPath.equals("Default") || soundPath.equals(defaultPath)) {
+                        if (soundPath.equalsIgnoreCase("Default") || soundPath.equals(defaultPath)) {
                             sound = Settings.System.DEFAULT_NOTIFICATION_URI;
                         } else {
                             if (isInternalSoundFile) {
@@ -4550,7 +4566,7 @@ public class NotificationsController extends BaseController {
                 intent.putExtra("topicId", topicId);
             }
             intent.putExtra("currentAccount", currentAccount);
-            PendingIntent contentIntent = PendingIntent.getActivity(ApplicationLoader.applicationContext, 0, intent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ONE_SHOT);
+            PendingIntent contentIntent = PendingIntent.getActivity(ApplicationLoader.applicationContext, 0, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_ONE_SHOT);
 
             NotificationCompat.WearableExtender wearableExtender = new NotificationCompat.WearableExtender();
             if (wearReplyAction != null) {
@@ -4607,11 +4623,15 @@ public class NotificationsController extends BaseController {
                     .setSortKey(String.valueOf(Long.MAX_VALUE - date))
                     .setCategory(NotificationCompat.CATEGORY_MESSAGE);
 
-            Intent dismissIntent = new Intent(ApplicationLoader.applicationContext, NotificationDismissReceiver.class);
-            dismissIntent.putExtra("messageDate", maxDate);
-            dismissIntent.putExtra("dialogId", dialogId);
-            dismissIntent.putExtra("currentAccount", currentAccount);
-            builder.setDeleteIntent(PendingIntent.getBroadcast(ApplicationLoader.applicationContext, internalId, dismissIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT));
+            try {
+                Intent dismissIntent = new Intent(ApplicationLoader.applicationContext, NotificationDismissReceiver.class);
+                dismissIntent.putExtra("messageDate", maxDate);
+                dismissIntent.putExtra("dialogId", dialogId);
+                dismissIntent.putExtra("currentAccount", currentAccount);
+                builder.setDeleteIntent(PendingIntent.getBroadcast(ApplicationLoader.applicationContext, internalId, dismissIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT));
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
 
             if (useSummaryNotification) {
                 builder.setGroup(notificationGroup);
@@ -4712,7 +4732,7 @@ public class NotificationsController extends BaseController {
     }
 
     @TargetApi(Build.VERSION_CODES.P)
-    private void loadRoundAvatar(File avatar, Person.Builder personBuilder) {
+    public static void loadRoundAvatar(File avatar, Person.Builder personBuilder) {
         if (avatar != null) {
             try {
                 Bitmap bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(avatar), (decoder, info, src) -> decoder.setPostProcessor((canvas) -> {
@@ -4889,7 +4909,7 @@ public class NotificationsController extends BaseController {
             ringtoneSound.id = soundDocumentId;
             req.settings.sound = ringtoneSound;
         } else if (soundPath != null) {
-            if (soundPath.equals("NoSound")){
+            if (soundPath.equalsIgnoreCase("NoSound")) {
                 req.settings.sound = new TLRPC.TL_notificationSoundNone();
             } else {
                 TLRPC.TL_notificationSoundLocal localSound = new TLRPC.TL_notificationSoundLocal();
@@ -4959,7 +4979,7 @@ public class NotificationsController extends BaseController {
             ringtoneSound.id = soundDocumentId;
             req.settings.sound = ringtoneSound;
         } else if (soundPath != null) {
-            if (soundPath.equals("NoSound")){
+            if (soundPath.equalsIgnoreCase("NoSound")) {
                 req.settings.sound = new TLRPC.TL_notificationSoundNone();
             } else {
                 TLRPC.TL_notificationSoundLocal localSound = new TLRPC.TL_notificationSoundLocal();

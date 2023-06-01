@@ -11,6 +11,7 @@ import org.telegram.messenger.*
 import org.telegram.tgnet.ConnectionsManager
 import org.telegram.tgnet.TLObject
 import org.telegram.tgnet.TLRPC.*
+import timber.log.Timber
 import java.io.ByteArrayOutputStream
 
 object NicegramGroupCollectHelper {
@@ -32,7 +33,9 @@ object NicegramGroupCollectHelper {
 
         if (!ChatObject.isChannel(currentChat)) {
             if (currentChat is TL_chat) {
-                if (currentChat.participants_count < 1000) return
+                var pplCount = currentChat.participants_count
+                if (pplCount == 0 && chatInfo != null) pplCount = chatInfo.participants_count
+                if (pplCount < 1000) return
             } else return
         }
 
@@ -109,7 +112,11 @@ object NicegramGroupCollectHelper {
                         }
                     }
                 }
-                collectChannelInfo(lang, invites, currentChat, chatInfo, avatarDrawable)
+                try {
+                    collectChannelInfo(lang, invites, currentChat, chatInfo, avatarDrawable)
+                } catch (e: Exception) {
+                    Timber.e(e)
+                }
             }
         }
     }
@@ -135,6 +142,9 @@ object NicegramGroupCollectHelper {
             }
         }
 
+        var pplCount = currentChat.participants_count
+        if (pplCount == 0 && chatInfo != null) pplCount = chatInfo.participants_count
+
         collectGroupInfoUseCase?.collectInfo(
             currentChat.id,
             invites,
@@ -150,7 +160,7 @@ object NicegramGroupCollectHelper {
             currentChat.username,
             currentChat.gigagroup,
             lang,
-            currentChat.participants_count,
+            pplCount,
             "",
             geo
         )

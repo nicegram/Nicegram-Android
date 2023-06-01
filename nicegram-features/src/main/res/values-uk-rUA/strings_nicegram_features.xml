@@ -18,4 +18,5 @@
     <string name="NicegramRequestIsPending">Ваш запит очікує очікування. Будь ласка, почекайте поки Nicegram Bot схвалить його</string>
     <string name="NicegramShareChannelInfo">Поділитися інформацією про канал</string>
     <string name="NicegramShareChannelInfoDesc">Приєднуйтесь до найбільш всеосяжної Вікіпедії каналів і груп Telegram, автоматично надсилаючи інформацію про канал і посилання на нашу базу даних. Ми не зв\'язуємо ваш профіль у Telegram і канал і не поширюємо ваші персональні дані.</string>
+    <string name="NicegarmBypassCopyProtection">Обхід заборони копіювання</string>
 </resources>

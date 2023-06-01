@@ -25,11 +25,11 @@
     <string name="NicegramShowRegistrationDate">显示注册日期</string>
     <string name="NicegramOpenLinksInBrowser">在浏览器中打开链接</string>
     <string name="NicegramUnblockGuide">解锁指南</string>
-    <string name="NicegramPremiumFeatures">高级功能</string>
+    <string name="NicegramPremiumFeatures">Nicegram\n高级功能</string>
     <string name="NicegramPrivacyPolicy">隐私政策</string>
     <string name="NicegramEULA">EULA</string>
     <string name="NicegramSubRenews">订阅自动续订</string>
-    <string name="NicegramSubPerMonth"><![CDATA[每月<b>订阅 %s</b>]]></string>
+    <string name="NicegramSubPerMonth">订阅%s/月</string>
     <string name="NicegramBuildInTranslator">内置翻译器</string>
     <string name="NicegramBuildInTranslatorDesc">即时翻译应用程序中的任何消息，无需切换到第 3 方翻译器</string>
     <string name="NicegramSpeech2Text">语音转文本</string>
@@ -57,6 +57,8 @@
     <string name="NicegramOnbroadingText4">利用 Nicegram 团队的创新，获取可在 133 个国家上网的 eSIM。您也可以用 eSIM 数据计划的电话号码注册新的 Telegram 账户。</string>
     <string name="NicegramOnbroadingTitle5">最安全的通讯工具</string>
     <string name="NicegramOnbroadingText5">安全的通讯工具，拥有强加密、群组音频和视频电话、公共频道、群聊和机器人、无限制的聊天云存储空间、媒体和文档共享功能。</string>
+    <string name="NicegramOnbroadingTitle6">认识莉莉</string>
+    <string name="NicegramOnbroadingText6">您的个人人工智能聊天机器人助手，简化您的生活!</string>
     <string name="NicegramDoubleBottom">双底</string>
     <string name="NicegramDoubleBottomDesc">要启用此功能，您需要有多个帐户并打开密码锁（转到“设置”→ 隐私&amp;amp；安全→ 密码锁）</string>
     <string name="NicegramDoubleBottomAnotherCode">请设置另一个与密码锁不同的密码</string>
@@ -73,4 +75,7 @@
     <string name="NicegramShareChannelInfo">分享频道信息</string>
     <string name="NicegramShareChannelInfoDesc">通过自动提交频道信息和链接至我们的数据库，向最全面的 Telegram 频道和群组百科贡献力量。我们不会关联您的 Telegram 个人资料和频道，不会分享您的个人数据。</string>
     <string name="NicegarmBypassCopyProtection">绕过复制保护</string>
+    <string name="NicegarmTutorial_HelpBtnText">我如何才能收到该代码？</string>
+    <string name="NicegarmTutorial_Dialog_Title">从2023年2月开始，请按照以下步骤接收该代码：</string>
+    <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. 登录 <font color="#0A84FF">Telegram</font><br/>2. 登录 <font color="#A134C7">Nicegram</font><br/>3. 输入你将在 <font color="#0A84FF">Telegram</font>上收到的代码]]></string>
 </resources>

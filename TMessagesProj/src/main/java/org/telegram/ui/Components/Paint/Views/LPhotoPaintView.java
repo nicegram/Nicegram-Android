@@ -208,37 +208,58 @@ public class LPhotoPaintView extends SizeNotifierFrameLayoutPhoto implements IPh
         setDelegate(this);
 
         this.currentAccount = currentAccount;
-        this.resourcesProvider = key -> {
-            switch (key) {
-                case Theme.key_actionBarDefaultSubmenuBackground: return 0xFF282829;
-                case Theme.key_actionBarDefaultSubmenuItem: return 0xFFFFFFFF;
-
-                case Theme.key_dialogBackground: return -14803426;
-                case Theme.key_dialogTextBlack: return -592138;
-                case Theme.key_dialogTextGray3: return -8553091;
-
-                case Theme.key_chat_emojiPanelBackground: return 0xFF000000;
-                case Theme.key_chat_emojiPanelShadowLine: return -1610612736;
-                case Theme.key_chat_emojiBottomPanelIcon: return -9539985;
-                case Theme.key_chat_emojiPanelBackspace: return -9539985;
-                case Theme.key_chat_emojiPanelIcon: return -9539985;
-                case Theme.key_chat_emojiPanelIconSelected: return -10177041;
-                case Theme.key_windowBackgroundWhiteBlackText: return -1;
-                case Theme.key_featuredStickers_addedIcon: return -11754001;
-                case Theme.key_listSelector: return 0x1FFFFFFF;
-
-                case Theme.key_profile_tabSelectedText: return 0xFFFFFFFF;
-                case Theme.key_profile_tabText: return 0xFFFFFFFF;
-                case Theme.key_profile_tabSelectedLine: return 0xFFFFFFFF;
-                case Theme.key_profile_tabSelector: return 0x14FFFFFF;
-
-                default: {
-                    if (resourcesProvider != null) {
-                        return resourcesProvider.getColor(key);
-                    } else {
-                        return Theme.getColor(key);
-                    }
+        this.resourcesProvider = new Theme.ResourcesProvider() {
+            @Override
+            public int getColor(int key) {
+                if (key == Theme.key_actionBarDefaultSubmenuBackground) {
+                    return 0xFF282829;
+                } else if (key == Theme.key_actionBarDefaultSubmenuItem) {
+                    return 0xFFFFFFFF;
+                } else if (key == Theme.key_dialogBackground) {
+                    return -14803426;
+                } else if (key == Theme.key_dialogTextBlack) {
+                    return -592138;
+                } else if (key == Theme.key_dialogTextGray3) {
+                    return -8553091;
+                } else if (key == Theme.key_chat_emojiPanelBackground) {
+                    return 0xFF000000;
+                } else if (key == Theme.key_chat_emojiPanelShadowLine) {
+                    return -1610612736;
+                } else if (key == Theme.key_chat_emojiBottomPanelIcon) {
+                    return -9539985;
+                } else if (key == Theme.key_chat_emojiPanelBackspace) {
+                    return -9539985;
+                } else if (key == Theme.key_chat_emojiPanelIcon) {
+                    return -9539985;
+                } else if (key == Theme.key_chat_emojiPanelIconSelected) {
+                    return -10177041;
+                } else if (key == Theme.key_windowBackgroundWhiteBlackText) {
+                    return -1;
+                } else if (key == Theme.key_featuredStickers_addedIcon) {
+                    return -11754001;
+                } else if (key == Theme.key_listSelector) {
+                    return 0x1FFFFFFF;
+                } else if (key == Theme.key_profile_tabSelectedText) {
+                    return 0xFFFFFFFF;
+                } else if (key == Theme.key_profile_tabText) {
+                    return 0xFFFFFFFF;
+                } else if (key == Theme.key_profile_tabSelectedLine) {
+                    return 0xFFFFFFFF;
+                } else if (key == Theme.key_profile_tabSelector) {
+                    return 0x14FFFFFF;
                 }
+
+
+                if (resourcesProvider != null) {
+                    return resourcesProvider.getColor(key);
+                } else {
+                    return Theme.getColor(key);
+                }
+            }
+
+            @Override
+            public boolean contains(int key) {
+                return true;
             }
         };
         this.currentCropState = cropState;
@@ -1310,6 +1331,7 @@ public class LPhotoPaintView extends SizeNotifierFrameLayoutPhoto implements IPh
                 switchTab(wasSelectedIndex);
             }
         };
+        stickerMasksAlert.setImageReceiverNumLevel(4 + 8 + 16, 4 + 8 + 16);
         stickerMasksAlert.setDelegate((parentObject, sticker) -> createSticker(parentObject, sticker, true));
         stickerMasksAlert.setOnDismissListener(dialog -> {
             onOpenCloseStickersAlert(false);
@@ -1378,7 +1400,7 @@ public class LPhotoPaintView extends SizeNotifierFrameLayoutPhoto implements IPh
         measureChild(topLayout, widthMeasureSpec, heightMeasureSpec);
         ignoreLayout = false;
 
-        int keyboardSize = SharedConfig.smoothKeyboard ? 0 : measureKeyboardHeight();
+        int keyboardSize = 0;
         if (!waitingForKeyboardOpen && keyboardSize <= AndroidUtilities.dp(20) && !emojiViewVisible && !isAnimatePopupClosing) {
             ignoreLayout = true;
             hideEmojiView();
@@ -1711,7 +1733,7 @@ public class LPhotoPaintView extends SizeNotifierFrameLayoutPhoto implements IPh
                     currentCanvas.scale(v.getScaleX(), v.getScaleY());
                     currentCanvas.rotate(v.getRotation());
                     currentCanvas.translate(-entity.getWidth() / 2f, -entity.getHeight() / 2f);
-                    if (v instanceof TextPaintView) {
+                    if (v instanceof TextPaintView && v.getHeight() > 0 && v.getWidth() > 0) {
                         Bitmap b = Bitmaps.createBitmap(v.getWidth(), v.getHeight(), Bitmap.Config.ARGB_8888);
                         Canvas c = new Canvas(b);
                         v.draw(c);
@@ -2575,9 +2597,8 @@ public class LPhotoPaintView extends SizeNotifierFrameLayoutPhoto implements IPh
         popupWindow.startAnimation(popupLayout);
     }
 
-    private int getThemedColor(String key) {
-        Integer color = resourcesProvider != null ? resourcesProvider.getColor(key) : null;
-        return color != null ? color : Theme.getColor(key);
+    private int getThemedColor(int key) {
+        return Theme.getColor(key, resourcesProvider);
     }
 
     @Override
@@ -2713,6 +2734,7 @@ public class LPhotoPaintView extends SizeNotifierFrameLayoutPhoto implements IPh
                 LPhotoPaintView.this.didSetAnimatedSticker(drawable);
             }
         };
+        view.centerImage.setLayerNum(4 + 8);
         if (position.position.x == entitiesView.getMeasuredWidth() / 2f) {
             view.setHasStickyX(true);
         }
@@ -2907,37 +2929,36 @@ public class LPhotoPaintView extends SizeNotifierFrameLayoutPhoto implements IPh
             onWindowSizeChanged();
 
             if (!emojiWasVisible) {
-                if (SharedConfig.smoothKeyboard) {
-                    if (keyboardVisible) {
-                        translateBottomPanelAfterResize = true;
-                        weightChooserView.startPanTransition(AndroidUtilities.displaySize.y, AndroidUtilities.displaySize.y - emojiPadding);
+                if (keyboardVisible) {
+                    translateBottomPanelAfterResize = true;
+                    weightChooserView.startPanTransition(AndroidUtilities.displaySize.y, AndroidUtilities.displaySize.y - emojiPadding);
 //                        weightChooserView.updatePanTransition(0, 1);
 //                        weightChooserView.stopPanTransition();
-                    } else {
-                        ValueAnimator animator = ValueAnimator.ofFloat(emojiPadding, 0);
-                        weightChooserView.startPanTransition(AndroidUtilities.displaySize.y, AndroidUtilities.displaySize.y - emojiPadding);
-                        animator.addUpdateListener(animation -> {
-                            float v = (float) animation.getAnimatedValue();
-                            emojiView.setTranslationY(v);
+                } else {
+                    ValueAnimator animator = ValueAnimator.ofFloat(emojiPadding, 0);
+                    weightChooserView.startPanTransition(AndroidUtilities.displaySize.y, AndroidUtilities.displaySize.y - emojiPadding);
+                    animator.addUpdateListener(animation -> {
+                        float v = (float) animation.getAnimatedValue();
+                        emojiView.setTranslationY(v);
+                        if (!ignore) {
+                            bottomPanelTranslationY(v, 1f - v / emojiPadding);
+                        }
+                    });
+                    animator.addListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            emojiView.setTranslationY(0);
                             if (!ignore) {
-                                bottomPanelTranslationY(v, 1f - v / emojiPadding);
+                                bottomPanelTranslationY(0, 1);
                             }
-                        });
-                        animator.addListener(new AnimatorListenerAdapter() {
-                            @Override
-                            public void onAnimationEnd(Animator animation) {
-                                emojiView.setTranslationY(0);
-                                if (!ignore) {
-                                    bottomPanelTranslationY(0, 1);
-                                }
-                                weightChooserView.stopPanTransition();
-                            }
-                        });
-                        animator.setDuration(AdjustPanLayoutHelper.keyboardDuration);
-                        animator.setInterpolator(AdjustPanLayoutHelper.keyboardInterpolator);
-                        animator.start();
-                    }
+                            weightChooserView.stopPanTransition();
+                        }
+                    });
+                    animator.setDuration(AdjustPanLayoutHelper.keyboardDuration);
+                    animator.setInterpolator(AdjustPanLayoutHelper.keyboardInterpolator);
+                    animator.start();
                 }
+
             }
         } else {
             ChatActivityEnterViewAnimatedIconView emojiButton = textOptionsView.getEmojiButton();
@@ -2970,7 +2991,7 @@ public class LPhotoPaintView extends SizeNotifierFrameLayoutPhoto implements IPh
             showEmojiPopup(0);
         }
         if (byBackButton) {
-            if (SharedConfig.smoothKeyboard && emojiView != null && emojiView.getVisibility() == View.VISIBLE && !waitingForKeyboardOpen) {
+            if (emojiView != null && emojiView.getVisibility() == View.VISIBLE && !waitingForKeyboardOpen) {
                 int height = emojiView.getMeasuredHeight();
                 ValueAnimator animator = ValueAnimator.ofFloat(0, height);
                 final boolean ignore = bottomPanelIgnoreOnce;

@@ -65,19 +65,19 @@ public class UsersAlertBase extends BottomSheet {
     protected boolean needSnapToTop = true;
     protected boolean isEmptyViewVisible = true;
 
-    protected String keyScrollUp = Theme.key_sheet_scrollUp;
-    protected String keyListSelector = Theme.key_listSelector;
-    protected String keySearchBackground = Theme.key_dialogSearchBackground;
-    protected String keyInviteMembersBackground = Theme.key_windowBackgroundWhite;
-    protected String keyListViewBackground = Theme.key_windowBackgroundWhite;
-    protected String keyActionBarUnscrolled = Theme.key_windowBackgroundWhite;
-    protected String keyNameText = Theme.key_windowBackgroundWhiteBlackText;
-    protected String keyLastSeenText = Theme.key_windowBackgroundWhiteGrayText;
-    protected String keyLastSeenTextUnscrolled = Theme.key_windowBackgroundWhiteGrayText;
-    protected String keySearchPlaceholder = Theme.key_dialogSearchHint;
-    protected String keySearchText = Theme.key_dialogSearchText;
-    protected String keySearchIcon = Theme.key_dialogSearchIcon;
-    protected String keySearchIconUnscrolled = Theme.key_dialogSearchIcon;
+    protected int keyScrollUp = Theme.key_sheet_scrollUp;
+    protected int keyListSelector = Theme.key_listSelector;
+    protected int keySearchBackground = Theme.key_dialogSearchBackground;
+    protected int keyInviteMembersBackground = Theme.key_windowBackgroundWhite;
+    protected int keyListViewBackground = Theme.key_windowBackgroundWhite;
+    protected int keyActionBarUnscrolled = Theme.key_windowBackgroundWhite;
+    protected int keyNameText = Theme.key_windowBackgroundWhiteBlackText;
+    protected int keyLastSeenText = Theme.key_windowBackgroundWhiteGrayText;
+    protected int keyLastSeenTextUnscrolled = Theme.key_windowBackgroundWhiteGrayText;
+    protected int keySearchPlaceholder = Theme.key_dialogSearchHint;
+    protected int keySearchText = Theme.key_dialogSearchText;
+    protected int keySearchIcon = Theme.key_dialogSearchIcon;
+    protected int keySearchIconUnscrolled = Theme.key_dialogSearchIcon;
     protected final FillLastLinearLayoutManager layoutManager;
 
 
@@ -117,10 +117,6 @@ public class UsersAlertBase extends BottomSheet {
         containerView.addView(emptyView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP, 0, 58 + 4, 0, 0));
 
         listView = new RecyclerListView(context) {
-            @Override
-            protected boolean allowSelectChildAtPosition(float x, float y) {
-                return isAllowSelectChildAtPosition(x, y);
-            }
 
             @Override
             public void setTranslationY(float translationY) {
@@ -194,10 +190,6 @@ public class UsersAlertBase extends BottomSheet {
         return new ContainerView(context);
     }
 
-    protected boolean isAllowSelectChildAtPosition(float x, float y) {
-        return y >= AndroidUtilities.dp(58) + (Build.VERSION.SDK_INT >= 21 ? AndroidUtilities.statusBarHeight : 0);
-    }
-
     protected void updateColorKeys() {
 
     }
@@ -246,7 +238,7 @@ public class UsersAlertBase extends BottomSheet {
                 @Override
                 public boolean dispatchTouchEvent(MotionEvent event) {
                     MotionEvent e = MotionEvent.obtain(event);
-                    e.setLocation(e.getRawX(), e.getRawY() - containerView.getTranslationY());
+                    e.setLocation(e.getRawX(), e.getRawY() - listView.getMeasuredHeight());
                     if (e.getAction() == MotionEvent.ACTION_UP) {
                         e.setAction(MotionEvent.ACTION_CANCEL);
                     }

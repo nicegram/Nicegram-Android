@@ -10,7 +10,6 @@ repositories {
     mavenCentral()
     google()
     maven { url 'https://jitpack.io' }
-    maven { url properties.getProperty("assistant.aarMavenRepo") }
 }
 
 configurations {

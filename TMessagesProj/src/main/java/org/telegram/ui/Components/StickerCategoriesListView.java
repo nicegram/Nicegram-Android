@@ -30,6 +30,7 @@ import org.telegram.SQLite.SQLitePreparedStatement;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Fetcher;
 import org.telegram.messenger.FileLog;
+import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
@@ -93,7 +94,7 @@ public class StickerCategoriesListView extends RecyclerListView {
 
     public static void preload(int account, @CategoriesType int type) {
         fetcher.fetch(account, type, emojiGroups -> {
-            if (emojiGroups.groups == null) {
+            if (emojiGroups == null || emojiGroups.groups == null) {
                 return;
             }
             for (TLRPC.TL_emojiGroup group : emojiGroups.groups) {
@@ -128,7 +129,6 @@ public class StickerCategoriesListView extends RecyclerListView {
 //        setSelectorType(Theme.RIPPLE_MASK_CIRCLE_20DP);
 //        setSelectorDrawableColor(getThemedColor(Theme.key_listSelector));
         selectedPaint.setColor(getThemedColor(Theme.key_listSelector));
-        setSelectorDrawableColor(0);
 
         setWillNotDraw(false);
 
@@ -152,6 +152,11 @@ public class StickerCategoriesListView extends RecyclerListView {
                 updateCategoriesShown(categoriesShouldShow, System.currentTimeMillis() - start > 16);
             }
         });
+    }
+
+    @Override
+    public Integer getSelectorColor(int position) {
+        return 0;
     }
 
     public void setShownButtonsAtStart(float buttonsCount) {
@@ -583,7 +588,7 @@ public class StickerCategoriesListView extends RecyclerListView {
     }
 
     protected boolean isTabIconsAnimationEnabled(boolean loaded) {
-        return !SharedConfig.getLiteMode().enabled() && !loaded;
+        return LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_EMOJI_KEYBOARD) && !loaded;
     }
 
     static int loadedCategoryIcons = 0;

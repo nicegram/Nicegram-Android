@@ -3,4 +3,5 @@
     <string name="NicegramForwardToSave">Lưu vào Đám mây</string>
     <string name="NicegramStartWithRearCamera">Bắt đầu với camera sau</string>
     <string name="NicegramContinue">Tiếp tục</string>
+    <string name="NicegarmBypassCopyProtection">Bypass Copy Protection</string>
 </resources>

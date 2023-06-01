@@ -24,10 +24,8 @@ import androidx.core.graphics.ColorUtils;
 import androidx.core.math.MathUtils;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
-import com.appvillis.nicegram.NicegramBillingHelper;
+import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
 import com.appvillis.nicegram.NicegramSpeechToTextHelper;
-import com.appvillis.nicegram.network.NicegramNetwork;
-import com.appvillis.nicegram.presentation.NicegramPremiumActivity;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -46,7 +44,6 @@ import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
-import org.telegram.ui.PremiumPreviewFragment;
 
 import java.io.File;
 import java.util.ArrayList;

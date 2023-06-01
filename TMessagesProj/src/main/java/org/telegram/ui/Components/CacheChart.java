@@ -28,6 +28,7 @@ import android.view.View;
 import com.google.zxing.common.detector.MathUtils;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.ui.ActionBar.Theme;
@@ -45,7 +46,7 @@ public class CacheChart extends View {
     private RectF chartInnerBounds = new RectF();
 
     private static final int DEFAULT_SECTIONS_COUNT = 9;
-    private static final String[] DEFAULT_COLORS = new String[] {
+    private static final int[] DEFAULT_COLORS = new int[] {
         Theme.key_statisticChartLine_lightblue,
         Theme.key_statisticChartLine_blue,
         Theme.key_statisticChartLine_green,
@@ -70,7 +71,7 @@ public class CacheChart extends View {
     };
 
     private final int sectionsCount;
-    private final String[] colorKeys;
+    private final int[] colorKeys;
     private final int type;
     private final boolean svgParticles;
     private final int[] particles;
@@ -248,7 +249,7 @@ public class CacheChart extends View {
             float innerRadius, float outerRadius,
             float textAlpha, float alpha
         ) {
-            if (alpha <= 0) {
+            if (alpha <= 0 || !LiteMode.isEnabled(LiteMode.FLAGS_CHAT)) {
                 return;
             }
             long now = System.currentTimeMillis();
@@ -355,7 +356,7 @@ public class CacheChart extends View {
         this(context, DEFAULT_SECTIONS_COUNT, DEFAULT_COLORS, TYPE_CACHE, DEFAULT_PARTICLES);
     }
 
-    public CacheChart(Context context, int count, String[] colorKeys, int type, int[] particles) {
+    public CacheChart(Context context, int count, int[] colorKeys, int type, int[] particles) {
         super(context);
         setLayerType(LAYER_TYPE_HARDWARE, null);
 

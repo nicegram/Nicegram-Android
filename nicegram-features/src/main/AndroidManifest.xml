@@ -4,13 +4,13 @@
     <application>
         <activity android:name=".presentation.NicegramPremiumActivity"
             android:exported="false"
-            android:theme="@style/AppTheme"
+            android:theme="@style/Theme.eSIM"
             android:screenOrientation="portrait"/>
 
         <activity android:name=".presentation.NicegramOnboardingActivity"
             android:exported="false"
             android:launchMode="singleTop"
-            android:theme="@style/AppTheme"
+            android:theme="@style/Theme.eSIM"
             android:screenOrientation="portrait"/>
     </application>
 </manifest>

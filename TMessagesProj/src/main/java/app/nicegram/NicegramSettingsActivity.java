@@ -10,7 +10,7 @@ import android.widget.Toast;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.appvillis.nicegram.NicegramBillingHelper;
+import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
 import com.appvillis.nicegram.NicegramConsts;
 import com.appvillis.nicegram.NicegramPrefs;
 import com.appvillis.nicegram.network.NicegramNetwork;
@@ -29,14 +29,12 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextCheckCell;
+import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.PasscodeActivity;
 
 import java.util.ArrayList;
-
-import kotlin.Unit;
-import kotlin.jvm.functions.Function1;
 
 public class NicegramSettingsActivity extends BaseFragment {
 
@@ -45,6 +43,8 @@ public class NicegramSettingsActivity extends BaseFragment {
 
     private int nicegramSectionRow;
     private int unblockGuideRow;
+
+    private int maxAccountsRow;
     private int skipReadHistoryRow;
     private int showProfileIdRow;
     private int showRegDateRow;
@@ -63,6 +63,7 @@ public class NicegramSettingsActivity extends BaseFragment {
     public boolean onFragmentCreate() {
         nicegramSectionRow = -1;
         unblockGuideRow = rowCount++;
+        maxAccountsRow = rowCount++;
         startWithRearCameraRow = rowCount++;
         downloadVideosToGallery = rowCount++;
         hidePhoneNumberRow = rowCount++;
@@ -190,12 +191,38 @@ public class NicegramSettingsActivity extends BaseFragment {
                     if (success) {
                         NicegramBillingHelper.INSTANCE.setGiftedPremium(true);
                     } else {
+                        if (getParentActivity() == null) return null;
                         Toast.makeText(getParentActivity(), R.string.NicegramRequestIsPending, Toast.LENGTH_LONG).show();
                     }
                     return null;
                 });
+            } else if (position == maxAccountsRow) {
+                enabled = PrefsHelper.INSTANCE.getMaxAccountCount(context) == NicegramPrefs.PREF_MAX_ACCOUNTS_MAX;
+                if (!enabled) {
+                    AlertsCreator.createSimpleAlert(
+                            getParentActivity(),
+                            "", LocaleController.getString("NicegramMaxAccount_IncreaseWarn"),
+                            LocaleController.getString("NicegramMaxAccount_Increase"),
+                            () -> {
+                                PrefsHelper.INSTANCE.setMaxAccountCount(context, NicegramPrefs.PREF_MAX_ACCOUNTS_MAX);
+                                view.postDelayed(() -> {RebirthHelper.INSTANCE.triggerRebirth(context);}, 500);
+                            },
+                            getResourceProvider()
+                    ).create().show();
+                } else {
+                    AlertsCreator.createSimpleAlert(
+                            getParentActivity(),
+                            "", LocaleController.getString("NicegramMaxAccount_ReduceWarn"),
+                            LocaleController.getString("NicegramMaxAccount_Reduce"),
+                            () -> {
+                                PrefsHelper.INSTANCE.setMaxAccountCount(context, NicegramPrefs.PREF_MAX_ACCOUNTS_DEFAULT);
+                                view.postDelayed(() -> {RebirthHelper.INSTANCE.triggerRebirth(context);}, 500);
+                            },
+                            getResourceProvider()
+                    ).create().show();
+                }
             }
-            if (view instanceof TextCheckCell && position != doubleBottomRow) {
+            if (view instanceof TextCheckCell && position != doubleBottomRow && position != maxAccountsRow) {
                 ((TextCheckCell) view).setChecked(!enabled);
             }
         });
@@ -285,6 +312,9 @@ public class NicegramSettingsActivity extends BaseFragment {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramHideReactions"), preferences.getBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, NicegramPrefs.PREF_HIDE_REACTIONS_DEFAULT), false);
                     } else if (position == shareChannelsInfoRow) {
                         checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramShareChannelInfo"), LocaleController.getString("NicegramShareChannelInfoDesc"), preferences.getBoolean(NicegramPrefs.PREF_SHARE_CHANNEL_INFO, NicegramPrefs.PREF_SHARE_CHANNEL_INFO_DEFAULT), true, false);
+                    } else if (position == maxAccountsRow) {
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramMaxAccount_IncreaseTo"), LocaleController.getString("NicegramMaxAccount_Default"), PrefsHelper.INSTANCE.getMaxAccountCount(getContext()) == NicegramPrefs.PREF_MAX_ACCOUNTS_MAX, true, false);
+                        checkCell.setEnabled(false);
                     }
                     break;
                 }
@@ -309,7 +339,7 @@ public class NicegramSettingsActivity extends BaseFragment {
             } else if (position == skipReadHistoryRow || position == openLinksRow ||
                     position == showRegDateRow || position == showProfileIdRow ||
                     position == startWithRearCameraRow || position == downloadVideosToGallery ||
-                    position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow || position == shareChannelsInfoRow) {
+                    position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow || position == maxAccountsRow || position == shareChannelsInfoRow) {
                 return 1;
             } else if (position == unblockGuideRow || position == quickRepliesRow || position == restoreRow) {
                 return 2;

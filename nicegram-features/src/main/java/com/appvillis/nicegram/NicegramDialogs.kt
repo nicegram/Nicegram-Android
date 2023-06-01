@@ -10,7 +10,9 @@ object NicegramDialogs {
     private const val PREF_NAME = "nicegram_prefs"
     private const val PREF_PRIVACY_DISPLAYED = "PREF_PRIVACY_DISPLAYED"
 
-    fun showContactsPermissionDialogIfNeeded(activity: Activity) {
+    fun showPrivacyPermissionDialogIfNeeded(activity: Activity?) {
+        if (activity == null || activity.isDestroyed) return
+
         val prefs = activity.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
         val privacyWasDisplayed = prefs.getBoolean(PREF_PRIVACY_DISPLAYED, false)
 

@@ -35,7 +35,15 @@ object NicegramSpeechToTextHelper {
                         )
                     )
                 )
-                val text = result.results?.getOrNull(0)?.alternatives?.getOrNull(0)?.transcript
+                val text: String? = result.results?.let { results ->
+                    val stringBuilder = StringBuilder()
+                    results.forEach { result ->
+                        result.alternatives?.forEach { alt ->
+                            alt.transcript?.let { stringBuilder.append(it) }
+                        }
+                    }
+                    stringBuilder.toString()
+                }
                 if (text == null) {
                     uiScope.launch { callback("") }
                 } else {

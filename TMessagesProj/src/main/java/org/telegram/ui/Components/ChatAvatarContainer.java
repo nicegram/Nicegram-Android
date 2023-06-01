@@ -86,7 +86,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
     private int onlineCount = -1;
     private int currentConnectionState;
     private CharSequence lastSubtitle;
-    private String lastSubtitleColorKey;
+    private int lastSubtitleColorKey = -1;
     private Integer overrideSubtitleColor;
 
     private SharedMediaLayout.SharedMediaPreloader sharedMediaPreloader;
@@ -293,7 +293,10 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
                 TLRPC.ChatFull chatInfo = parentFragment.getCurrentChatInfo();
                 TLRPC.UserFull userInfo = parentFragment.getCurrentUserInfo();
                 if (userInfo != null || chatInfo != null) {
-                    parentFragment.getUndoView().showWithAction(parentFragment.getDialogId(), action, parentFragment.getCurrentUser(), userInfo != null ? userInfo.ttl_period : chatInfo.ttl_period, null, null);
+                    UndoView undoView = parentFragment.getUndoView();
+                    if (undoView != null) {
+                        undoView.showWithAction(parentFragment.getDialogId(), action, parentFragment.getCurrentUser(), userInfo != null ? userInfo.ttl_period : chatInfo.ttl_period, null, null);
+                    }
                 }
 
             }
@@ -888,7 +891,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
         }
     }
 
-    public String getLastSubtitleColorKey() {
+    public int getLastSubtitleColorKey() {
         return lastSubtitleColorKey;
     }
 
@@ -993,6 +996,9 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
             currentConnectionState = ConnectionsManager.getInstance(currentAccount).getConnectionState();
             updateCurrentConnectionState();
         }
+        if (emojiStatusDrawable != null) {
+            emojiStatusDrawable.attach();
+        }
     }
 
     @Override
@@ -1001,6 +1007,9 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
         if (parentFragment != null) {
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.didUpdateConnectionState);
             NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
+        }
+        if (emojiStatusDrawable != null) {
+            emojiStatusDrawable.detach();
         }
     }
 
@@ -1040,7 +1049,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
                 lastSubtitle = null;
                 if (overrideSubtitleColor != null) {
                     subtitleTextView.setTextColor(overrideSubtitleColor);
-                } else if (lastSubtitleColorKey != null) {
+                } else if (lastSubtitleColorKey >= 0) {
                     subtitleTextView.setTextColor(getThemedColor(lastSubtitleColorKey));
                     subtitleTextView.setTag(lastSubtitleColorKey);
                 }
@@ -1084,9 +1093,8 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
         return avatarImageView;
     }
 
-    private int getThemedColor(String key) {
-        Integer color = resourcesProvider != null ? resourcesProvider.getColor(key) : null;
-        return color != null ? color : Theme.getColor(key);
+    private int getThemedColor(int key) {
+        return Theme.getColor(key, resourcesProvider);
     }
 
     public void updateColors() {
