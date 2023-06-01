@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.FrameLayout
 import com.appvillis.nicegram.presentation.NicegramOnboardingActivity
@@ -16,13 +18,21 @@ class NicegramIntroActivity : BaseFragment() {
         private const val REQ_CODE_NICEGRAM_ONBOARDING = 200000
     }
 
+    private var blockActivityCreation = false // to avoid double activity because createView called two times
+
     override fun createView(context: Context): View {
-        parentActivity.startActivityForResult(
-            Intent(
-                parentActivity,
-                NicegramOnboardingActivity::class.java
-            ), REQ_CODE_NICEGRAM_ONBOARDING
-        )
+        if (!blockActivityCreation) {
+            blockActivityCreation = true
+
+            parentActivity.startActivityForResult(
+                Intent(
+                    parentActivity,
+                    NicegramOnboardingActivity::class.java
+                ), REQ_CODE_NICEGRAM_ONBOARDING
+            )
+
+            Handler(Looper.getMainLooper()).postDelayed({ blockActivityCreation = false }, 2000)
+        }
 
         return FrameLayout(parentActivity).apply {
             setBackgroundColor(Color.BLACK)

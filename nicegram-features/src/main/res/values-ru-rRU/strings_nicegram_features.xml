@@ -25,11 +25,11 @@
     <string name="NicegramShowRegistrationDate">Показать дату регистрации человека</string>
     <string name="NicegramOpenLinksInBrowser">Открывать во внешнем браузере</string>
     <string name="NicegramUnblockGuide">Руководство по разблокировке канала</string>
-    <string name="NicegramPremiumFeatures">Премиум-функции</string>
+    <string name="NicegramPremiumFeatures">Возможности\nNicegram Premium</string>
     <string name="NicegramPrivacyPolicy">Политика конфиденциальности Nicegram</string>
     <string name="NicegramEULA">Пользовательское соглашение Nicegram</string>
     <string name="NicegramSubRenews">Подписка продлевается автоматически</string>
-    <string name="NicegramSubPerMonth"><![CDATA[<b>Подпишитесь за %s</b>/месяц]]></string>
+    <string name="NicegramSubPerMonth">Оформить подписку за %s в месяц</string>
     <string name="NicegramBuildInTranslator">Встроенный переводчик</string>
     <string name="NicegramBuildInTranslatorDesc">Мгновенно переводите любые сообщения прямо в приложений</string>
     <string name="NicegramSpeech2Text">Речь в текст</string>
@@ -57,6 +57,8 @@
     <string name="NicegramOnbroadingText4">Воспользуйтесь инновациями от команды Nicegram и получите eSIM с доступом в интернет в 133 странах. Вы также можете зарегистрировать новые аккаунты Telegram на номер телефона тарифного плана eSIM.</string>
     <string name="NicegramOnbroadingTitle5">Самый безопасный мессенджер</string>
     <string name="NicegramOnbroadingText5">Безопасный мессенджер с надежным шифрованием, групповыми аудио- и видеозвонками, общедоступными каналами, группами и ботами, неограниченным облачным хранилищем для чатов, а также возможностью обмена медиафайлами и документами.</string>
+    <string name="NicegramOnbroadingTitle6">Встречайте ИИ-чатбота Лили!</string>
+    <string name="NicegramOnbroadingText6">Ваш личный ИИ-помощник, призванный облегчить вам жизнь!</string>
     <string name="NicegramDoubleBottom">Двойное дно</string>
     <string name="NicegramDoubleBottomDesc">Чтобы включить эту функцию, у вас должно быть более одного аккаунта и включена блокировка паролем (перейдите в «Настройки» → «Конфиденциальность и безопасность» → «Блокировка паролем»).</string>
     <string name="NicegramDoubleBottomAnotherCode">Установите другой код доступа, отличающийся от того, который Вы используете для Блокировки кодом доступа.</string>
@@ -73,4 +75,7 @@
     <string name="NicegramShareChannelInfo">Поделиться информацией канала</string>
     <string name="NicegramShareChannelInfoDesc">Внесите свой вклад в самую полную Википедию каналов и групп Telegram, автоматически отправляя информацию о каналах и ссылки в нашу базу данных. Мы не связываем ваш телеграм-профиль и канал, а также никому не передаем ваши личные данные.</string>
     <string name="NicegarmBypassCopyProtection">Обход защиты от копирования</string>
+    <string name="NicegarmTutorial_HelpBtnText">Как получить код?</string>
+    <string name="NicegarmTutorial_Dialog_Title">Начиная с февраля 2023 года, выполните следующие действия для получения кода:</string>
+    <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. Войдите в <font color="#0A84FF">Telegram</font><br/>2. Войдите в <font color="#A134C7">Nicegram</font><br/>3. Введите код, который вы получите в <font color="#0A84FF">Telegram</font>]]></string>
 </resources>

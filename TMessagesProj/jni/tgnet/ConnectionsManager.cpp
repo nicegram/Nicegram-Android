@@ -690,6 +690,9 @@ void ConnectionsManager::loadConfig() {
                     auto datacenter = new Datacenter(instanceNum, buffer);
                     datacenters[datacenter->getDatacenterId()] = datacenter;
                     if (LOGS_ENABLED) DEBUG_D("datacenter(%p) %u loaded (hasAuthKey = %d, 0x%" PRIx64 ")", datacenter, datacenter->getDatacenterId(), (int) datacenter->hasPermanentAuthKey(), datacenter->getPermanentAuthKeyId());
+                    if (datacenter->isCdnDatacenter && !datacenter->hasPermanentAuthKey()) {
+                        datacenter->clearAuthKey(HandshakeTypePerm);
+                    }
                 }
             }
         }
@@ -1110,7 +1113,7 @@ void ConnectionsManager::onConnectionDataReceived(Connection *connection, Native
                     delegate->onProxyError(instanceNum);
                 }
             } else if (code == -404 && (datacenter->isCdnDatacenter || PFS_ENABLED)) {
-                if (!datacenter->isHandshaking(connection->isMediaConnection)) {
+                if (!datacenter->isHandshaking(connection->isMediaConnection) || datacenter->isCdnDatacenter) {
                     datacenter->clearAuthKey(connection->isMediaConnection ? HandshakeTypeMediaTemp : HandshakeTypeTemp);
                     datacenter->beginHandshake(connection->isMediaConnection ? HandshakeTypeMediaTemp : HandshakeTypeTemp, true);
                     if (LOGS_ENABLED) DEBUG_D("connection(%p, account%u, dc%u, type %d) reset auth key due to -404 error", connection, instanceNum, datacenter->getDatacenterId(), connection->getConnectionType());
@@ -1582,6 +1585,12 @@ void ConnectionsManager::processServerResponse(TLObject *message, int64_t messag
                                     request->serverFailureCount++;
                                 }
                                 discardResponse = true;
+                            } else if (error->error_code == -504) {
+                                discardResponse = (request->requestFlags & RequestFlagIgnoreFloodWait) == 0;
+                                request->failedByFloodWait = 2;
+                                request->startTime = 0;
+                                request->startTimeMillis = 0;
+                                request->minStartTime = (int32_t) (getCurrentTimeMonotonicMillis() / 1000 + 2);
                             } else if (error->error_code == 420) {
                                 int32_t waitTime = 2;
                                 static std::string floodWait = "FLOOD_WAIT_";
@@ -2053,6 +2062,13 @@ int32_t ConnectionsManager::sendRequestInternal(TLObject *object, onCompleteFunc
     auto request = new Request(instanceNum, lastRequestToken++, connetionType, flags, datacenterId, onComplete, onQuickAck, nullptr);
     request->rawRequest = object;
     request->rpcRequest = wrapInLayer(object, getDatacenterWithId(datacenterId), request);
+    auto cancelledIterator = tokensToBeCancelled.find(request->requestToken);
+    if (cancelledIterator != tokensToBeCancelled.end()) {
+        if (LOGS_ENABLED) DEBUG_D("(3) request is cancelled before sending, token %d", request->requestToken);
+        tokensToBeCancelled.erase(cancelledIterator);
+        delete request;
+        return request->requestToken;
+    }
     requestsQueue.push_back(std::unique_ptr<Request>(request));
     if (immediate) {
         processRequestQueue(0, 0);
@@ -2078,6 +2094,12 @@ int32_t ConnectionsManager::sendRequest(TLObject *object, onCompleteFunc onCompl
         auto request = new Request(instanceNum, requestToken, connetionType, flags, datacenterId, onComplete, onQuickAck, nullptr);
         request->rawRequest = object;
         request->rpcRequest = wrapInLayer(object, getDatacenterWithId(datacenterId), request);
+        auto cancelledIterator = tokensToBeCancelled.find(request->requestToken);
+        if (cancelledIterator != tokensToBeCancelled.end()) {
+            if (LOGS_ENABLED) DEBUG_D("(1) request is cancelled before sending, token %d", requestToken);
+            tokensToBeCancelled.erase(cancelledIterator);
+            delete request;
+        }
         requestsQueue.push_back(std::unique_ptr<Request>(request));
         if (immediate) {
             processRequestQueue(0, 0);
@@ -2097,14 +2119,17 @@ void ConnectionsManager::sendRequest(TLObject *object, onCompleteFunc onComplete
             exit(1);
         }
         if (ptr1 != nullptr) {
+            DEBUG_DELREF("connectionsmanager ptr1");
             env->DeleteGlobalRef(ptr1);
             ptr1 = nullptr;
         }
         if (ptr2 != nullptr) {
+            DEBUG_DELREF("connectionsmanager ptr2");
             env->DeleteGlobalRef(ptr2);
             ptr2 = nullptr;
         }
         if (ptr3 != nullptr) {
+            DEBUG_DELREF("connectionsmanager ptr3");
             env->DeleteGlobalRef(ptr3);
             ptr3 = nullptr;
         }
@@ -2119,6 +2144,13 @@ void ConnectionsManager::sendRequest(TLObject *object, onCompleteFunc onComplete
         request->ptr3 = ptr3;
         request->rpcRequest = wrapInLayer(object, getDatacenterWithId(datacenterId), request);
         if (LOGS_ENABLED) DEBUG_D("send request wrapped %p - %s", request->rpcRequest.get(), typeid(*(request->rpcRequest.get())).name());
+        auto cancelledIterator = tokensToBeCancelled.find(request->requestToken);
+        if (cancelledIterator != tokensToBeCancelled.end()) {
+            if (LOGS_ENABLED) DEBUG_D("(2) request is cancelled before sending, token %d", requestToken);
+            tokensToBeCancelled.erase(cancelledIterator);
+            delete request;
+            return;
+        }
         requestsQueue.push_back(std::unique_ptr<Request>(request));
         if (immediate) {
             processRequestQueue(0, 0);
@@ -2213,6 +2245,10 @@ void ConnectionsManager::removeRequestFromGuid(int32_t requestToken) {
 }
 
 bool ConnectionsManager::cancelRequestInternal(int32_t token, int64_t messageId, bool notifyServer, bool removeFromClass) {
+    if (!tokensToBeCancelled.empty() && (connectionState != ConnectionStateWaitingForNetwork || tokensToBeCancelled.size() > 5000)) {
+        tokensToBeCancelled.clear();
+    }
+
     for (auto iter = requestsQueue.begin(); iter != requestsQueue.end(); iter++) {
         Request *request = iter->get();
         if ((token != 0 && request->requestToken == token) || (messageId != 0 && request->respondsToMessageId(messageId))) {
@@ -2243,6 +2279,12 @@ bool ConnectionsManager::cancelRequestInternal(int32_t token, int64_t messageId,
             return true;
         }
     }
+
+    if (token != 0 && connectionState == ConnectionStateWaitingForNetwork) {
+        if (LOGS_ENABLED) DEBUG_D("request is tried to be cancelled, but it does not even exist, token %d", token);
+        tokensToBeCancelled.insert(token);
+    }
+
     return false;
 }
 
@@ -3284,12 +3326,14 @@ void ConnectionsManager::updateDcSettings(uint32_t dcNum, bool workaround) {
                 std::vector<TcpAddress> addressesIpv4Download;
                 std::vector<TcpAddress> addressesIpv6Download;
                 bool isCdn = false;
+                bool forceTryIpV6;
 
                 void addAddressAndPort(TL_dcOption *dcOption) {
                     std::vector<TcpAddress> *addresses;
                     if (!isCdn) {
                         isCdn = dcOption->cdn;
                     }
+                    forceTryIpV6 = dcOption->force_try_ipv6;
                     if (dcOption->media_only) {
                         if (dcOption->ipv6) {
                             addresses = &addressesIpv6Download;
@@ -3312,7 +3356,7 @@ void ConnectionsManager::updateDcSettings(uint32_t dcNum, bool workaround) {
                     if (dcOption->secret != nullptr) {
                         secret = std::string((const char *) dcOption->secret->bytes, dcOption->secret->length);
                     }
-                    if (LOGS_ENABLED) DEBUG_D("getConfig add %s:%d to dc%d, flags %d, has_secret = %d[%d], try_this_port_only = %d", dcOption->ip_address.c_str(), dcOption->port, dcOption->id, dcOption->flags, dcOption->secret != nullptr ? 1 : 0, dcOption->secret != nullptr ? dcOption->secret->length : 0, dcOption->thisPortOnly ? 1 : 0);
+                    if (LOGS_ENABLED) DEBUG_D("getConfig add %s:%d to dc%d, flags %d, has_secret = %d[%d], try_this_port_only = %d, force_try_ipv6 = %d", dcOption->ip_address.c_str(), dcOption->port, dcOption->id, dcOption->flags, dcOption->secret != nullptr ? 1 : 0, dcOption->secret != nullptr ? dcOption->secret->length : 0, dcOption->thisPortOnly ? 1 : 0, dcOption->force_try_ipv6 ? 1 : 0);
                     if (dcOption->thisPortOnly) {
                         addresses->insert(addresses->begin(), TcpAddress(dcOption->ip_address, dcOption->port, dcOption->flags, secret));
                     } else {
@@ -3378,21 +3422,7 @@ void ConnectionsManager::moveToDatacenter(uint32_t datacenterId) {
 
     Datacenter *currentDatacenter = getDatacenterWithId(currentDatacenterId);
     clearRequestsForDatacenter(currentDatacenter, HandshakeTypeAll);
-
-    if (currentUserId) {
-        auto request = new TL_auth_exportAuthorization();
-        request->dc_id = datacenterId;
-        sendRequest(request, [&, datacenterId](TLObject *response, TL_error *error, int32_t networkType, int64_t responseTime, int64_t msgId) {
-            if (error == nullptr) {
-                movingAuthorization = std::move(((TL_auth_exportedAuthorization *) response)->bytes);
-                authorizeOnMovingDatacenter();
-            } else {
-                moveToDatacenter(datacenterId);
-            }
-        }, nullptr, RequestFlagWithoutLogin, DEFAULT_DATACENTER_ID, ConnectionTypeGeneric, true);
-    } else {
-        authorizeOnMovingDatacenter();
-    }
+    authorizeOnMovingDatacenter();
 }
 
 void ConnectionsManager::authorizeOnMovingDatacenter() {
@@ -3862,6 +3892,7 @@ void ConnectionsManager::useJavaVM(JavaVM *vm, bool useJavaByteBuffers) {
             if (LOGS_ENABLED) DEBUG_E("can't get jnienv");
             exit(1);
         }
+        DEBUG_REF("connectionsmanager byte buffer");
         jclass_ByteBuffer = (jclass) env->NewGlobalRef(env->FindClass("java/nio/ByteBuffer"));
         if (jclass_ByteBuffer == nullptr) {
             if (LOGS_ENABLED) DEBUG_E("can't find java ByteBuffer class");

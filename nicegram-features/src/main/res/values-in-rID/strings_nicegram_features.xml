@@ -21,11 +21,9 @@
     <string name="NicegramShowProfileID">Tampilkan ID profil</string>
     <string name="NicegramShowRegistrationDate">Tampilkan tanggal pendaftaran</string>
     <string name="NicegramUnblockGuide">Panduan buka blokir</string>
-    <string name="NicegramPremiumFeatures">Fitur Premium</string>
     <string name="NicegramPrivacyPolicy">Kebijakan pribadi</string>
     <string name="NicegramEULA">EULA</string>
     <string name="NicegramSubRenews">Berlangganan Memperbarui Secara Otomatis</string>
-    <string name="NicegramSubPerMonth"><![CDATA[<b>Berlangganan %s</b> per bulan]]></string>
     <string name="NicegramBuildInTranslator">Penerjemah bawaan</string>
     <string name="NicegramBuildInTranslatorDesc">Terjemahkan pesan apa pun secara instan di aplikasi tanpa beralih ke penerjemah pihak ketiga</string>
     <string name="NicegramSpeech2TextDesc">Dapatkan pesan suara apa pun yang ditranskripsi dalam hitungan detik dan hemat banyak waktu luang anda </string>

@@ -1228,6 +1228,32 @@ public class DatabaseMigrationHelper {
             version = 112;
         }
 
+        if (version == 112) {
+            database.executeFast("CREATE TABLE app_config(data BLOB)").stepThis().dispose();
+            database.executeFast("PRAGMA user_version = 113").stepThis().dispose();
+            version = 113;
+        }
+
+        if (version == 113) {
+            //fix issue when database file was deleted
+            //just reload dialogs
+            messagesStorage.reset();
+            database.executeFast("PRAGMA user_version = 114").stepThis().dispose();
+            version = 114;
+        }
+        if (version == 114) {
+            database.executeFast("CREATE TABLE bot_keyboard_topics(uid INTEGER, tid INTEGER, mid INTEGER, info BLOB, PRIMARY KEY(uid, tid))").stepThis().dispose();
+            database.executeFast("CREATE INDEX IF NOT EXISTS bot_keyboard_topics_idx_mid_v2 ON bot_keyboard_topics(mid, uid, tid);").stepThis().dispose();
+            database.executeFast("PRAGMA user_version = 115").stepThis().dispose();
+            version = 115;
+        }
+        if (version == 115) {
+            database.executeFast("CREATE INDEX IF NOT EXISTS idx_to_reply_messages_v2 ON messages_v2(reply_to_message_id, mid);").stepThis().dispose();
+            database.executeFast("CREATE INDEX IF NOT EXISTS idx_to_reply_scheduled_messages_v2 ON scheduled_messages_v2(reply_to_message_id, mid);").stepThis().dispose();
+            database.executeFast("CREATE INDEX IF NOT EXISTS idx_to_reply_messages_topics ON messages_topics(reply_to_message_id, mid);").stepThis().dispose();
+            database.executeFast("PRAGMA user_version = 117").stepThis().dispose();
+            version = 117;
+        }
         return version;
     }
 
@@ -1285,6 +1311,10 @@ public class DatabaseMigrationHelper {
             excludeTables.add("topics");
             excludeTables.add("media_counts_v2");
             excludeTables.add("media_counts_topics");
+            excludeTables.add("dialogs");
+            excludeTables.add("dialog_filter");
+            excludeTables.add("dialog_filter_ep");
+            excludeTables.add("dialog_filter_pin_v2");
 
             //restore whole tables
             for (int i = 0; i < MessagesStorage.DATABASE_TABLES.length; i++) {

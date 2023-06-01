@@ -12,7 +12,6 @@ repositories {
     google()
     maven { url 'https://jitpack.io' }
     maven { url 'https://developer.huawei.com/repo/' }
-    maven { url properties.getProperty("assistant.aarMavenRepo") }
 }
 
 configurations {

@@ -159,7 +159,7 @@ public class EditTextEmoji extends FrameLayout implements NotificationCenter.Not
         if (style == STYLE_FRAGMENT) {
             editText.setGravity(Gravity.CENTER_VERTICAL | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT));
             editText.setBackground(null);
-            editText.setLineColors(getThemedColor(Theme.key_windowBackgroundWhiteInputField), getThemedColor(Theme.key_windowBackgroundWhiteInputFieldActivated), getThemedColor(Theme.key_windowBackgroundWhiteRedText3));
+            editText.setLineColors(getThemedColor(Theme.key_windowBackgroundWhiteInputField), getThemedColor(Theme.key_windowBackgroundWhiteInputFieldActivated), getThemedColor(Theme.key_text_RedRegular));
             editText.setHintTextColor(getThemedColor(Theme.key_windowBackgroundWhiteHintText));
             editText.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
             editText.setPadding(LocaleController.isRTL ? AndroidUtilities.dp(40) : 0, 0, LocaleController.isRTL ? 0 : AndroidUtilities.dp(40), AndroidUtilities.dp(8));
@@ -334,7 +334,7 @@ public class EditTextEmoji extends FrameLayout implements NotificationCenter.Not
             showPopup(0);
         }
         if (byBackButton) {
-            if (SharedConfig.smoothKeyboard && emojiView != null && emojiView.getVisibility() == View.VISIBLE && !waitingForKeyboardOpen) {
+            if (emojiView != null && emojiView.getVisibility() == View.VISIBLE && !waitingForKeyboardOpen) {
                 int height = emojiView.getMeasuredHeight();
                 ValueAnimator animator = ValueAnimator.ofFloat(0, height);
                 animator.addUpdateListener(animation -> {
@@ -433,24 +433,23 @@ public class EditTextEmoji extends FrameLayout implements NotificationCenter.Not
             }
 
             if (!keyboardVisible && !emojiWasVisible) {
-                if (SharedConfig.smoothKeyboard) {
-                    ValueAnimator animator = ValueAnimator.ofFloat(emojiPadding, 0);
-                    animator.addUpdateListener(animation -> {
-                        float v = (float) animation.getAnimatedValue();
-                        emojiView.setTranslationY(v);
-                        bottomPanelTranslationY(v);
-                    });
-                    animator.addListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            emojiView.setTranslationY(0);
-                            bottomPanelTranslationY(0);
-                        }
-                    });
-                    animator.setDuration(AdjustPanLayoutHelper.keyboardDuration);
-                    animator.setInterpolator(AdjustPanLayoutHelper.keyboardInterpolator);
-                    animator.start();
-                }
+                ValueAnimator animator = ValueAnimator.ofFloat(emojiPadding, 0);
+                animator.addUpdateListener(animation -> {
+                    float v = (float) animation.getAnimatedValue();
+                    emojiView.setTranslationY(v);
+                    bottomPanelTranslationY(v);
+                });
+                animator.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        emojiView.setTranslationY(0);
+                        bottomPanelTranslationY(0);
+                    }
+                });
+                animator.setDuration(AdjustPanLayoutHelper.keyboardDuration);
+                animator.setInterpolator(AdjustPanLayoutHelper.keyboardInterpolator);
+                animator.start();
+
             }
         } else {
             if (emojiButton != null) {
@@ -682,8 +681,7 @@ public class EditTextEmoji extends FrameLayout implements NotificationCenter.Not
         return editText;
     }
 
-    private int getThemedColor(String key) {
-        Integer color = resourcesProvider != null ? resourcesProvider.getColor(key) : null;
-        return color != null ? color : Theme.getColor(key);
+    private int getThemedColor(int key) {
+        return Theme.getColor(key, resourcesProvider);
     }
 }

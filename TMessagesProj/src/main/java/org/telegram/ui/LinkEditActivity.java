@@ -314,7 +314,7 @@ public class LinkEditActivity extends BaseFragment {
         }
 
         TextInfoPrivacyCell hintCell = new TextInfoPrivacyCell(context);
-        hintCell.setBackground(Theme.getThemedDrawable(context, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
+        hintCell.setBackground(Theme.getThemedDrawableByKey(context, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
         if (hasApproveCell) {
             hintCell.setText(LocaleController.getString("ApproveNewMembersDescription", R.string.ApproveNewMembersDescription));
         }
@@ -434,15 +434,7 @@ public class LinkEditActivity extends BaseFragment {
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
             @Override
             public void afterTextChanged(Editable s) {
-                SpannableStringBuilder builder = new SpannableStringBuilder(s);
-                Emoji.replaceEmoji(builder, nameEditText.getPaint().getFontMetricsInt(), (int) nameEditText.getPaint().getTextSize(), false);
-                int selection = nameEditText.getSelectionStart();
-                nameEditText.removeTextChangedListener(this);
-                nameEditText.setText(builder);
-                if (selection >= 0) {
-                    nameEditText.setSelection(selection);
-                }
-                nameEditText.addTextChangedListener(this);
+                Emoji.replaceEmoji(s, nameEditText.getPaint().getFontMetricsInt(), (int) nameEditText.getPaint().getTextSize(), false);
             }
         });
         nameEditText.setCursorVisible(false);
@@ -458,7 +450,7 @@ public class LinkEditActivity extends BaseFragment {
         linearLayout.addView(nameEditText, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 50));
 
         dividerName = new TextInfoPrivacyCell(context);
-        dividerName.setBackground(Theme.getThemedDrawable(context, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+        dividerName.setBackground(Theme.getThemedDrawableByKey(context, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
         dividerName.setText(LocaleController.getString("LinkNameHelp", R.string.LinkNameHelp));
         linearLayout.addView(dividerName);
 
@@ -466,7 +458,7 @@ public class LinkEditActivity extends BaseFragment {
             revokeLink = new TextSettingsCell(context);
             revokeLink.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
             revokeLink.setText(LocaleController.getString("RevokeLink", R.string.RevokeLink), false);
-            revokeLink.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteRedText5));
+            revokeLink.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
             revokeLink.setOnClickListener(view -> {
                 AlertDialog.Builder builder2 = new AlertDialog.Builder(getParentActivity());
                 builder2.setMessage(LocaleController.getString("RevokeAlert", R.string.RevokeAlert));
@@ -497,8 +489,8 @@ public class LinkEditActivity extends BaseFragment {
         buttonTextView.setOnClickListener(this::onCreateClicked);
         buttonTextView.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
 
-        dividerUses.setBackgroundDrawable(Theme.getThemedDrawable(context, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
-        divider.setBackgroundDrawable(Theme.getThemedDrawable(context, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
+        dividerUses.setBackgroundDrawable(Theme.getThemedDrawableByKey(context, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+        divider.setBackgroundDrawable(Theme.getThemedDrawableByKey(context, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
         buttonTextView.setBackgroundDrawable(Theme.createSimpleSelectorRoundRectDrawable(AndroidUtilities.dp(6), Theme.getColor(Theme.key_featuredStickers_addButton), Theme.getColor(Theme.key_featuredStickers_addButtonPressed)));
 
         usesEditText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
@@ -800,7 +792,7 @@ public class LinkEditActivity extends BaseFragment {
         usesChooseView.setVisibility(isVisible ? View.VISIBLE : View.GONE);
         usesEditText.setVisibility(isVisible ? View.VISIBLE : View.GONE);
         dividerUses.setVisibility(isVisible ? View.VISIBLE : View.GONE);
-        divider.setBackground(Theme.getThemedDrawable(getParentActivity(), isVisible ? R.drawable.greydivider : R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+        divider.setBackground(Theme.getThemedDrawableByKey(getParentActivity(), isVisible ? R.drawable.greydivider : R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
     }
 
     public interface Callback {
@@ -826,8 +818,8 @@ public class LinkEditActivity extends BaseFragment {
         ThemeDescription.ThemeDescriptionDelegate descriptionDelegate = () -> {
             if (dividerUses != null) {
                 Context context = dividerUses.getContext();
-                dividerUses.setBackgroundDrawable(Theme.getThemedDrawable(context, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
-                divider.setBackgroundDrawable(Theme.getThemedDrawable(context, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
+                dividerUses.setBackgroundDrawable(Theme.getThemedDrawableByKey(context, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                divider.setBackgroundDrawable(Theme.getThemedDrawableByKey(context, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
                 buttonTextView.setBackgroundDrawable(Theme.createSimpleSelectorRoundRectDrawable(AndroidUtilities.dp(6), Theme.getColor(Theme.key_featuredStickers_addButton), Theme.getColor(Theme.key_featuredStickers_addButtonPressed)));
 
                 usesEditText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
@@ -837,11 +829,11 @@ public class LinkEditActivity extends BaseFragment {
                 timeEditText.setHintTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
                 buttonTextView.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
                 if (revokeLink != null) {
-                    revokeLink.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteRedText5));
+                    revokeLink.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
                 }
 
                 createTextView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultTitle));
-                dividerName.setBackground(Theme.getThemedDrawable(context, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                dividerName.setBackground(Theme.getThemedDrawableByKey(context, R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
                 nameEditText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
                 nameEditText.setHintTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
             }
@@ -874,7 +866,7 @@ public class LinkEditActivity extends BaseFragment {
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, descriptionDelegate, Theme.key_windowBackgroundWhiteBlackText));
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, descriptionDelegate, Theme.key_windowBackgroundWhiteGrayText));
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, descriptionDelegate, Theme.key_featuredStickers_buttonText));
-        themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, descriptionDelegate, Theme.key_windowBackgroundWhiteRedText5));
+        themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, descriptionDelegate, Theme.key_text_RedRegular));
 
         return themeDescriptions;
     }

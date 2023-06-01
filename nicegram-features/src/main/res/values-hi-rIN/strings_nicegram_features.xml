@@ -21,11 +21,9 @@
     <string name="NicegramShowProfileID">प्रोफाइल आईडी दिखाएं</string>
     <string name="NicegramShowRegistrationDate">रजिस्ट्रेशन तारीख दिखाएं </string>
     <string name="NicegramUnblockGuide">गाइड अनब्लॉक करें </string>
-    <string name="NicegramPremiumFeatures">प्रीमियम सुविधाएं (फीचर्स)</string>
     <string name="NicegramPrivacyPolicy">प्राइवेसी पॉलिसी</string>
     <string name="NicegramEULA">ईयूएलए </string>
     <string name="NicegramSubRenews">सब्सक्रिप्शन खुद ब खुद रीन्यू हो जाएगी </string>
-    <string name="NicegramSubPerMonth"><![CDATA[<b>हर महीने%s </b> के लिए सब्सक्राइब करें ]]></string>
     <string name="NicegramBuildInTranslator">बिल्ट इन ट्रांसलेटर </string>
     <string name="NicegramBuildInTranslatorDesc">बिना 3rd पार्टी ट्रांसलेटर  को स्विच किए फटाफट एप्प में किसी भी संदेश का ट्रांसलेशन पाएं </string>
     <string name="NicegramSpeech2TextDesc">सेकंड्स में कोई भी वॉइस मैसेज का ट्रांसक्रिप्शन पाएं और अपना बहुत सारा समय बचाएं </string>

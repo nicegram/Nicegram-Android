@@ -24,8 +24,11 @@ import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
+import org.checkerframework.checker.units.qual.A;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ImageReceiver;
+import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
@@ -236,7 +239,7 @@ public class CustomEmojiReactionsWindow {
     }
 
     int[] location = new int[2];
-    int animationIndex;
+    final AnimationNotificationsLocker notificationsLocker = new AnimationNotificationsLocker();
 
     private void createTransition(boolean enter) {
         fromRect.set(reactionsContainerLayout.rect);
@@ -268,7 +271,7 @@ public class CustomEmojiReactionsWindow {
         reactionsContainerLayout.setCustomEmojiEnterProgress(enterTransitionProgress);
 
         if (enter) {
-            cascadeAnimation = SharedConfig.getDevicePerformanceClass() >= SharedConfig.PERFORMANCE_CLASS_HIGH && !SharedConfig.getLiteMode().enabled();
+            cascadeAnimation = SharedConfig.getDevicePerformanceClass() >= SharedConfig.PERFORMANCE_CLASS_HIGH && LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_EMOJI_REACTIONS);
             enterTransitionFinished = false;
         } else {
             cascadeAnimation = false;
@@ -278,7 +281,7 @@ public class CustomEmojiReactionsWindow {
         }
         selectAnimatedEmojiDialog.setEnterAnimationInProgress(true);
         account = UserConfig.selectedAccount;
-        animationIndex = NotificationCenter.getInstance(account).setAnimationInProgress(animationIndex, null);
+        notificationsLocker.lock();
         valueAnimator = ValueAnimator.ofFloat(enterTransitionProgress, enter ? 1f : 0);
         valueAnimator.addUpdateListener(animation -> {
             valueAnimator = null;
@@ -409,7 +412,7 @@ public class CustomEmojiReactionsWindow {
 
     private void checkAnimationEnd() {
         if (animators.isEmpty()) {
-            NotificationCenter.getInstance(account).onAnimationFinish(animationIndex);
+            notificationsLocker.unlock();
             selectAnimatedEmojiDialog.setEnterAnimationInProgress(false);
         }
     }
@@ -445,7 +448,7 @@ public class CustomEmojiReactionsWindow {
         });
     }
 
-    private void dismiss() {
+    public void dismiss() {
         if (dismissed) {
             return;
         }

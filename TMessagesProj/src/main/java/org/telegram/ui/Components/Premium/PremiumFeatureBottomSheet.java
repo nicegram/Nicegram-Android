@@ -136,9 +136,10 @@ public class PremiumFeatureBottomSheet extends BottomSheet implements Notificati
 
         PremiumPreviewFragment.PremiumFeatureData featureData = premiumFeatures.get(selectedPosition);
 
+        setApplyTopPadding(false);
         setApplyBottomPadding(false);
         useBackgroundTopPadding = false;
-        PremiumGradient.PremiumGradientTools gradientTools = new PremiumGradient.PremiumGradientTools(Theme.key_premiumGradientBottomSheet1, Theme.key_premiumGradientBottomSheet2, Theme.key_premiumGradientBottomSheet3, null);
+        PremiumGradient.PremiumGradientTools gradientTools = new PremiumGradient.PremiumGradientTools(Theme.key_premiumGradientBottomSheet1, Theme.key_premiumGradientBottomSheet2, Theme.key_premiumGradientBottomSheet3, -1);
         gradientTools.x1 = 0;
         gradientTools.y1 = 1.1f;
         gradientTools.x2 = 1.5f;
@@ -289,7 +290,9 @@ public class PremiumFeatureBottomSheet extends BottomSheet implements Notificati
                 if (localGradientAlpha != gradientAlpha) {
                     gradientAlpha = localGradientAlpha;
                     content.invalidate();
-                    checkTopOffset();
+                    AndroidUtilities.runOnUIThread(() -> {
+                        checkTopOffset();
+                    });
                 }
             }
 
@@ -380,7 +383,7 @@ public class PremiumFeatureBottomSheet extends BottomSheet implements Notificati
 
             @Override
             protected void dispatchDraw(Canvas canvas) {
-                shadowDrawable.setBounds(0, topCurrentOffset - backgroundPaddingTop + AndroidUtilities.dp(2), getMeasuredWidth(), getMeasuredHeight());
+                shadowDrawable.setBounds(0, topCurrentOffset + backgroundPaddingTop - AndroidUtilities.dp(2) + 1, getMeasuredWidth(), getMeasuredHeight());
                 shadowDrawable.draw(canvas);
                 super.dispatchDraw(canvas);
                 if (actionBar != null && actionBar.getVisibility() == View.VISIBLE && actionBar.getAlpha() != 0) {

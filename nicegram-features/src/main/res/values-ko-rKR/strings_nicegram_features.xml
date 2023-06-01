@@ -25,11 +25,11 @@
     <string name="NicegramShowRegistrationDate">가입 날짜 표시</string>
     <string name="NicegramOpenLinksInBrowser">브라우저에서 링크 열기</string>
     <string name="NicegramUnblockGuide">차단해제 가이드</string>
-    <string name="NicegramPremiumFeatures">프리미엄 기능</string>
+    <string name="NicegramPremiumFeatures">Nicegram\n프리미엄 기능</string>
     <string name="NicegramPrivacyPolicy">개인 정보 보호정책</string>
     <string name="NicegramEULA">EULA</string>
     <string name="NicegramSubRenews">구독 자동 갱신</string>
-    <string name="NicegramSubPerMonth"><![CDATA[매월 <b>%s에 구독</b>]]></string>
+    <string name="NicegramSubPerMonth">월 %s 구독</string>
     <string name="NicegramBuildInTranslator">내장된 번역기능</string>
     <string name="NicegramBuildInTranslatorDesc">타사 번역기로 전환할 필요 없이 앱의 모든 메시지를 즉시 번역</string>
     <string name="NicegramSpeech2Text">음성-텍스트 변환</string>
@@ -39,7 +39,7 @@
     <string name="NicegramQuickTranslateButton">빠른 번역 버튼</string>
     <string name="NicegramStartWithRearCamera">후면 카메라로 시작</string>
     <string name="NicegramDownloadVideosToGallery">사진앨범으로 동영상 다운로드</string>
-    <string name="NicegramHidePhoneNumber">설정에서 전화번호 숨기기</string>
+    <string name="NicegramHidePhoneNumber">Hide phone in settings</string>
     <string name="NicegramHidePhoneNumberDesc">전화 번호는 UI에서만 숨겨집니다. 다른 사람에게 숨기려면 개인 정보 설정을 사용하세요.</string>
     <string name="NicegramHideReactions">반응 숨기기</string>
     <string name="NicegramSelectAllFromThisUser">이 사용자에게서 온 모든 메시지 선택 </string>
@@ -57,6 +57,8 @@
     <string name="NicegramOnbroadingText4">Nicegram 팀의 혁신적인 기능을 활용하고, 133개 국가에서 인터넷 사용이 가능한 eSIM을 구매하세요. eSIM 데이터 요금제 전화번호에 새로운 텔레그램 계정을 등록할 수 있습니다.</string>
     <string name="NicegramOnbroadingTitle5">가장 안전한 메신저</string>
     <string name="NicegramOnbroadingText5">강력한 암호화, 단체 오디오 및 비디오 통화, 공용 채널, 그룹 및 봇, 채팅과 미디어 및 문서 공유를 위한 무제한 클라우드 스토리지 기능을 갖춘 안전한 메신저입니다.</string>
+    <string name="NicegramOnbroadingTitle6">릴리를 만나보세요</string>
+    <string name="NicegramOnbroadingText6">생활을 간소화하는 개인 AI 챗봇 비서!</string>
     <string name="NicegramDoubleBottom">이중 바닥</string>
     <string name="NicegramDoubleBottomDesc">이 기능을 활성화하려면 계정을 2개 이상 소유하고 암호 잠금을 설정해야 합니다 (설정 → 개인정보보호 &amp; 보안 → 암호 잠금으로 이동)</string>
     <string name="NicegramDoubleBottomAnotherCode">비밀번호 잠금에 사용하는 비밀번호와 다른 비밀번호를 설정하세요.</string>
@@ -73,4 +75,7 @@
     <string name="NicegramShareChannelInfo">채널 정보 공유</string>
     <string name="NicegramShareChannelInfoDesc">저희 데이터 베이스에 자동으로 채널 정보와 링크를 제출함으로써 텔레그램(Telegram) 채널 및 그룹의 가장 포괄적인 위키피디아에 기여하세요. 저희는 귀하의 텔레그램 프로필과 채널을 연결하지 않으며 귀하의 개인 정보도 공유하지 않습니다.</string>
     <string name="NicegarmBypassCopyProtection">복사 방지 무시</string>
+    <string name="NicegarmTutorial_HelpBtnText">코드를 받으려면 어떻게 해야 하나요?</string>
+    <string name="NicegarmTutorial_Dialog_Title">2023년 2월부터 아래 단계에 따라 코드를 받으세요:</string>
+    <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. 로그인 <font color="#0A84FF">Telegram</font><br/>2. 로그인 <font color="#A134C7">Nicegram</font><br/>3. 수신할 코드를 입력하세요 <font color="#0A84FF">Telegram</font>]]></string>
 </resources>

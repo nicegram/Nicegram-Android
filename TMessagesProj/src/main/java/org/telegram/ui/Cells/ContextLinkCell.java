@@ -41,6 +41,7 @@ import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
@@ -87,6 +88,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
     private boolean needShadow;
 
     private boolean canPreviewGif;
+    private boolean isKeyboard;
 
     private boolean isForceGif;
 
@@ -141,6 +143,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
         this.resourcesProvider = resourcesProvider;
 
         linkImageView = new ImageReceiver(this);
+        linkImageView.setAllowLoadingOnAttachedOnly(true);
         linkImageView.setLayerNum(1);
         linkImageView.setUseSharedAnimationQueue(true);
         letterDrawable = new LetterDrawable(resourcesProvider, LetterDrawable.STYLE_DEFAULT);
@@ -154,7 +157,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
 
             checkBox = new CheckBox2(context, 21, resourcesProvider);
             checkBox.setVisibility(INVISIBLE);
-            checkBox.setColor(null, Theme.key_sharedMedia_photoPlaceholder, Theme.key_checkboxCheck);
+            checkBox.setColor(-1, Theme.key_sharedMedia_photoPlaceholder, Theme.key_checkboxCheck);
             checkBox.setDrawUnchecked(false);
             checkBox.setDrawBackgroundAsArc(1);
             addView(checkBox, LayoutHelper.createFrame(24, 24, Gravity.RIGHT | Gravity.TOP, 0, 1, 1, 0));
@@ -321,6 +324,10 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
                 width = (int) (w / (h / (float) AndroidUtilities.dp(80)));
                 if (documentAttachType == DOCUMENT_ATTACH_TYPE_GIF) {
                     currentPhotoFilterThumb = currentPhotoFilter = String.format(Locale.US, "%d_%d_b", (int) (width / AndroidUtilities.density), 80);
+                    if (!SharedConfig.isAutoplayGifs() && !isKeyboard) {
+                        currentPhotoFilterThumb += "_firstframe";
+                        currentPhotoFilter += "_firstframe";
+                    }
                 } else {
                     currentPhotoFilter = String.format(Locale.US, "%d_%d", (int) (width / AndroidUtilities.density), 80);
                     currentPhotoFilterThumb = currentPhotoFilter + "_b";
@@ -334,13 +341,13 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
                 if (documentAttach != null) {
                     TLRPC.VideoSize thumb = MessageObject.getDocumentVideoThumb(documentAttach);
                     if (thumb != null) {
-                        linkImageView.setImage(ImageLocation.getForDocument(thumb, documentAttach), "100_100", ImageLocation.getForDocument(currentPhotoObject, documentAttach), currentPhotoFilter, -1, ext, parentObject, 1);
+                        linkImageView.setImage(ImageLocation.getForDocument(thumb, documentAttach), "100_100" + (!SharedConfig.isAutoplayGifs() && !isKeyboard ? "_firstframe" : ""), ImageLocation.getForDocument(currentPhotoObject, documentAttach), currentPhotoFilter, -1, ext, parentObject, 1);
                     } else {
                         ImageLocation location = ImageLocation.getForDocument(documentAttach);
                         if (isForceGif) {
                             location.imageType = FileLoader.IMAGE_TYPE_ANIMATION;
                         }
-                        linkImageView.setImage(location, "100_100", ImageLocation.getForDocument(currentPhotoObject, documentAttach), currentPhotoFilter, documentAttach.size, ext, parentObject, 0);
+                        linkImageView.setImage(location, "100_100" + (!SharedConfig.isAutoplayGifs() && !isKeyboard ? "_firstframe" : ""), ImageLocation.getForDocument(currentPhotoObject, documentAttach), currentPhotoFilter, documentAttach.size, ext, parentObject, 0);
                     }
                 } else if (webFile != null) {
                     linkImageView.setImage(ImageLocation.getForWebFile(webFile), "100_100", ImageLocation.getForPhoto(currentPhotoObject, photoAttach), currentPhotoFilter, -1, ext, parentObject, 1);
@@ -371,6 +378,13 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
                 } else {
                     linkImageView.setImage(ImageLocation.getForPath(urlLocation), currentPhotoFilter, ImageLocation.getForPhoto(currentPhotoObjectThumb, photoAttach), currentPhotoFilterThumb, -1, ext, parentObject, 1);
                 }
+            }
+            if (SharedConfig.isAutoplayGifs() || isKeyboard) {
+                linkImageView.setAllowStartAnimation(true);
+                linkImageView.startAnimation();
+            } else {
+                linkImageView.setAllowStartAnimation(false);
+                linkImageView.stopAnimation();
             }
             drawLinkImageView = true;
         }
@@ -583,6 +597,10 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
 
     public void setCanPreviewGif(boolean value) {
         canPreviewGif = value;
+    }
+
+    public void setIsKeyboard(boolean value) {
+        isKeyboard = value;
     }
 
     public boolean isCanPreviewGif() {
@@ -838,7 +856,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
 
     private int getIconForCurrentState() {
         if (documentAttachType == DOCUMENT_ATTACH_TYPE_AUDIO || documentAttachType == DOCUMENT_ATTACH_TYPE_MUSIC) {
-            radialProgress.setColors(Theme.key_chat_inLoader, Theme.key_chat_inLoaderSelected, Theme.key_chat_inMediaIcon, Theme.key_chat_inMediaIconSelected);
+            radialProgress.setColorKeys(Theme.key_chat_inLoader, Theme.key_chat_inLoaderSelected, Theme.key_chat_inMediaIcon, Theme.key_chat_inMediaIconSelected);
             if (buttonState == 1) {
                 return MediaActionDrawable.ICON_PAUSE;
             } else if (buttonState == 2) {
@@ -848,7 +866,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
             }
             return MediaActionDrawable.ICON_PLAY;
         }
-        radialProgress.setColors(Theme.key_chat_mediaLoaderPhoto, Theme.key_chat_mediaLoaderPhotoSelected, Theme.key_chat_mediaLoaderPhotoIcon, Theme.key_chat_mediaLoaderPhotoIconSelected);
+        radialProgress.setColorKeys(Theme.key_chat_mediaLoaderPhoto, Theme.key_chat_mediaLoaderPhotoSelected, Theme.key_chat_mediaLoaderPhotoIcon, Theme.key_chat_mediaLoaderPhotoIconSelected);
         return buttonState == 1 ? MediaActionDrawable.ICON_EMPTY : MediaActionDrawable.ICON_NONE;
     }
 

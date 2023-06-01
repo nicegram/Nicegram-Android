@@ -9,9 +9,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import javax.inject.Named
 import javax.inject.Singleton
 
@@ -19,22 +16,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NicegramFeaturesModule {
     private const val PREFS_NAME = "NicegramFeaturesModulePrefs"
-
-    @Provides
-    @Singleton
-    fun provideBillingManger(
-        @ApplicationContext context: Context
-    ): BillingManager =
-        BillingManagerImpl(context, CoroutineScope(SupervisorJob() + Dispatchers.IO))
-
-    @Provides
-    @Singleton
-    fun provideBillingClient(billingManager: BillingManager) = billingManager.billingClient
-
-    @Provides
-    @Singleton
-    fun provideGetBillingSkusUseCase(billingManager: BillingManager) =
-        GetBillingSkusUseCase(billingManager)
 
     @Provides
     @Singleton

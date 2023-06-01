@@ -21,7 +21,6 @@ import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
@@ -38,19 +37,17 @@ import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.FileLog;
-import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.Paint.Views.LPhotoPaintView;
 import org.telegram.ui.Components.PopupSwipeBackLayout;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Locale;
 
 public class ActionBarPopupWindow extends PopupWindow {
 
@@ -84,7 +81,7 @@ public class ActionBarPopupWindow extends PopupWindow {
 
     private ViewTreeObserver.OnScrollChangedListener mSuperScrollListener;
     private ViewTreeObserver mViewTreeObserver;
-    private int popupAnimationIndex = -1;
+    private AnimationNotificationsLocker notificationsLocker = new AnimationNotificationsLocker();
 
     public void setScaleOut(boolean b) {
         scaleOut = b;
@@ -106,7 +103,7 @@ public class ActionBarPopupWindow extends PopupWindow {
         private boolean startAnimationPending = false;
         private int backAlpha = 255;
         private int lastStartedChild = 0;
-        private boolean shownFromBottom;
+        public boolean shownFromBottom;
         private boolean animationEnabled = allowAnimation;
         private ArrayList<AnimatorSet> itemAnimators;
         private HashMap<View, Integer> positions = new HashMap<>();
@@ -291,16 +288,6 @@ public class ActionBarPopupWindow extends PopupWindow {
                 invalidate();
                 if (onSizeChangedListener != null) {
                     onSizeChangedListener.onSizeChanged();
-                }
-            }
-        }
-
-        public void translateChildrenAfter(int index, float ty) {
-            subtractBackgroundHeight = (int) -ty;
-            for (int i = index + 1; i < linearLayout.getChildCount(); ++i) {
-                View child = linearLayout.getChildAt(i);
-                if (child != null) {
-                    child.setTranslationY(ty);
                 }
             }
         }
@@ -599,9 +586,8 @@ public class ActionBarPopupWindow extends PopupWindow {
             }
         }
 
-        private int getThemedColor(String key) {
-            Integer color = resourcesProvider != null ? resourcesProvider.getColor(key) : null;
-            return color != null ? color : Theme.getColor(key);
+        protected int getThemedColor(int key) {
+            return Theme.getColor(key, resourcesProvider);
         }
 
         public void setOnSizeChangedListener(ActionBarPopupWindow.onSizeChangedListener onSizeChangedListener) {
@@ -728,12 +714,16 @@ public class ActionBarPopupWindow extends PopupWindow {
     }
 
     public void dimBehind() {
+        dimBehind(0.2f);
+    }
+
+    public void dimBehind(float amount) {
         View container = getContentView().getRootView();
         Context context = getContentView().getContext();
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         WindowManager.LayoutParams p = (WindowManager.LayoutParams) container.getLayoutParams();
         p.flags |= WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-        p.dimAmount = 0.2f;
+        p.dimAmount = amount;
         wm.updateViewLayout(container, p);
     }
 
@@ -1022,12 +1012,12 @@ public class ActionBarPopupWindow extends PopupWindow {
                     }
                     unregisterListener();
                     if (pauseNotifications) {
-                        NotificationCenter.getInstance(currentAccount).onAnimationFinish(popupAnimationIndex);
+                        notificationsLocker.unlock();
                     }
                 }
             });
             if (pauseNotifications) {
-                popupAnimationIndex = NotificationCenter.getInstance(currentAccount).setAnimationInProgress(popupAnimationIndex, null);
+                notificationsLocker.lock();
             }
             windowAnimatorSet.start();
         } else {
@@ -1050,21 +1040,20 @@ public class ActionBarPopupWindow extends PopupWindow {
 
     public static class GapView extends FrameLayout {
 
-        Theme.ResourcesProvider resourcesProvider;
-        String colorKey;
-
         Drawable shadowDrawable;
 
         public GapView(Context context, Theme.ResourcesProvider resourcesProvider) {
             this(context, resourcesProvider, Theme.key_actionBarDefaultSubmenuSeparator);
         }
 
-        public GapView(Context context, Theme.ResourcesProvider resourcesProvider, String colorKey) {
+        public GapView(Context context, int color, int shadowColor) {
             super(context);
-            this.resourcesProvider = resourcesProvider;
-            this.colorKey = colorKey;
-            this.shadowDrawable = Theme.getThemedDrawable(getContext(), R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow, resourcesProvider);
-            setBackgroundColor(Theme.getColor(colorKey, resourcesProvider));
+            this.shadowDrawable = Theme.getThemedDrawable(getContext(), R.drawable.greydivider, shadowColor);
+            setBackgroundColor(color);
+        }
+
+        public GapView(Context context, Theme.ResourcesProvider resourcesProvider, int colorKey) {
+            this(context, Theme.getColor(colorKey, resourcesProvider), Theme.getColor(Theme.key_windowBackgroundGrayShadow, resourcesProvider));
         }
 
         public void setColor(int color) {

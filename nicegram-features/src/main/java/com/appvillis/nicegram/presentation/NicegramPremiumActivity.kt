@@ -4,6 +4,8 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumFragment
+import com.appvillis.lib_android_base.setTransparentStatusBar
 import com.appvillis.nicegram.R
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -12,9 +14,8 @@ class NicegramPremiumActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        window.statusBarColor = Color.BLACK
-        window.decorView.systemUiVisibility =
-            window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+        window.navigationBarColor = Color.BLACK
+        setTransparentStatusBar()
 
         setContentView(R.layout.activity_nicegram_fragment)
 

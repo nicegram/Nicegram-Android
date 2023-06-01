@@ -25,11 +25,11 @@
     <string name="NicegramShowRegistrationDate">إظهار تاريخ التسجيل</string>
     <string name="NicegramOpenLinksInBrowser">فتح الروابط في المتصفح</string>
     <string name="NicegramUnblockGuide">دليل فك الحظر</string>
-    <string name="NicegramPremiumFeatures">مميزات الاشتراك المتميز</string>
+    <string name="NicegramPremiumFeatures">Nicegram\nميزات بريميوم</string>
     <string name="NicegramPrivacyPolicy">سياسة الخصوصية</string>
     <string name="NicegramEULA">اتفاقية ترخيص المستخدم النهائي</string>
     <string name="NicegramSubRenews">الاشتراك يتجدد تلقائياً</string>
-    <string name="NicegramSubPerMonth"><![CDATA[<b>اشترك مقابل %s</b>  شهرياً]]></string>
+    <string name="NicegramSubPerMonth">اشترك في %s / شهر</string>
     <string name="NicegramBuildInTranslator">برنامج مدمج للترجمة</string>
     <string name="NicegramBuildInTranslatorDesc">ترجم أي رسالة في التطبيق فوراً دون الحاجة إلى الانتقال إلى برامج ترجمة خارجية</string>
     <string name="NicegramSpeech2Text">نص البيان2</string>
@@ -57,6 +57,8 @@
     <string name="NicegramOnbroadingText4">استفد من الابتكارات من فريق نايسجرام واحصل على eSIM مع إمكانية الوصول إلى الإنترنت في 133 دولة. كما يُمكنك تسجيل حسابات تيليجرام الجديدة على رقم هاتف خطة بيانات eSIM.</string>
     <string name="NicegramOnbroadingTitle5">برنامج المراسلة الأكثر أمانًا</string>
     <string name="NicegramOnbroadingText5">برنامج مراسلة قوي بتشفير قوي، ومكالمات صوتية ومرئية جماعية، وقنوات عامة، ومجموعات وبرمجيات بوت، وتخزين سحابي غير محدود للمحادثات، ومشاركة الوسائط والمستندات.</string>
+    <string name="NicegramOnbroadingTitle6">تعرف على ليلي</string>
+    <string name="NicegramOnbroadingText6">مساعد شخصي للتحدث مع الذكاء الاصطناعي وتبسيط حياتك!</string>
     <string name="NicegramDoubleBottom">Double bottom</string>
     <string name="NicegramDoubleBottomDesc">لتمكين هذه الخاصية، يجب أن يكون لديك أكثر من حساب وتشغّل قفل رمز المرور (انتقل إلى الإعدادات ← الخصوصية والأمان ← قفل رمز المرور)</string>
     <string name="NicegramDoubleBottomAnotherCode">يرجى تعيين رمز مرور مختلف عن الذي تستخدمه في رمز مرور القفل</string>
@@ -73,4 +75,7 @@
     <string name="NicegramShareChannelInfo">شارك معلومات القناة</string>
     <string name="NicegramShareChannelInfoDesc">ساهم في موسوعة ويكيبيديا الأكثر شمولاً لقنوات ومجموعات تيليجرام عن طريق إرسال معلومات القناة تلقائياً والارتباط بقاعدة البيانات الخاصة بنا. نحن لا نربط ملفك الشخصي وقناتك على تيليجرام ولا نشارك بياناتك الشخصية.</string>
     <string name="NicegarmBypassCopyProtection">تجاوز الحماية من النسخ</string>
+    <string name="NicegarmTutorial_HelpBtnText">كيف يمكنني استلام الرمز؟</string>
+    <string name="NicegarmTutorial_Dialog_Title">بدءا من فبراير 2023 ، اتبع الخطوات أدناه لتلقي الرمز:</string>
+    <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. تسجيل الدخول <font color="#0A84FF">Telegram</font><br/>2. تسجيل الدخول <font color="#A134C7">Nicegram</font><br/>3. أدخل الرمز الذي ستصلك عليه <font color="#0A84FF">Telegram</font>]]></string>
 </resources>

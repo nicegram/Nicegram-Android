@@ -234,7 +234,7 @@ public class SharedDocumentCell extends FrameLayout implements DownloadControlle
 
         checkBox = new CheckBox2(context, 21);
         checkBox.setVisibility(INVISIBLE);
-        checkBox.setColor(null, Theme.key_windowBackgroundWhite, Theme.key_checkboxCheck);
+        checkBox.setColor(-1, Theme.key_windowBackgroundWhite, Theme.key_checkboxCheck);
         checkBox.setDrawUnchecked(false);
         checkBox.setDrawBackgroundAsArc(2);
         if (viewType == VIEW_TYPE_PICKER) {
@@ -276,20 +276,20 @@ public class SharedDocumentCell extends FrameLayout implements DownloadControlle
                 }
             } else {
                 Drawable drawable = Theme.createCircleDrawableWithIcon(AndroidUtilities.dp(42), resId);
-                String iconKey;
-                String backKey;
+                int iconKey;
+                int backKey;
                 if (resId == R.drawable.files_storage) {
                     backKey = Theme.key_chat_attachLocationBackground;
-                    iconKey = Theme.key_chat_attachLocationIcon;
+                    iconKey = Theme.key_chat_attachIcon;
                 } else if (resId == R.drawable.files_gallery) {
                     backKey = Theme.key_chat_attachContactBackground;
-                    iconKey = Theme.key_chat_attachContactIcon;
+                    iconKey = Theme.key_chat_attachIcon;
                 } else if (resId == R.drawable.files_music) {
                     backKey = Theme.key_chat_attachAudioBackground;
-                    iconKey = Theme.key_chat_attachAudioIcon;
+                    iconKey = Theme.key_chat_attachIcon;
                 } else if (resId == R.drawable.files_internal) {
                     backKey = Theme.key_chat_attachGalleryBackground;
-                    iconKey = Theme.key_chat_attachGalleryIcon;
+                    iconKey = Theme.key_chat_attachIcon;
                 } else {
                     backKey = Theme.key_files_folderIconBackground;
                     iconKey = Theme.key_files_folderIcon;
@@ -320,7 +320,7 @@ public class SharedDocumentCell extends FrameLayout implements DownloadControlle
                 thumbImageView.setOrientation(0, true);
                 thumbImageView.setImage("vthumb://" + entry.imageId + ":" + entry.path, null, Theme.chat_attachEmptyDrawable);
             } else {
-                thumbImageView.setOrientation(entry.orientation, true);
+                thumbImageView.setOrientation(entry.orientation, entry.invert, true);
                 thumbImageView.setImage("thumb://" + entry.imageId + ":" + entry.path, null, Theme.chat_attachEmptyDrawable);
             }
             path = entry.path;
@@ -697,9 +697,8 @@ public class SharedDocumentCell extends FrameLayout implements DownloadControlle
         }
     }
 
-    private int getThemedColor(String key) {
-        Integer color = resourcesProvider != null ? resourcesProvider.getColor(key) : null;
-        return color != null ? color : Theme.getColor(key);
+    private int getThemedColor(int key) {
+        return Theme.getColor(key, resourcesProvider);
     }
 
     float enterAlpha = 1f;
