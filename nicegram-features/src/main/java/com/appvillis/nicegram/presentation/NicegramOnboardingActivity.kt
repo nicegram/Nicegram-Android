@@ -19,6 +19,7 @@ class NicegramOnboardingActivity : AppCompatActivity() {
         private const val FORCE_ONBOARDING = false
         var instance: NicegramOnboardingActivity? = null
     }
+
     @Inject
     lateinit var nicegramFeaturesOnboardingUseCase: NicegramFeaturesOnboardingUseCase
 
@@ -49,7 +50,9 @@ class NicegramOnboardingActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        startActivityForResult(Intent(this, NicegramPremiumActivity::class.java), 1)
+        startActivityForResult(Intent(this, NicegramPremiumActivity::class.java).apply {
+            putExtra(NicegramPremiumActivity.EXTRA_SHOW_CONTINUE_BTN, true)
+        }, 1)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

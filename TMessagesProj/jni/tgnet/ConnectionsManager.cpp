@@ -582,7 +582,7 @@ void ConnectionsManager::select() {
                 sendPing(datacenter, false);
             }
             if (abs((int32_t) (now / 1000) - lastDcUpdateTime) >= DC_UPDATE_TIME) {
-                updateDcSettings(0, false);
+                updateDcSettings(0, false, false);
             }
             processRequestQueue(0, 0);
         } else if (!datacenter->isHandshakingAny()) {
@@ -958,6 +958,9 @@ void ConnectionsManager::cleanUp(bool resetKeys, int32_t datacenterId) {
 }
 
 void ConnectionsManager::onConnectionClosed(Connection *connection, int reason) {
+    if (reason == 1) {
+        lastProtocolUsefullData = false;
+    }
     Datacenter *datacenter = connection->getDatacenter();
     if ((connection->getConnectionType() == ConnectionTypeGeneric || connection->getConnectionType() == ConnectionTypeGenericMedia) && datacenter->isHandshakingAny()) {
         datacenter->onHandshakeConnectionClosed(connection);
@@ -2199,7 +2202,7 @@ void ConnectionsManager::setUserId(int64_t userId) {
             registerForInternalPushUpdates();
         }
         if (currentUserId != userId && userId != 0) {
-            updateDcSettings(0, false);
+            updateDcSettings(0, false, false);
         }
         if (currentUserId != 0 && pushConnectionEnabled) {
             Datacenter *datacenter = getDatacenterWithId(currentDatacenterId);
@@ -3058,7 +3061,7 @@ void ConnectionsManager::processRequestQueue(uint32_t connectionTypes, uint32_t 
     }
 
     if (!unknownDatacenterIds.empty()) {
-        updateDcSettings(0, false);
+        updateDcSettings(0, false, false);
     }
 
     size_t count = neededDatacenters.size();
@@ -3289,7 +3292,7 @@ inline std::string decodeSecret(std::string secret) {
     return base64UrlDecode(secret);
 }
 
-void ConnectionsManager::updateDcSettings(uint32_t dcNum, bool workaround) {
+void ConnectionsManager::updateDcSettings(uint32_t dcNum, bool workaround, bool ifLoadingTryAgain) {
     if (workaround) {
         if (updatingDcSettingsWorkaround) {
             return;
@@ -3297,6 +3300,10 @@ void ConnectionsManager::updateDcSettings(uint32_t dcNum, bool workaround) {
         updatingDcSettingsWorkaround = true;
     } else {
         if (updatingDcSettings) {
+            if (ifLoadingTryAgain) {
+                updatingDcSettingsAgain = true;
+                updatingDcSettingsAgainDcNum = dcNum;
+            }
             return;
         }
         updatingDcSettings = true;
@@ -3306,6 +3313,14 @@ void ConnectionsManager::updateDcSettings(uint32_t dcNum, bool workaround) {
     auto request = new TL_help_getConfig();
     sendRequest(request, [&, workaround](TLObject *response, TL_error *error, int32_t networkType, int64_t responseTime, int64_t msgId) {
         if ((!workaround && !updatingDcSettings) || (workaround && !updatingDcSettingsWorkaround)) {
+            return;
+        }
+        if (!workaround && updatingDcSettingsAgain) {
+            updatingDcSettingsAgain = false;
+            for (auto & datacenter : datacenters) {
+                datacenter.second->resetInitVersion();
+            }
+            updateDcSettings(updatingDcSettingsAgainDcNum, false, false);
             return;
         }
 
@@ -3428,7 +3443,7 @@ void ConnectionsManager::moveToDatacenter(uint32_t datacenterId) {
 void ConnectionsManager::authorizeOnMovingDatacenter() {
     Datacenter *datacenter = getDatacenterWithId(movingToDatacenterId);
     if (datacenter == nullptr) {
-        updateDcSettings(0, false);
+        updateDcSettings(0, false, false);
         return;
     }
     datacenter->recreateSessions(HandshakeTypeAll);
@@ -3479,7 +3494,7 @@ void ConnectionsManager::applyDatacenterAddress(uint32_t datacenterId, std::stri
             if (datacenter->isHandshakingAny()) {
                 datacenter->beginHandshake(HandshakeTypeCurrent, true);
             }
-            updateDcSettings(datacenterId, false);
+            updateDcSettings(datacenterId, false, false);
         }
     });
 }
@@ -3572,7 +3587,7 @@ void ConnectionsManager::applyDnsConfig(NativeByteBuffer *buffer, std::string ph
                         if (datacenter->isHandshakingAny()) {
                             datacenter->beginHandshake(HandshakeTypeCurrent, true);
                         }
-                        updateDcSettings(rule->dc_id, true);
+                        updateDcSettings(rule->dc_id, true, false);
                     }
                 } else {
                     if (LOGS_ENABLED) DEBUG_D("config datacenter %d not found", rule->dc_id);
@@ -3658,7 +3673,7 @@ void ConnectionsManager::init(uint32_t version, int32_t layer, int32_t apiId, st
     pthread_create(&networkThread, nullptr, (ConnectionsManager::ThreadProc), this);
 
     if (needLoadConfig) {
-        updateDcSettings(0, false);
+        updateDcSettings(0, false, false);
     }
 }
 
@@ -3724,7 +3739,7 @@ void ConnectionsManager::setRegId(std::string regId) {
         for (auto & datacenter : datacenters) {
             datacenter.second->resetInitVersion();
         }
-        updateDcSettings(0, false);
+        updateDcSettings(0, false, true);
         saveConfig();
     });
 }
@@ -3739,7 +3754,7 @@ void ConnectionsManager::setSystemLangCode(std::string langCode) {
             datacenter.second->resetInitVersion();
         }
         saveConfig();
-        updateDcSettings(0, false);
+        updateDcSettings(0, false, false);
     });
 }
 
@@ -3816,6 +3831,7 @@ void ConnectionsManager::setNetworkAvailable(bool value, int32_t type, bool slow
 
 void ConnectionsManager::setIpStrategy(uint8_t value) {
     scheduleTask([&, value] {
+        lastProtocolUsefullData = false;
         ipStrategy = value;
     });
 }
