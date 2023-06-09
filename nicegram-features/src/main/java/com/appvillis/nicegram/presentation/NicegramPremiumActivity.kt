@@ -11,16 +11,20 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class NicegramPremiumActivity : AppCompatActivity() {
+    companion object {
+        const val EXTRA_SHOW_CONTINUE_BTN = "EXTRA_SHOW_CONTINUE_BTN"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        window.navigationBarColor = Color.BLACK
+        window.navigationBarColor = Color.parseColor("#131417")
         setTransparentStatusBar()
 
         setContentView(R.layout.activity_nicegram_fragment)
 
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainerView, NicegramPremiumFragment())
+            .replace(R.id.fragmentContainerView, NicegramPremiumFragment.newInstance(intent.getBooleanExtra(EXTRA_SHOW_CONTINUE_BTN, false)))
             .commit()
     }
 

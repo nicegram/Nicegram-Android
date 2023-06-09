@@ -12,7 +12,7 @@
         android:layout_height="54dp"
         android:layout_marginStart="@dimen/margin_default"
         android:layout_marginEnd="@dimen/margin_default"
-        android:layout_marginBottom="@dimen/margin_giant"
+        android:layout_marginBottom="16dp"
         android:background="@drawable/bg_ripple_blue_rounded_6"
         android:fontFamily="@font/sf_pro_text_semibold"
         android:gravity="center"
@@ -20,22 +20,6 @@
         android:text="@string/NicegramContinue"
         android:textColor="#fff"
         app:layout_constraintBottom_toBottomOf="parent" />
-
-    <!--<com.zhpan.indicator.IndicatorView
-        android:id="@+id/indicatorView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_margin="@dimen/margin_giant"
-        app:layout_constraintBottom_toTopOf="@id/continueButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:vpi_slide_mode="scale"
-        app:vpi_slider_checked_color="#ffffff"
-        app:vpi_slider_normal_color="#333334"
-        app:vpi_slider_radius="8dp"
-        app:vpi_style="round_rect" />-->
 
     <com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
         android:id="@+id/indicatorView"
