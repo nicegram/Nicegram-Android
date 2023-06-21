@@ -8,6 +8,7 @@
 
 package org.telegram.ui;
 
+import static com.appvillis.assistant_core.MainActivity.BROADCAST_ACTION_ON_RESUME;
 import static org.telegram.ui.Components.Premium.LimitReachedBottomSheet.TYPE_ACCOUNTS;
 
 import android.Manifest;
@@ -19,8 +20,10 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -325,6 +328,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     .detectLeakedClosableObjects()
                     .build());
         }
+        registerReceiver(assistantResumeReceiver, new IntentFilter(BROADCAST_ACTION_ON_RESUME)); // ng
         instance = this;
         ApplicationLoader.postInitApplication();
         AndroidUtilities.checkDisplaySize(this, getResources().getConfiguration());
@@ -5583,6 +5587,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @Override
     protected void onDestroy() {
+        unregisterReceiver(assistantResumeReceiver); // ng
+
         if (PhotoViewer.getPipInstance() != null) {
             PhotoViewer.getPipInstance().destroyPhotoViewer();
         }
@@ -6744,6 +6750,11 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                 FileLog.d("lock app");
                             }
                             showPasscodeActivity(true, false, -1, -1, null, null);
+
+                            // region ng finish assistant
+                            Intent intent = new Intent(MainActivity.BROADCAST_ACTION_FINISH);
+                            sendBroadcast(intent);
+                            // endregion
                             try {
                                 NotificationsController.getInstance(UserConfig.selectedAccount).showNotifications();
                             } catch (Exception e) {
@@ -7379,4 +7390,15 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         return null;
     }
 
+    // ng
+    private BroadcastReceiver assistantResumeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getAction().equals(MainActivity.BROADCAST_ACTION_ON_RESUME)) {
+                if (AndroidUtilities.needShowPasscode(false)) {
+                    sendBroadcast(new Intent(MainActivity.BROADCAST_ACTION_FINISH));
+                }
+            }
+        }
+    };
 }

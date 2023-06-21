@@ -1281,6 +1281,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                 actionBar.setEnabled(true);
                                 filterTabsView.setEnabled(true);
                                 checkListLoad(viewPages[0]);
+
+                                PrefsHelper.INSTANCE.setCurrentFolder(currentAccount, filterTabsView.getCurrentTabId()); // ng save folder on exit
                             }
                         });
                         tabsAnimation.start();
@@ -10816,7 +10818,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     MainActivity.Companion.launchGrumPopup(getParentActivity(), outPosition[0], outPosition[1]);
                     NicegramAssistantHelper.INSTANCE.setGrumPopupShown();
                 }
-            }, 1500);
+            }, 3000);
         } else if (offer != null) {
             nicegramLogoItem.postDelayed(() -> {
                 if (!isPaused) {

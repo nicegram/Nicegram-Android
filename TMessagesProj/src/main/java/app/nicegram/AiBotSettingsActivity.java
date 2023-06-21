@@ -9,9 +9,13 @@ import android.widget.FrameLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.core_resources.widgets.ToastView;
 import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.nicegram.NicegramPrefs;
+import com.mediapark.wcdbce.views.ToastViewHelper;
 
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -99,7 +103,11 @@ public class AiBotSettingsActivity extends BaseFragment {
                         getContext().getString(R.string.Chatbot_ClearAlertTitle), getContext().getString(R.string.Chatbot_ClearAlertText),
                         getContext().getString(R.string.Chatbot_ClearAlertYes),
                         () -> {
-                            if (AiChatBotHelper.INSTANCE.getClearDataUseCase() != null) AiChatBotHelper.INSTANCE.getClearDataUseCase().invoke();
+                            if (AiChatBotHelper.INSTANCE.getClearDataUseCase() != null) {
+                                AiChatBotHelper.INSTANCE.getClearDataUseCase().invoke();
+                                ToastView toastView = ToastView.Companion.newInstance(getParentActivity(), LocaleController.getString("CancelLinkSuccessTitle"), R.drawable.toast_success_icon, false);
+                                ToastViewHelper.INSTANCE.showViewToast(toastView, fragmentView, true, true, AndroidUtilities.dp(24));
+                            }
                         },
                         getResourceProvider()
                 ).create().show();
