@@ -100,3 +100,4 @@ output.json
 NicegramNetworkConsts.kt
 nicegram-assistant-android/
 .gitmodules
+gradle.properties
