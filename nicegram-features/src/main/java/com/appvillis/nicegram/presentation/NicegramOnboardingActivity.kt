@@ -26,6 +26,8 @@ class NicegramOnboardingActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        window.navigationBarColor = Color.BLACK
+
         instance = this
 
         window.statusBarColor = Color.BLACK
