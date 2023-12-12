@@ -18,7 +18,6 @@ import android.content.res.Configuration;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
-import android.util.Log;
 import android.util.Xml;
 
 import androidx.annotation.StringRes;
@@ -43,7 +42,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.TimeZone;
 
 import app.nicegram.NicegramLocales;
@@ -74,6 +72,10 @@ public class LocaleController {
     public FastDateFormat formatterScheduleDay;
     public FastDateFormat formatterScheduleYear;
     public FastDateFormat formatterMonthYear;
+    public FastDateFormat formatterGiveawayCard;
+    public FastDateFormat formatterBoostExpired;
+    public FastDateFormat formatterGiveawayMonthDay;
+    public FastDateFormat formatterGiveawayMonthDayYear;
     public FastDateFormat[] formatterScheduleSend = new FastDateFormat[15];
 
     private static HashMap<Integer, String> resourcesCacheMap = new HashMap<>();
@@ -1178,6 +1180,11 @@ public class LocaleController {
                 int resourceId = ApplicationLoader.applicationContext.getResources().getIdentifier(param, "string", ApplicationLoader.applicationContext.getPackageName());
                 value = ApplicationLoader.applicationContext.getString(resourceId);
             }
+            if (value == null) {
+                int resourceId = ApplicationLoader.applicationContext.getResources().getIdentifier(key + "_other", "string", ApplicationLoader.applicationContext.getPackageName());
+                value = ApplicationLoader.applicationContext.getString(resourceId);
+            }
+            value = value.replace("%d", "%1$s");
             value = value.replace("%1$d", "%1$s");
 
             if (getInstance().currentLocale != null) {
@@ -1693,6 +1700,73 @@ public class LocaleController {
         return "LOC_ERR";
     }
 
+    public static String formatShortDate(long date) {
+        try {
+            date *= 1000;
+            Calendar rightNow = Calendar.getInstance();
+            int day = rightNow.get(Calendar.DAY_OF_YEAR);
+            int year = rightNow.get(Calendar.YEAR);
+            long timeInMillis = rightNow.getTimeInMillis();
+            rightNow.setTimeInMillis(date);
+            int dateDay = rightNow.get(Calendar.DAY_OF_YEAR);
+            int dateYear = rightNow.get(Calendar.YEAR);
+
+            if (timeInMillis - date < 1000 * 60) {
+                return LocaleController.getString(R.string.ShortNow);
+            } else if (timeInMillis - date < 1000 * 60 * 60) {
+                int minutesAgo = (int) ((timeInMillis - date) / (1000 * 60));
+                return LocaleController.formatPluralString("ShortMinutesAgo", minutesAgo);
+            } else if (dateDay == day && year == dateYear) {
+                if (timeInMillis - date < 12 * 1000 * 60 * 60) {
+                    int hoursAgo = (int) ((timeInMillis - date) / (1000 * 60 * 60));
+                    return LocaleController.formatPluralString("ShortHoursAgo", hoursAgo);
+                } else {
+                    return LocaleController.getString(R.string.ShortToday);
+                }
+            } else if (dateDay + 1 == day && year == dateYear) {
+                return LocaleController.getString(R.string.ShortYesterday);
+            } else if (Math.abs(System.currentTimeMillis() - date) < 31536000000L) {
+                return getInstance().formatterDayMonth.format(new Date(date));
+            } else {
+                return LocaleController.formatString("formatDateAtTime", R.string.formatDateAtTime, getInstance().formatterYear.format(new Date(date)), getInstance().formatterDay.format(new Date(date)));
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+        return "LOC_ERR";
+    }
+
+    public static String formatStoryDate(long date) {
+        try {
+            date *= 1000;
+            Calendar rightNow = Calendar.getInstance();
+            int day = rightNow.get(Calendar.DAY_OF_YEAR);
+            int year = rightNow.get(Calendar.YEAR);
+            long timeInMillis = rightNow.getTimeInMillis();
+            rightNow.setTimeInMillis(date);
+            int dateDay = rightNow.get(Calendar.DAY_OF_YEAR);
+            int dateYear = rightNow.get(Calendar.YEAR);
+
+            if (timeInMillis - date < 1000 * 60) {
+                return LocaleController.getString("RightNow", R.string.RightNow);
+            } else if (timeInMillis - date < 1000 * 60 * 60) {
+                int minutesAgo = (int) ((timeInMillis - date) / (1000 * 60));
+                return LocaleController.formatPluralString("MinutesAgo", minutesAgo, minutesAgo);
+            } else if (dateDay == day && year == dateYear) {
+                return LocaleController.formatString("TodayAtFormattedWithToday", R.string.TodayAtFormattedWithToday, getInstance().formatterDay.format(new Date(date)));
+            } else if (dateDay + 1 == day && year == dateYear) {
+                return LocaleController.formatString("YesterdayAtFormatted", R.string.YesterdayAtFormatted, getInstance().formatterDay.format(new Date(date)));
+            } else if (Math.abs(System.currentTimeMillis() - date) < 31536000000L) {
+                return LocaleController.formatString("formatDateAtTime", R.string.formatDateAtTime, getInstance().formatterDayMonth.format(new Date(date)), getInstance().formatterDay.format(new Date(date)));
+            } else {
+                return LocaleController.formatString("formatDateAtTime", R.string.formatDateAtTime, getInstance().formatterYear.format(new Date(date)), getInstance().formatterDay.format(new Date(date)));
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+        return "LOC_ERR";
+    }
+
     public static String formatDateCallLog(long date) {
         try {
             date *= 1000;
@@ -1889,6 +1963,10 @@ public class LocaleController {
                 || currentLocaleInfo != null && currentLocaleInfo.isRtl;
         nameDisplayOrder = lang.equals("ko") ? 2 : 1;
 
+        formatterBoostExpired = createFormatter(locale, getStringInternal("formatterBoostExpired", R.string.formatterBoostExpired), "MMM dd, yyyy");
+        formatterGiveawayCard = createFormatter(locale, getStringInternal("formatterGiveawayCard", R.string.formatterGiveawayCard), "dd MMM yyyy");
+        formatterGiveawayMonthDay = createFormatter(locale, getStringInternal("formatterGiveawayMonthDay", R.string.formatterGiveawayMonthDay), "MMMM dd");
+        formatterGiveawayMonthDayYear = createFormatter(locale, getStringInternal("formatterGiveawayMonthDayYear", R.string.formatterGiveawayMonthDayYear), "MMMM dd, yyyy");
         formatterMonthYear = createFormatter(locale, getStringInternal("formatterMonthYear", R.string.formatterMonthYear), "MMM yyyy");
         formatterDayMonth = createFormatter(locale, getStringInternal("formatterMonth", R.string.formatterMonth), "dd MMM");
         formatterYear = createFormatter(locale, getStringInternal("formatterYear", R.string.formatterYear), "dd.MM.yy");
@@ -2021,14 +2099,14 @@ public class LocaleController {
     public static String stringForMessageListDate(long date) {
         try {
             date *= 1000;
-            Calendar rightNow = Calendar.getInstance();
-            int day = rightNow.get(Calendar.DAY_OF_YEAR);
-            rightNow.setTimeInMillis(date);
-            int dateDay = rightNow.get(Calendar.DAY_OF_YEAR);
-
             if (Math.abs(System.currentTimeMillis() - date) >= 31536000000L) {
                 return getInstance().formatterYear.format(new Date(date));
             } else {
+                Calendar rightNow = Calendar.getInstance();
+                int day = rightNow.get(Calendar.DAY_OF_YEAR);
+                rightNow.setTimeInMillis(date);
+                int dateDay = rightNow.get(Calendar.DAY_OF_YEAR);
+
                 int dayDiff = dateDay - day;
                 if (dayDiff == 0 || dayDiff == -1 && System.currentTimeMillis() - date < 60 * 60 * 8 * 1000) {
                     return getInstance().formatterDay.format(new Date(date));

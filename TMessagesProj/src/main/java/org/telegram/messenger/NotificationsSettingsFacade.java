@@ -15,6 +15,7 @@ public class NotificationsSettingsFacade {
     public final static String PROPERTY_NOTIFY_UNTIL = "notifyuntil_";
     public final static String PROPERTY_CONTENT_PREVIEW = "content_preview_";
     public final static String PROPERTY_SILENT  = "silent_";
+    public final static String PROPERTY_STORIES_NOTIFY = "stories_";
 
     private final int currentAccount;
 
@@ -24,38 +25,39 @@ public class NotificationsSettingsFacade {
 
 
     public boolean isDefault(long dialogId, int topicId) {
-        String key = NotificationsController.getSharedPrefKey(dialogId, topicId);
+        String key = NotificationsController.getSharedPrefKey(dialogId, topicId, true);
         return false;
     }
 
     public void clearPreference(long dialogId, int topicId) {
-        String key = NotificationsController.getSharedPrefKey(dialogId, topicId);
+        String key = NotificationsController.getSharedPrefKey(dialogId, topicId, true);
         getPreferences().edit()
                 .remove(PROPERTY_NOTIFY + key)
                 .remove(PROPERTY_CUSTOM + key)
                 .remove(PROPERTY_NOTIFY_UNTIL + key)
                 .remove(PROPERTY_CONTENT_PREVIEW + key)
                 .remove(PROPERTY_SILENT + key)
+                .remove(PROPERTY_STORIES_NOTIFY + key)
                 .apply();
 
     }
 
 
     public int getProperty(String property, long dialogId, int topicId, int defaultValue) {
-        String key = NotificationsController.getSharedPrefKey(dialogId, topicId);
+        String key = NotificationsController.getSharedPrefKey(dialogId, topicId, true);
         if (getPreferences().contains(property + key)) {
             return getPreferences().getInt(property + key, defaultValue);
         }
-        key = NotificationsController.getSharedPrefKey(dialogId, 0);
+        key = NotificationsController.getSharedPrefKey(dialogId, 0, true);
         return getPreferences().getInt(property + key, defaultValue);
     }
 
     public long getProperty(String property, long dialogId, int topicId, long defaultValue) {
-        String key = NotificationsController.getSharedPrefKey(dialogId, topicId);
+        String key = NotificationsController.getSharedPrefKey(dialogId, topicId, true);
         if (getPreferences().contains(property + key)) {
             return getPreferences().getLong(property + key, defaultValue);
         }
-        key = NotificationsController.getSharedPrefKey(dialogId, 0);
+        key = NotificationsController.getSharedPrefKey(dialogId, 0, true);
         return getPreferences().getLong(property + key, defaultValue);
     }
 
@@ -92,7 +94,7 @@ public class NotificationsSettingsFacade {
             return;
         }
         Utilities.globalQueue.postRunnable(() -> {
-            String key = NotificationsController.getSharedPrefKey(dialogId, topicId);
+            String key = NotificationsController.getSharedPrefKey(dialogId, topicId, true);
             MessagesController messagesController = MessagesController.getInstance(currentAccount);
             ConnectionsManager connectionsManager = ConnectionsManager.getInstance(currentAccount);
             MessagesStorage messagesStorage = MessagesStorage.getInstance(currentAccount);
@@ -106,6 +108,11 @@ public class NotificationsSettingsFacade {
                 editor.putBoolean(PROPERTY_SILENT + key, notify_settings.silent);
             } else {
                 editor.remove(PROPERTY_SILENT + key);
+            }
+            if ((notify_settings.flags & 64) != 0) {
+                editor.putBoolean(PROPERTY_STORIES_NOTIFY + key, !notify_settings.stories_muted);
+            } else {
+                editor.remove(PROPERTY_STORIES_NOTIFY + key);
             }
 
             TLRPC.Dialog dialog = null;
@@ -184,7 +191,7 @@ public class NotificationsSettingsFacade {
         String soundPathPref;
         String soundDocPref;
         if (dialogId != 0) {
-            String key = NotificationsController.getSharedPrefKey(dialogId, topicId);
+            String key = NotificationsController.getSharedPrefKey(dialogId, topicId, true);
             soundPref = "sound_" + key;
             soundPathPref = "sound_path_" + key;
             soundDocPref = "sound_document_id_" + key;
@@ -193,6 +200,10 @@ public class NotificationsSettingsFacade {
                 soundPref = "GroupSound";
                 soundDocPref = "GroupSoundDocId";
                 soundPathPref = "GroupSoundPath";
+            } else if (globalType == NotificationsController.TYPE_STORIES) {
+                soundPref = "StoriesSound";
+                soundDocPref = "StoriesSoundDocId";
+                soundPathPref = "StoriesSoundPath";
             } else if (globalType == TYPE_PRIVATE) {
                 soundPref = "GlobalSound";
                 soundDocPref = "GlobalSoundDocId";

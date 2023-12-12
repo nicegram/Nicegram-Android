@@ -9,8 +9,8 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.Log;
 
+import com.google.android.exoplayer2.util.Log;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 
 import org.json.JSONArray;
@@ -30,6 +30,7 @@ import org.telegram.messenger.PushListenerController;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.StatsController;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 
 import java.io.ByteArrayOutputStream;
@@ -137,6 +138,18 @@ public class ConnectionsManager extends BaseController {
         }
     }
 
+    public void discardConnection(int dcId, int connectionType) {
+        Utilities.stageQueue.postRunnable(() -> {
+            native_discardConnection(currentAccount, dcId, connectionType);
+        });
+    }
+
+    public void failNotRunningRequest(int requestToken) {
+        Utilities.stageQueue.postRunnable(() -> {
+            native_failNotRunningRequest(currentAccount, requestToken);
+        });
+    }
+
     private static class ResolvedDomain {
 
         public ArrayList<String> addresses;
@@ -228,7 +241,11 @@ public class ConnectionsManager extends BaseController {
             mainPreferences = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig" + currentAccount, Activity.MODE_PRIVATE);
         }
         forceTryIpV6 = mainPreferences.getBoolean("forceTryIpV6", false);
-        init(BuildVars.BUILD_VERSION, TLRPC.LAYER, BuildVars.APP_ID, deviceModel, systemVersion, appVersion, langCode, systemLangCode, configPath, FileLog.getNetworkLogPath(), pushString, fingerprint, timezoneOffset, getUserConfig().getClientUserId(), enablePushConnection);
+        boolean userPremium = false;
+        if (getUserConfig().getCurrentUser() != null) {
+            userPremium = getUserConfig().getCurrentUser().premium;
+        }
+        init(BuildVars.BUILD_VERSION, TLRPC.LAYER, BuildVars.APP_ID, deviceModel, systemVersion, appVersion, langCode, systemLangCode, configPath, FileLog.getNetworkLogPath(), pushString, fingerprint, timezoneOffset, getUserConfig().getClientUserId(), userPremium, enablePushConnection);
     }
 
     private String getRegId() {
@@ -310,6 +327,7 @@ public class ConnectionsManager extends BaseController {
     }
 
     private void sendRequestInternal(TLObject object, RequestDelegate onComplete, RequestDelegateTimestamp onCompleteTimestamp, QuickAckDelegate onQuickAck, WriteToSocketDelegate onWriteToSocket, int flags, int datacenterId, int connetionType, boolean immediate, int requestToken) {
+
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("send request " + object + " with token = " + requestToken);
         }
@@ -344,7 +362,7 @@ public class ConnectionsManager extends BaseController {
                         error = new TLRPC.TL_error();
                         error.code = errorCode;
                         error.text = errorText;
-                        if (BuildVars.LOGS_ENABLED) {
+                        if (BuildVars.LOGS_ENABLED && error.code != -2000) {
                             FileLog.e(object + " got error " + error.code + " " + error.text);
                         }
                     }
@@ -360,7 +378,7 @@ public class ConnectionsManager extends BaseController {
                         resp.networkType = networkType;
                     }
                     if (BuildVars.LOGS_ENABLED) {
-                        FileLog.d("java received " + resp + " error = " + error);
+                        FileLog.d("java received " + resp + " error = " + error + " messageId = " + requestMsgId);
                     }
                     FileLog.dumpResponseAndRequest(object, resp, error, requestMsgId, finalStartRequestTime, requestToken);
                     final TLObject finalResponse = resp;
@@ -401,6 +419,9 @@ public class ConnectionsManager extends BaseController {
     }
 
     public void bindRequestToGuid(int requestToken, int guid) {
+        if (guid == 0) {
+            return;
+        }
         native_bindRequestToGuid(currentAccount, requestToken, guid);
     }
 
@@ -432,7 +453,7 @@ public class ConnectionsManager extends BaseController {
         native_setPushConnectionEnabled(currentAccount, value);
     }
 
-    public void init(int version, int layer, int apiId, String deviceModel, String systemVersion, String appVersion, String langCode, String systemLangCode, String configPath, String logPath, String regId, String cFingerprint, int timezoneOffset, long userId, boolean enablePushConnection) {
+    public void init(int version, int layer, int apiId, String deviceModel, String systemVersion, String appVersion, String langCode, String systemLangCode, String configPath, String logPath, String regId, String cFingerprint, int timezoneOffset, long userId, boolean userPremium, boolean enablePushConnection) {
         SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
         String proxyAddress = preferences.getString("proxy_ip", "");
         String proxyUsername = preferences.getString("proxy_user", "");
@@ -462,7 +483,7 @@ public class ConnectionsManager extends BaseController {
             packageId = "";
         }
 
-        native_init(currentAccount, version, layer, apiId, deviceModel, systemVersion, appVersion, langCode, systemLangCode, configPath, logPath, regId, cFingerprint, installer, packageId, timezoneOffset, userId, enablePushConnection, ApplicationLoader.isNetworkOnline(), ApplicationLoader.getCurrentNetworkType(), SharedConfig.measureDevicePerformanceClass());
+        native_init(currentAccount, version, layer, apiId, deviceModel, systemVersion, appVersion, langCode, systemLangCode, configPath, logPath, regId, cFingerprint, installer, packageId, timezoneOffset, userId, userPremium, enablePushConnection, ApplicationLoader.isNetworkOnline(), ApplicationLoader.getCurrentNetworkType(), SharedConfig.measureDevicePerformanceClass());
         checkConnection();
     }
 
@@ -786,7 +807,7 @@ public class ConnectionsManager extends BaseController {
     public static native void native_applyDatacenterAddress(int currentAccount, int datacenterId, String ipAddress, int port);
     public static native int native_getConnectionState(int currentAccount);
     public static native void native_setUserId(int currentAccount, long id);
-    public static native void native_init(int currentAccount, int version, int layer, int apiId, String deviceModel, String systemVersion, String appVersion, String langCode, String systemLangCode, String configPath, String logPath, String regId, String cFingerprint, String installer, String packageId, int timezoneOffset, long userId, boolean enablePushConnection, boolean hasNetwork, int networkType, int performanceClass);
+    public static native void native_init(int currentAccount, int version, int layer, int apiId, String deviceModel, String systemVersion, String appVersion, String langCode, String systemLangCode, String configPath, String logPath, String regId, String cFingerprint, String installer, String packageId, int timezoneOffset, long userId, boolean userPremium, boolean enablePushConnection, boolean hasNetwork, int networkType, int performanceClass);
     public static native void native_setProxySettings(int currentAccount, String address, int port, String username, String password, String secret);
     public static native void native_setLangCode(int currentAccount, String langCode);
     public static native void native_setRegId(int currentAccount, String regId);
@@ -797,6 +818,8 @@ public class ConnectionsManager extends BaseController {
     public static native void native_applyDnsConfig(int currentAccount, long address, String phone, int date);
     public static native long native_checkProxy(int currentAccount, String address, int port, String username, String password, String secret, RequestTimeDelegate requestTimeDelegate);
     public static native void native_onHostNameResolved(String host, long address, String ip);
+    public static native void native_discardConnection(int currentAccount, int datacenterId, int connectionType);
+    public static native void native_failNotRunningRequest(int currentAccount, int token);
 
     public static int generateClassGuid() {
         return lastClassGuid++;

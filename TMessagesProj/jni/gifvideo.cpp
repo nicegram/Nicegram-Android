@@ -122,7 +122,7 @@ typedef struct VideoInfo {
             } else {
                 attached = false;
             }
-            DEBUG_DELREF("gifvideocpp stream");
+            DEBUG_DELREF("gifvideo.cpp stream");
             jniEnv->DeleteGlobalRef(stream);
             if (attached) {
                 javaVm->DetachCurrentThread();
@@ -1036,6 +1036,26 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_telegram_ui_Components_AnimatedFileD
             dataArr[2] = 0;
         }
         dataArr[4] = (int32_t) (info->fmt_ctx->duration * 1000 / AV_TIME_BASE);
+        int video_stream_index = -1;
+        double fps = 30.0;
+        for (int i = 0; i < info->fmt_ctx->nb_streams; i++) {
+            if (info->fmt_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+                video_stream_index = i;
+                break;
+            }
+        }
+        if (video_stream_index != -1) {
+            AVStream* video_stream = info->fmt_ctx->streams[video_stream_index];
+            if (video_stream->avg_frame_rate.den && video_stream->avg_frame_rate.num) {
+                fps = av_q2d(video_stream->avg_frame_rate);
+            } else if(video_stream->r_frame_rate.den && video_stream->r_frame_rate.num) {
+                fps = av_q2d(video_stream->r_frame_rate);
+            } else {
+                int ticks = video_stream->codec->ticks_per_frame;
+                fps = 1.0 / (ticks * av_q2d(video_stream->time_base));
+            }
+        }
+        dataArr[5] = (int32_t) fps;
         //(int32_t) (1000 * info->video_stream->duration * av_q2d(info->video_stream->time_base));
         env->ReleaseIntArrayElements(data, dataArr, 0);
     }
@@ -1319,7 +1339,7 @@ extern "C" JNIEXPORT int JNICALL Java_org_telegram_ui_Components_AnimatedFileDra
     }
 }
 
-extern "C" JNIEXPORT jint JNICALL Java_org_telegram_ui_Components_AnimatedFileDrawable_getVideoFrame(JNIEnv *env, jclass clazz, jlong ptr, jobject bitmap, jintArray data, jint stride, jboolean preview, jfloat start_time, jfloat end_time) {
+extern "C" JNIEXPORT jint JNICALL Java_org_telegram_ui_Components_AnimatedFileDrawable_getVideoFrame(JNIEnv *env, jclass clazz, jlong ptr, jobject bitmap, jintArray data, jint stride, jboolean preview, jfloat start_time, jfloat end_time, jboolean loop) {
     if (ptr == NULL || bitmap == nullptr) {
         return 0;
     }
@@ -1388,18 +1408,19 @@ extern "C" JNIEXPORT jint JNICALL Java_org_telegram_ui_Components_AnimatedFileDr
                 LOGE("can't decode packet flushed %s", info->src);
                 return 0;
             }
-            if (!preview && got_frame == 0) {
-                if (info->has_decoded_frames) {
-                    int64_t start_from = 0;
-                    if (start_time > 0) {
-                        start_from = (int64_t)(start_time / av_q2d(info->video_stream->time_base));
-                    }
-                    if ((ret = av_seek_frame(info->fmt_ctx, info->video_stream_idx, start_from, AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME)) < 0) {
-                        LOGE("can't seek to begin of file %s, %s", info->src, av_err2str(ret));
-                        return 0;
-                    } else {
-                        avcodec_flush_buffers(info->video_dec_ctx);
-                    }
+            if (!preview && got_frame == 0 && info->has_decoded_frames) {
+                if (!loop) {
+                    return 0;
+                }
+                int64_t start_from = 0;
+                if (start_time > 0) {
+                    start_from = (int64_t)(start_time / av_q2d(info->video_stream->time_base));
+                }
+                if ((ret = av_seek_frame(info->fmt_ctx, info->video_stream_idx, start_from, AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME)) < 0) {
+                    LOGE("can't seek to begin of file %s, %s", info->src, av_err2str(ret));
+                    return 0;
+                } else {
+                    avcodec_flush_buffers(info->video_dec_ctx);
                 }
             }
         }

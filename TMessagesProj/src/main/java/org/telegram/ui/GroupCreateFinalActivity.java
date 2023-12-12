@@ -29,6 +29,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.text.InputFilter;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -266,6 +267,62 @@ public class GroupCreateFinalActivity extends BaseFragment implements Notificati
     @Override
     protected boolean hideKeyboardOnShow() {
         return false;
+    }
+
+    private void setDefaultGroupName() {
+        TLRPC.User currentUser = getUserConfig().getCurrentUser();
+        int members = selectedContacts.size() + 1;
+        if (members >= 2 && members <= 5 && TextUtils.isEmpty(editText.getText())) {
+            String txt = "";
+            try {
+                switch (members) {
+                    case 2:
+                        txt = LocaleController.formatString(
+                                "GroupCreateMembersTwo", R.string.GroupCreateMembersTwo,
+                                currentUser.first_name,
+                                getFirstNameByPos(0)
+                        );
+                        break;
+                    case 3:
+                        txt = LocaleController.formatString(
+                                "GroupCreateMembersThree", R.string.GroupCreateMembersThree,
+                                currentUser.first_name,
+                                getFirstNameByPos(0),
+                                getFirstNameByPos(1)
+                        );
+                        break;
+                    case 4:
+                        txt = LocaleController.formatString(
+                                "GroupCreateMembersFour", R.string.GroupCreateMembersFour,
+                                currentUser.first_name,
+                                getFirstNameByPos(0),
+                                getFirstNameByPos(1),
+                                getFirstNameByPos(2)
+                        );
+                        break;
+                    case 5:
+                        txt = LocaleController.formatString(
+                                "GroupCreateMembersFive", R.string.GroupCreateMembersFive,
+                                currentUser.first_name,
+                                getFirstNameByPos(0),
+                                getFirstNameByPos(1),
+                                getFirstNameByPos(2),
+                                getFirstNameByPos(3)
+                        );
+                        break;
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+            if (!TextUtils.isEmpty(txt)) {
+                editText.setText(txt);
+                editText.setSelection(editText.getText().length());
+            }
+        }
+    }
+
+    private String getFirstNameByPos(int pos) {
+        return getMessagesController().getUser(selectedContacts.get(pos)).first_name;
     }
 
     @Override
@@ -532,8 +589,10 @@ public class GroupCreateFinalActivity extends BaseFragment implements Notificati
         editText.setHint(chatType == ChatObject.CHAT_TYPE_CHAT || chatType == ChatObject.CHAT_TYPE_MEGAGROUP || chatType == ChatObject.CHAT_TYPE_FORUM ? LocaleController.getString("EnterGroupNamePlaceholder", R.string.EnterGroupNamePlaceholder) : LocaleController.getString("EnterListName", R.string.EnterListName));
         if (nameToSet != null) {
             editText.setText(nameToSet);
+            editText.setSelection(editText.getText().length());
             nameToSet = null;
         }
+        setDefaultGroupName();
         InputFilter[] inputFilters = new InputFilter[1];
         inputFilters[0] = new InputFilter.LengthFilter(100);
         editText.setFilters(inputFilters);

@@ -2,6 +2,7 @@ include ':TMessagesProj'
 include ':TMessagesProj_App'
 include ':TMessagesProj_AppHuawei'
 include ':TMessagesProj_AppHockeyApp'
+include ':TMessagesProj_AppStandalone'
 include ':nicegram-features'
 
 def modules = [
@@ -12,6 +13,8 @@ def modules = [
         'feature-auth',
         'feature-analytics',
         'feature-ads',
+        'feature-nuhub',
+        'feature-rewards',
         'rep-user',
         'lib-android-base',
         'core-ui',

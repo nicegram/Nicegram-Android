@@ -21,6 +21,7 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -45,13 +46,14 @@ public class CacheChart extends View {
     private RectF chartBounds = new RectF();
     private RectF chartInnerBounds = new RectF();
 
-    private static final int DEFAULT_SECTIONS_COUNT = 9;
+    private static final int DEFAULT_SECTIONS_COUNT = 10;
     private static final int[] DEFAULT_COLORS = new int[] {
         Theme.key_statisticChartLine_lightblue,
         Theme.key_statisticChartLine_blue,
         Theme.key_statisticChartLine_green,
-        Theme.key_statisticChartLine_red,
+        Theme.key_statisticChartLine_purple,
         Theme.key_statisticChartLine_lightgreen,
+        Theme.key_statisticChartLine_red,
         Theme.key_statisticChartLine_orange,
         Theme.key_statisticChartLine_cyan,
         Theme.key_statisticChartLine_purple,
@@ -64,6 +66,7 @@ public class CacheChart extends View {
         R.raw.cache_documents,
         R.raw.cache_music,
         R.raw.cache_videos,
+        R.raw.cache_music,
         R.raw.cache_stickers,
         R.raw.cache_profile_photos,
         R.raw.cache_other,
@@ -106,7 +109,9 @@ public class CacheChart extends View {
     private static long particlesStart = -1;
     class Sector {
 
-        Paint particlePaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        Paint particlePaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG); {
+            particlePaint.setColor(0xFFFFFFFF);
+        }
         Bitmap particle;
 
         float angleCenter, angleSize;
@@ -645,7 +650,7 @@ public class CacheChart extends View {
         AndroidUtilities.roundPercents(tempFloat, tempPercents);
         if (type == TYPE_CACHE) { // putting "other" section to being the first one
             Arrays.sort(segments, (a, b) -> Long.compare(a.size, b.size));
-            for (int i = 0; i < segments.length - 1; ++i) {
+            for (int i = 0; i <= segments.length; ++i) {
                 if (segments[i].index == segments.length - 1) {
                     int from = i, to = 0;
                     SegmentSize temp = segments[to];
@@ -703,7 +708,7 @@ public class CacheChart extends View {
             k++;
         }
 
-        String[] fileSize = AndroidUtilities.formatFileSize(segmentsSum).split(" ");
+        String[] fileSize = AndroidUtilities.formatFileSize(segmentsSum, true, true).split(" ");
         String top = fileSize.length > 0 ? fileSize[0] : "";
         if (top.length() >= 4 && segmentsSum < 1024L * 1024L * 1024L) {
             top = top.split("\\.")[0];

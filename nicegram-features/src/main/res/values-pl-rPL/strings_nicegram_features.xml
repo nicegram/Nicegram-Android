@@ -25,9 +25,11 @@
     <string name="NicegramShowRegistrationDate">Pokaż datę rejestracji</string>
     <string name="NicegramOpenLinksInBrowser">Otwórz linki w przeglądarce</string>
     <string name="NicegramUnblockGuide">Odblokuj przewodnik</string>
+    <string name="NicegramPremiumFeatures">Nicegram\nPremiumowe funkcje</string>
     <string name="NicegramPrivacyPolicy">Polityka prywatności</string>
     <string name="NicegramEULA">EULA</string>
     <string name="NicegramSubRenews">Automatyczne odnawianie subskrypcji</string>
+    <string name="NicegramSubPerMonth">Subskrybuj za %s / miesiąc</string>
     <string name="NicegramBuildInTranslator">Wbudowany tłumacz</string>
     <string name="NicegramBuildInTranslatorDesc">Natychmiast przetłumacz dowolną wiadomość w aplikacji bez przełączenia na tłumaczy firm zewnętrznych</string>
     <string name="NicegramSpeech2Text">Mowa na tekst</string>
@@ -55,7 +57,11 @@
     <string name="NicegramOnbroadingText4">Skorzystaj z innowacji zespołu Nicegram i zdobądź eSIM z dostępem do Internetu w 133 krajach. Możesz również zarejestrować nowe konta Telegram na numer telefonu planu danych eSIM.</string>
     <string name="NicegramOnbroadingTitle5">Najbezpieczniejszy komunikator</string>
     <string name="NicegramOnbroadingText5">Bezpieczny komunikator z silnym szyfrowaniem, grupowym rozmowami audio i wideo, publicznymi kanałami, grupami i botami, nieograniczonym przechowywaniem w chmurze, udostępnianiem czatów, multimediów i dokumentów.</string>
+    <string name="NicegramOnbroadingTitle6">Spotkaj Lily</string>
+    <string name="NicegramOnbroadingText6">Twój osobisty asystent chatbot SI do upraszczania życia!</string>
+    <string name="NicegramDoubleBottom">Double bottom</string>
     <string name="NicegramDoubleBottomDesc">Aby włączyć tę funkcję, musisz mieć więcej niż jedno konto i włączyć opcję Blokada hasłem (wybierz Ustawienia → Prywatność i bezpieczeństwo → Blokada hasłem)</string>
+    <string name="NicegramDoubleBottomAnotherCode">Proszę ustaw inny kod dostępu, różny od tego, którego używasz do blokady kodem dostępu</string>
     <string name="QuickReplies">Szybkie odpowiedzi</string>
     <string name="QuickRepliesDesc">Możesz dodać nieograniczoną liczbę odpowiedzi za pomocą poniższego przycisku. Aby użyć szybkiej odpowiedzi, wprowadź **symbol \"&amp;\"** w polu wprowadzania wiadomości.</string>
     <string name="QuickRepliesEnterText">Wprowadź tekst</string>
@@ -64,6 +70,19 @@
     <string name="NicegramImmediateLockIn">Natychmiast</string>
     <string name="NicegramSaveFolderOnExit">Zapisz folder przy zakończeniu</string>
     <string name="NicegramRoundVideos">Zapętlone filmy</string>
+    <string name="NicegramRestorePremium">Przywróć Premium</string>
+    <string name="NicegramRequestIsPending">Twoje żądanie jest oczekujące. Proszę czekać, aż Nicegram Bot je zatwierdzi</string>
     <string name="NicegramShareChannelInfo">Udostępnij informacje o kanale</string>
+    <string name="NicegramShareChannelInfoDesc">Przyczyniaj się do najbardziej wszechstronnej bazy danych kanałów i grup Telegram, automatycznie przesyłając informacje o kanałach i linki do naszej bazy danych. Nie łączymy twojego profilu Telegram z kanałem i nie udostępniamy twoich danych osobowych.</string>
     <string name="NicegarmBypassCopyProtection">Omiń ochronę przed kopiowaniem</string>
+    <string name="NicegarmTutorial_HelpBtnText">Jak mogę otrzymać kod?</string>
+    <string name="NicegarmTutorial_Dialog_Title">Począwszy od lutego 2023 roku, postępuj zgodnie z poniższymi krokami, aby otrzymać kod:</string>
+    <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. Zaloguj się do <font color="#0A84FF">Telegram</font><br/>2. Zaloguj się do <font color="#A134C7">Nicegram</font><br/>3. Wprowadź kod, który otrzymasz na <font color="#0A84FF">Telegram</font>]]></string>
+    <string name="NicegramMaxAccount_IncreaseTo">Maksymalnie 100 kont</string>
+    <string name="NicegramMaxAccount_Default">Domyślna maksymalna liczba kont to 10</string>
+    <string name="NicegramMaxAccount_IncreaseWarn">Zwiększenie maksymalnej liczby kont może mieć negatywny wpływ na szybkość uruchamiania aplikacji i jej wydajność na niektórych urządzeniach. Zwróć uwagę, że możesz stracić dostęp do nowo dodanych kont, jeśli zdecydujesz się zmniejszyć ich maksymalną liczbę w przyszłości</string>
+    <string name="NicegramMaxAccount_Increase">Zwiększ</string>
+    <string name="NicegramMaxAccount_Reduce">Zmniejsz</string>
+    <string name="NicegramMaxAccount_ReduceWarn">Zmniejszenie maksymalnej liczby kont prawdopodobnie poprawi wydajność aplikacji na niektórych urządzeniach. Pamiętaj jednak, że będziesz musiał zalogować się ponownie do wszystkich swoich kont, z wyjątkiem pierwszego</string>
+    <string name="NicegramTryRelogin">Wylogowanie się z Twojego konta i ponowne zalogowanie może rozwiązać ten problem.</string>
 </resources>

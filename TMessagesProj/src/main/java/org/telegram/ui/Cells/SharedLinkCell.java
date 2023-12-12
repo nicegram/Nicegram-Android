@@ -464,7 +464,9 @@ public class SharedLinkCell extends FrameLayout {
             if (currentPhotoObjectThumb == currentPhotoObject) {
                 currentPhotoObjectThumb = null;
             }
-            currentPhotoObject.size = -1;
+            if (currentPhotoObject != null) {
+                currentPhotoObject.size = -1;
+            }
             if (currentPhotoObjectThumb != null) {
                 currentPhotoObjectThumb.size = -1;
             }
@@ -477,7 +479,7 @@ public class SharedLinkCell extends FrameLayout {
         }
 
         if (viewType == VIEW_TYPE_GLOBAL_SEARCH) {
-            fromInfoLayout = ChatMessageCell.generateStaticLayout(FilteredSearchView.createFromInfoString(message), description2TextPaint, maxWidth, maxWidth, 0, desctiptionLines);
+            fromInfoLayout = ChatMessageCell.generateStaticLayout(FilteredSearchView.createFromInfoString(message, true, 2, description2TextPaint), description2TextPaint, maxWidth, maxWidth, 0, desctiptionLines);
             fromInfoLayoutEmojis = AnimatedEmojiSpan.update(AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES, this, fromInfoLayoutEmojis, fromInfoLayout);
         }
 

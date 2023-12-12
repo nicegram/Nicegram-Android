@@ -25,11 +25,14 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.DiffUtil;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
+import com.appvillis.nicegram.AnalyticsHelper;
+import com.appvillis.nicegram.NicegramAssistantHelper;
+
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
@@ -40,10 +43,12 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
+import org.telegram.messenger.Utilities;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_chatlists;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ArchiveHintCell;
@@ -59,6 +64,7 @@ import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.UserCell;
+import org.telegram.ui.Components.ArchiveHelp;
 import org.telegram.ui.Components.BlurredRecyclerView;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.FlickerLoadingView;
@@ -67,10 +73,15 @@ import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
 import org.telegram.ui.Components.PullForegroundDrawable;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.DialogsActivity;
+import org.telegram.ui.Stories.DialogStoriesCell;
+import org.telegram.ui.Stories.StoriesController;
+import org.telegram.ui.Stories.StoriesListPlaceProvider;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 
 import app.nicegram.PrefsHelper;
@@ -85,7 +96,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             VIEW_TYPE_USER = 6,
             VIEW_TYPE_HEADER = 7,
             VIEW_TYPE_SHADOW = 8,
-            VIEW_TYPE_ARCHIVE = 9,
+    //            VIEW_TYPE_ARCHIVE = 9,
             VIEW_TYPE_LAST_EMPTY = 10,
             VIEW_TYPE_NEW_CHAT_HINT = 11,
             VIEW_TYPE_TEXT = 12,
@@ -94,7 +105,14 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             VIEW_TYPE_REQUIREMENTS = 15,
             VIEW_TYPE_REQUIRED_EMPTY = 16,
             VIEW_TYPE_FOLDER_UPDATE_HINT = 17,
-            VIEW_TYPE_AI_CHAT_BOT = 100000;
+            VIEW_TYPE_STORIES = 18,
+            VIEW_TYPE_ARCHIVE_FULLSCREEN = 19,
+            VIEW_TYPE_AI_CHAT_BOT = 100000,
+            VIEW_TYPE_PST = 100001,
+            VIEW_TYPE_NU_HUB = 100002,
+            VIEW_TYPE_AMBASSADOR = 100003;
+
+    public static Integer[] ngViewTypes = {VIEW_TYPE_AI_CHAT_BOT, VIEW_TYPE_PST, VIEW_TYPE_NU_HUB, VIEW_TYPE_AMBASSADOR};
 
     private Context mContext;
     private ArchiveHintCell archiveHintCell;
@@ -113,10 +131,10 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     private boolean hasChatlistHint;
     private int currentAccount;
     private boolean dialogsListFrozen;
-    private boolean showArchiveHint;
     private boolean isReordering;
     private long lastSortTime;
     private boolean collapsedView;
+    private boolean firstUpdate = true;
     RecyclerListView recyclerListView;
     private PullForegroundDrawable pullForegroundDrawable;
     ArrayList<ItemInternal> itemInternals = new ArrayList<>();
@@ -142,12 +160,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         hasHints = folder == 0 && type == 0 && !onlySelect;
         selectedDialogs = selected;
         currentAccount = account;
-      //  setHasStableIds(true);
-        if (folderId == 1) {
-            SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-            showArchiveHint = preferences.getBoolean("archivehint", true);
-            preferences.edit().putBoolean("archivehint", false).commit();
-        }
+        //  setHasStableIds(true);
         if (folder == 0) {
             this.preloader = new DialogsPreloader();
         }
@@ -173,9 +186,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         if (hasHints) {
             position -= 2 + MessagesController.getInstance(currentAccount).hintDialogs.size();
         }
-        if (showArchiveHint) {
-            position -= 2;
-        } else if (dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_GROUPS || dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY) {
+        if (dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_GROUPS || dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY) {
             position -= 2;
         } else if (dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_USERS) {
             position -= 1;
@@ -220,26 +231,33 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         return -1;
     }
 
-    public int fixScrollGap(RecyclerListView animationSupportListView, int p, int offset, boolean hasHidenArchive, boolean oppened) {
-        int itemsToEnd = getItemCount() - p ;
+    public int fixScrollGap(RecyclerListView animationSupportListView, int p, int offset, boolean hasHidenArchive, boolean hasStories, boolean hasTabs, boolean oppened) {
+        int itemsToEnd = getItemCount() - p;
         int cellHeight = AndroidUtilities.dp(SharedConfig.useThreeLinesLayout ? 78 : 72);
         int bottom = offset + animationSupportListView.getPaddingTop() + itemsToEnd * cellHeight + itemsToEnd - 1;
         //fix height changed
-        int top =  offset + animationSupportListView.getPaddingTop() - p * cellHeight - p;
+        int top = offset + animationSupportListView.getPaddingTop() - p * cellHeight - p;
+        int additionalHeight = 0;
+        if (hasStories) {
+            additionalHeight += AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP);
+        } else if (hasTabs) {
+            additionalHeight += AndroidUtilities.dp(44);
+        }
         if (oppened) {
-            bottom -= AndroidUtilities.dp(44);
+            bottom -= additionalHeight;
         } else {
-            bottom += AndroidUtilities.dp(44);
+            bottom += additionalHeight;
         }
         if (hasHidenArchive) {
             top += cellHeight;
         }
-        if (top > animationSupportListView.getPaddingTop()) {
-            return offset + animationSupportListView.getPaddingTop() - top;
+        int paddingTop = animationSupportListView.getPaddingTop();
+        if (top > paddingTop) {
+            return offset + paddingTop - top;
         }
-        if (bottom < animationSupportListView.getMeasuredHeight()) {
-            return offset + (animationSupportListView.getMeasuredHeight() - bottom);
-        }
+//        if (bottom < animationSupportListView.getMeasuredHeight()) {
+//            return offset + (animationSupportListView.getMeasuredHeight() - bottom);
+//        }
         return offset;
     }
 
@@ -254,10 +272,10 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         boolean isForumCell;
         private boolean pinned;
         private boolean isFolder;
-        TLRPC.TL_chatlists_chatlistUpdates chatlistUpdates;
+        TL_chatlists.TL_chatlists_chatlistUpdates chatlistUpdates;
         private int emptyType;
 
-        public ItemInternal(TLRPC.TL_chatlists_chatlistUpdates updates) {
+        public ItemInternal(TL_chatlists.TL_chatlists_chatlistUpdates updates) {
             super(VIEW_TYPE_FOLDER_UPDATE_HINT, true);
             this.chatlistUpdates = updates;
             stableId = stableIdPointer++;
@@ -277,7 +295,11 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     dialogsStableIds.put(dialog.id, stableId);
                 }
             } else {
-                stableId = stableIdPointer++;
+                if (viewType == VIEW_TYPE_ARCHIVE_FULLSCREEN) {
+                    stableId = 5;
+                } else {
+                    stableId = stableIdPointer++;
+                }
             }
             if (dialog != null) {
                 if (dialogsType == 7 || dialogsType == 8) {
@@ -299,8 +321,16 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
         public ItemInternal(int viewTypeEmpty) {
             super(viewTypeEmpty, true);
-            this.emptyType = emptyType;
-            stableId = stableIdPointer++;
+            this.emptyType = viewTypeEmpty;
+            if (viewTypeEmpty == VIEW_TYPE_LAST_EMPTY) {
+                stableId = 1;
+            } else {
+                if (viewType == VIEW_TYPE_ARCHIVE_FULLSCREEN) {
+                    stableId = 5;
+                } else {
+                    stableId = stableIdPointer++;
+                }
+            }
         }
 
         public ItemInternal(int viewTypeEmpty, int emptyType) {
@@ -329,9 +359,13 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             if (viewType != itemInternal.viewType) {
                 return false;
             }
-            if (viewType == VIEW_TYPE_AI_CHAT_BOT) {
+
+            if (Arrays.asList(ngViewTypes).contains(viewType)) {
                 return true;
             }
+            /*if (viewType == VIEW_TYPE_AI_CHAT_BOT || viewType == VIEW_TYPE_PST || viewType == VIEW_TYPE_NU_HUB) {
+                return true;
+            }*/
             if (viewType == VIEW_TYPE_DIALOG) {
                 return dialog != null && itemInternal.dialog != null && dialog.id == itemInternal.dialog.id
                         && isFolder == itemInternal.isFolder &&
@@ -349,6 +383,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             }
             if (viewType == VIEW_TYPE_EMPTY) {
                 return emptyType == itemInternal.emptyType;
+            }
+            if (viewType == VIEW_TYPE_LAST_EMPTY) {
+                return false;
             }
             return true;
         }
@@ -445,35 +482,23 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         hasHints = folderId == 0 && dialogsType == DialogsActivity.DIALOGS_TYPE_DEFAULT && !isOnlySelect && !MessagesController.getInstance(currentAccount).hintDialogs.isEmpty();
     }
 
-    public void updateList(RecyclerListView recyclerListView, boolean hasHiddenArchive, float tabsTranslation) {
-        oldItems.clear();
+    boolean isCalculatingDiff;
+    boolean updateListPending;
+    private final static boolean ALLOW_UPDATE_IN_BACKGROUND = BuildVars.DEBUG_PRIVATE_VERSION;
+
+    public void updateList(Runnable saveScrollPosition) {
+        if (isCalculatingDiff) {
+            updateListPending = true;
+            return;
+        }
+        isCalculatingDiff = true;
+        oldItems = new ArrayList<>();
         oldItems.addAll(itemInternals);
         updateItemList();
+        ArrayList<ItemInternal> newItems = new ArrayList<>(itemInternals);
+        itemInternals = oldItems;
 
-        if (recyclerListView != null && recyclerListView.getScrollState() == RecyclerView.SCROLL_STATE_IDLE && recyclerListView.getChildCount() > 0 && recyclerListView.getLayoutManager() != null) {
-            LinearLayoutManager layoutManager = ((LinearLayoutManager) recyclerListView.getLayoutManager());
-            View view = null;
-            int position = -1;
-            int top = Integer.MAX_VALUE;
-            for (int i = 0; i < recyclerListView.getChildCount(); i++) {
-                int childPosition = recyclerListView.getChildAdapterPosition(recyclerListView.getChildAt(i));
-                View child = recyclerListView.getChildAt(i);
-                if (childPosition != RecyclerListView.NO_POSITION && child != null && child.getTop() < top) {
-                    view = child;
-                    position = childPosition;
-                    top = child.getTop();
-                }
-            }
-            if (view != null) {
-                float offset = view.getTop() - recyclerListView.getPaddingTop() + tabsTranslation;
-                if (hasHiddenArchive && position == 0 && view.getTop() - recyclerListView.getPaddingTop() + tabsTranslation < AndroidUtilities.dp(SharedConfig.useThreeLinesLayout ? 78 : 72)) {
-                    position = 1;
-                    offset = tabsTranslation;
-                }
-                layoutManager.scrollToPositionWithOffset(position, (int) offset);
-            }
-        }
-        DiffUtil.calculateDiff(new DiffUtil.Callback() {
+        DiffUtil.Callback callback = new DiffUtil.Callback() {
             @Override
             public int getOldListSize() {
                 return oldItems.size();
@@ -481,23 +506,56 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
             @Override
             public int getNewListSize() {
-                return itemInternals.size();
+                return newItems.size();
             }
 
             @Override
             public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-                return oldItems.get(oldItemPosition).compare(itemInternals.get(newItemPosition));
+                return oldItems.get(oldItemPosition).compare(newItems.get(newItemPosition));
             }
 
             @Override
             public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-                return oldItems.get(oldItemPosition).viewType == itemInternals.get(newItemPosition).viewType;
+                return oldItems.get(oldItemPosition).viewType == newItems.get(newItemPosition).viewType;
             }
-        }).dispatchUpdatesTo(this);
+        };
+        if (itemInternals.size() < 50 || !ALLOW_UPDATE_IN_BACKGROUND) {
+            DiffUtil.DiffResult result = DiffUtil.calculateDiff(callback);
+            isCalculatingDiff = false;
+            if (saveScrollPosition != null) {
+                saveScrollPosition.run();
+            }
+            itemInternals = newItems;
+            result.dispatchUpdatesTo(this);
+        } else {
+            Utilities.searchQueue.postRunnable(() -> {
+                DiffUtil.DiffResult result = DiffUtil.calculateDiff(callback);
+                AndroidUtilities.runOnUIThread(() -> {
+                    if (!isCalculatingDiff) {
+                        return;
+                    }
+                    isCalculatingDiff = false;
+                    if (saveScrollPosition != null) {
+                        saveScrollPosition.run();
+                    }
+                    itemInternals = newItems;
+                    result.dispatchUpdatesTo(this);
+                    if (updateListPending) {
+                        updateListPending = false;
+                        updateList(saveScrollPosition);
+                    }
+                });
+            });
+        }
+
     }
 
     @Override
     public void notifyDataSetChanged() {
+        if (isCalculatingDiff) {
+            itemInternals = new ArrayList<>();
+        }
+        isCalculatingDiff = false;
         updateItemList();
         super.notifyDataSetChanged();
     }
@@ -517,9 +575,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     public boolean isEnabled(RecyclerView.ViewHolder holder) {
         int viewType = holder.getItemViewType();
         return viewType != VIEW_TYPE_FLICKER && viewType != VIEW_TYPE_EMPTY && viewType != VIEW_TYPE_DIVIDER &&
-                viewType != VIEW_TYPE_SHADOW && viewType != VIEW_TYPE_HEADER && viewType != VIEW_TYPE_ARCHIVE &&
+                viewType != VIEW_TYPE_SHADOW && viewType != VIEW_TYPE_HEADER &&
                 viewType != VIEW_TYPE_LAST_EMPTY && viewType != VIEW_TYPE_NEW_CHAT_HINT && viewType != VIEW_TYPE_CONTACTS_FLICKER &&
-                viewType != VIEW_TYPE_REQUIREMENTS && viewType != VIEW_TYPE_REQUIRED_EMPTY;
+                viewType != VIEW_TYPE_REQUIREMENTS && viewType != VIEW_TYPE_REQUIRED_EMPTY && viewType != VIEW_TYPE_STORIES && viewType != VIEW_TYPE_ARCHIVE_FULLSCREEN;
     }
 
     @Override
@@ -534,9 +592,37 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 aiBotCell.setIsTransitionSupport(isTransitionSupport);
                 view = aiBotCell;
                 break;
+            case VIEW_TYPE_PST:
+                DialogCell pstCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
+                pstCell.setArchivedPullAnimation(pullForegroundDrawable);
+                pstCell.setPreloader(preloader);
+                pstCell.setDialogCellDelegate(this);
+                pstCell.setIsTransitionSupport(isTransitionSupport);
+                view = pstCell;
+
+                AnalyticsHelper.INSTANCE.logOneTimePerSessionEvent("pst_pin_show", null);
+                break;
+            case VIEW_TYPE_NU_HUB:
+                DialogCell nuCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
+                nuCell.setArchivedPullAnimation(pullForegroundDrawable);
+                nuCell.setPreloader(preloader);
+                nuCell.setDialogCellDelegate(this);
+                nuCell.setIsTransitionSupport(isTransitionSupport);
+                view = nuCell;
+
+                break;
+            case VIEW_TYPE_AMBASSADOR:
+                DialogCell ambassadorCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
+                ambassadorCell.setArchivedPullAnimation(pullForegroundDrawable);
+                ambassadorCell.setPreloader(preloader);
+                ambassadorCell.setDialogCellDelegate(this);
+                ambassadorCell.setIsTransitionSupport(isTransitionSupport);
+                view = ambassadorCell;
+
+                break;
             case VIEW_TYPE_DIALOG:
                 if (dialogsType == DialogsActivity.DIALOGS_TYPE_ADD_USERS_TO ||
-                    dialogsType == DialogsActivity.DIALOGS_TYPE_BOT_REQUEST_PEER) {
+                        dialogsType == DialogsActivity.DIALOGS_TYPE_BOT_REQUEST_PEER) {
                     view = new ProfileSearchCell(mContext);
                 } else {
                     DialogCell dialogCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
@@ -636,9 +722,13 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 view.setBackgroundDrawable(combinedDrawable);
                 break;
             }
-            case VIEW_TYPE_ARCHIVE:
-                archiveHintCell = new ArchiveHintCell(mContext);
-                view = archiveHintCell;
+            case VIEW_TYPE_ARCHIVE_FULLSCREEN:
+                LastEmptyView lastEmptyView = new LastEmptyView(mContext);
+                lastEmptyView.addView(
+                        new ArchiveHelp(mContext, currentAccount, null, DialogsAdapter.this::onArchiveSettingsClick, null),
+                        LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER, 0, -(int) (DialogStoriesCell.HEIGHT_IN_DP * .5f), 0, 0)
+                );
+                view = lastEmptyView;
                 break;
             case VIEW_TYPE_LAST_EMPTY: {
                 view = new LastEmptyView(mContext);
@@ -702,19 +792,33 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             case VIEW_TYPE_FOLDER_UPDATE_HINT:
                 view = new DialogsHintCell(mContext);
                 break;
+            case VIEW_TYPE_STORIES: {
+                view = new View(mContext) {
+                    @Override
+                    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                        super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP), MeasureSpec.EXACTLY));
+                    }
+                };
+                break;
+            }
             case VIEW_TYPE_TEXT:
             default: {
                 view = new TextCell(mContext);
                 if (dialogsType == DialogsActivity.DIALOGS_TYPE_BOT_REQUEST_PEER) {
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                 }
+                break;
             }
         }
-        view.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, viewType == 5 ? RecyclerView.LayoutParams.MATCH_PARENT : RecyclerView.LayoutParams.WRAP_CONTENT));
+        view.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, viewType == VIEW_TYPE_EMPTY || viewType == VIEW_TYPE_ARCHIVE_FULLSCREEN ? RecyclerView.LayoutParams.MATCH_PARENT : RecyclerView.LayoutParams.WRAP_CONTENT));
         return new RecyclerListView.Holder(view);
     }
 
     public void onCreateGroupForThisClick() {
+
+    }
+
+    protected void onArchiveSettingsClick() {
 
     }
 
@@ -743,6 +847,36 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 customDialog.id = DialogCell.AI_CHAT_BOT_DIALOG_ID;
                 customDialog.name = mContext.getString(R.string.Chatbot_AIChatbot);
                 customDialog.message = mContext.getString(R.string.Chatbot_PoweredByChatGpt);
+                customDialog.pinned = true;
+                cell.setDialog(customDialog);
+                break;
+            }
+            case VIEW_TYPE_PST: {
+                DialogCell cell = (DialogCell) holder.itemView;
+                DialogCell.CustomDialog customDialog = new DialogCell.CustomDialog();
+                customDialog.id = DialogCell.PST_DIALOG_ID;
+                customDialog.name = NicegramAssistantHelper.INSTANCE.getPstConfig().getPinTitle();
+                customDialog.message = NicegramAssistantHelper.INSTANCE.getPstConfig().getPinDesc();
+                customDialog.pinned = true;
+                cell.setDialog(customDialog);
+                break;
+            }
+            case VIEW_TYPE_NU_HUB: {
+                DialogCell cell = (DialogCell) holder.itemView;
+                DialogCell.CustomDialog customDialog = new DialogCell.CustomDialog();
+                customDialog.id = DialogCell.NU_HUB_DIALOG_ID;
+                customDialog.name = NicegramAssistantHelper.INSTANCE.getNuConfig().getPinTitle();
+                customDialog.message = NicegramAssistantHelper.INSTANCE.getNuConfig().getPinDesc();
+                customDialog.pinned = true;
+                cell.setDialog(customDialog);
+                break;
+            }
+            case VIEW_TYPE_AMBASSADOR: {
+                DialogCell cell = (DialogCell) holder.itemView;
+                DialogCell.CustomDialog customDialog = new DialogCell.CustomDialog();
+                customDialog.id = DialogCell.AMBASSADOR_DIALOG_ID;
+                customDialog.name = NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPinData().getTitle();
+                customDialog.message = NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPinData().getDesc();
                 customDialog.pinned = true;
                 cell.setDialog(customDialog);
                 break;
@@ -879,9 +1013,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             case VIEW_TYPE_HEADER: {
                 HeaderCell cell = (HeaderCell) holder.itemView;
                 if (
-                    dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_GROUPS ||
-                    dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_USERS ||
-                    dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY
+                        dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_GROUPS ||
+                                dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_USERS ||
+                                dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY
                 ) {
                     if (i == 0) {
                         cell.setText(LocaleController.getString("ImportHeader", R.string.ImportHeader));
@@ -920,11 +1054,14 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 }
                 TextView textView = cell.getTextView();
                 textView.setCompoundDrawablePadding(AndroidUtilities.dp(4));
-                textView.setCompoundDrawablesWithIntrinsicBounds(null, null, arrowDrawable, null);
+                textView.setCompoundDrawablesWithIntrinsicBounds(null, null, parentFragment != null && parentFragment.storiesEnabled ? null : arrowDrawable, null);
                 textView.getLayoutParams().width = LayoutHelper.WRAP_CONTENT;
                 break;
             }
             case VIEW_TYPE_TEXT: {
+                if (!(holder.itemView instanceof TextCell)) {
+                    return;
+                }
                 TextCell cell = (TextCell) holder.itemView;
                 cell.setColors(Theme.key_windowBackgroundWhiteBlueText4, Theme.key_windowBackgroundWhiteBlueText4);
                 if (requestPeerType != null) {
@@ -951,13 +1088,13 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 if (item.chatlistUpdates != null) {
                     int count = item.chatlistUpdates.missing_peers.size();
                     hintCell.setText(
-                        AndroidUtilities.replaceSingleTag(
-                            LocaleController.formatPluralString("FolderUpdatesTitle", count),
-                            Theme.key_windowBackgroundWhiteValueText,
-                            0,
-                            null
-                        ),
-                        LocaleController.formatPluralString("FolderUpdatesSubtitle", count)
+                            AndroidUtilities.replaceSingleTag(
+                                    LocaleController.formatPluralString("FolderUpdatesTitle", count),
+                                    Theme.key_windowBackgroundWhiteValueText,
+                                    0,
+                                    null
+                            ),
+                            LocaleController.formatPluralString("FolderUpdatesSubtitle", count)
                     );
                 }
                 break;
@@ -968,7 +1105,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         }
     }
 
-    public TLRPC.TL_chatlists_chatlistUpdates getChatlistUpdate() {
+    public TL_chatlists.TL_chatlists_chatlistUpdates getChatlistUpdate() {
         ItemInternal item = itemInternals.get(0);
         if (item != null && item.viewType == VIEW_TYPE_FOLDER_UPDATE_HINT) {
             return item.chatlistUpdates;
@@ -1003,8 +1140,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             toDialog.pinnedNum = oldNum;
         }
         Collections.swap(dialogs, fromIndex, toIndex);
-        updateList(recyclerView, false, 0);
+        updateList(null);
     }
+
     @Override
     public void notifyItemMoved(int fromPosition, int toPosition) {
         super.notifyItemMoved(fromPosition, toPosition);
@@ -1045,6 +1183,39 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     @Override
     public boolean canClickButtonInside() {
         return selectedDialogs.isEmpty();
+    }
+
+    @Override
+    public void openStory(DialogCell dialogCell, Runnable onDone) {
+        MessagesController messagesController = MessagesController.getInstance(currentAccount);
+        if (MessagesController.getInstance(currentAccount).getStoriesController().hasStories(dialogCell.getDialogId())) {
+            parentFragment.getOrCreateStoryViewer().doOnAnimationReady(onDone);
+            parentFragment.getOrCreateStoryViewer().open(parentFragment.getContext(), dialogCell.getDialogId(), StoriesListPlaceProvider.of((RecyclerListView) dialogCell.getParent()));
+            return;
+        }
+    }
+
+    @Override
+    public void showChatPreview(DialogCell cell) {
+        parentFragment.showChatPreview(cell);
+    }
+
+    @Override
+    public void openHiddenStories() {
+        StoriesController storiesController = MessagesController.getInstance(currentAccount).getStoriesController();
+        if (storiesController.getHiddenList().isEmpty()) {
+            return;
+        }
+        boolean unreadOnly = storiesController.getUnreadState(DialogObject.getPeerDialogId(storiesController.getHiddenList().get(0).peer)) != StoriesController.STATE_READ;
+        ArrayList<Long> peerIds = new ArrayList<>();
+        for (int i = 0; i < storiesController.getHiddenList().size(); i++) {
+            long dialogId = DialogObject.getPeerDialogId(storiesController.getHiddenList().get(i).peer);
+            if (!unreadOnly || storiesController.getUnreadState(dialogId) != StoriesController.STATE_READ) {
+                peerIds.add(dialogId);
+            }
+        }
+
+        parentFragment.getOrCreateStoryViewer().open(mContext, null, peerIds, 0, null, null, StoriesListPlaceProvider.of(recyclerListView, true), false);
     }
 
     public void setIsTransitionSupport() {
@@ -1193,7 +1364,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         this.forceShowEmptyCell = forceShowEmptyCell;
     }
 
-    public class LastEmptyView extends View {
+    public class LastEmptyView extends FrameLayout {
 
         public boolean moving;
 
@@ -1203,16 +1374,28 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             int size = itemInternals.size();
-            boolean hasArchive = dialogsType == 0 && MessagesController.getInstance(currentAccount).dialogs_dict.get(DialogObject.makeFolderDialogId(1)) != null;
+            boolean hasArchive = folderId == 0 && dialogsType == 0 && MessagesController.getInstance(currentAccount).dialogs_dict.get(DialogObject.makeFolderDialogId(1)) != null;
             View parent = (View) getParent();
             int height;
             int blurOffset = 0;
             if (parent instanceof BlurredRecyclerView) {
                 blurOffset = ((BlurredRecyclerView) parent).blurTopPadding;
             }
+            boolean collapsedView = DialogsAdapter.this.collapsedView;
             int paddingTop = parent.getPaddingTop();
             paddingTop -= blurOffset;
-            if (size == 0 || paddingTop == 0 && !hasArchive) {
+            if (folderId == 1 && size == 1 && itemInternals.get(0).viewType == VIEW_TYPE_ARCHIVE_FULLSCREEN) {
+                height = MeasureSpec.getSize(heightMeasureSpec);
+                if (height == 0) {
+                    height = parent.getMeasuredHeight();
+                }
+                if (height == 0) {
+                    height = AndroidUtilities.displaySize.y - ActionBar.getCurrentActionBarHeight() - (Build.VERSION.SDK_INT >= 21 ? AndroidUtilities.statusBarHeight : 0);
+                }
+                if (parentFragment.hasStories) {
+                    height += AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP);
+                }
+            } else if (size == 0 || paddingTop == 0 && !hasArchive) {
                 height = 0;
             } else {
                 height = MeasureSpec.getSize(heightMeasureSpec);
@@ -1232,6 +1415,8 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                         } else {
                             dialogsHeight += cellHeight;
                         }
+                    } else  if (itemInternals.get(i).viewType == VIEW_TYPE_FLICKER) {
+                        dialogsHeight += cellHeight;
                     }
                 }
                 dialogsHeight += size - 1;
@@ -1243,23 +1428,41 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     height = height - dialogsHeight + archiveHeight;
                     if (paddingTop != 0) {
                         height -= AndroidUtilities.statusBarHeight;
-                        if (height < 0) {
-                            height = 0;
+                        if (parentFragment.hasStories && !collapsedView && !isTransitionSupport) {
+                            height -= ActionBar.getCurrentActionBarHeight();
+                            if (getParent() instanceof DialogsActivity.DialogsRecyclerView) {
+                                DialogsActivity.DialogsRecyclerView dialogsRecyclerView = (DialogsActivity.DialogsRecyclerView) getParent();
+                                height -= dialogsRecyclerView.additionalPadding;
+                            }
+                        } else if (collapsedView) {
+                            height -= paddingTop;
                         }
                     }
                 } else if (dialogsHeight - height < archiveHeight) {
                     height = archiveHeight - (dialogsHeight - height);
                     if (paddingTop != 0) {
                         height -= AndroidUtilities.statusBarHeight;
-                    }
-                    if (height < 0) {
-                        height = 0;
+                        if (parentFragment.hasStories && !collapsedView && !isTransitionSupport) {
+                            height -= ActionBar.getCurrentActionBarHeight();
+                            if (getParent() instanceof DialogsActivity.DialogsRecyclerView) {
+                                DialogsActivity.DialogsRecyclerView dialogsRecyclerView = (DialogsActivity.DialogsRecyclerView) getParent();
+                                height -= dialogsRecyclerView.additionalPadding;
+                            }
+                        } else if (collapsedView) {
+                            height -= paddingTop;
+                        }
                     }
                 } else {
                     height = 0;
                 }
             }
-            setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), height);
+            if (height < 0) {
+                height = 0;
+            }
+            if (isTransitionSupport) {
+                height += AndroidUtilities.dp(1000);
+            }
+            super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
         }
     }
 
@@ -1269,8 +1472,15 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
         MessagesController messagesController = MessagesController.getInstance(currentAccount);
         ArrayList<TLRPC.Dialog> array = parentFragment.getDialogsArray(currentAccount, dialogsType, folderId, dialogsListFrozen);
+        if (array == null) {
+            array = new ArrayList<>();
+        }
         dialogsCount = array.size();
         isEmpty = false;
+        if (dialogsCount == 0 && parentFragment.isArchive()) {
+            itemInternals.add(new ItemInternal(VIEW_TYPE_ARCHIVE_FULLSCREEN));
+            return;
+        }
 
         if (!hasHints && dialogsType == 0 && folderId == 0 && messagesController.isDialogsEndReached(folderId) && !forceUpdatingContacts) {
             if (messagesController.getAllFoldersDialogsCount() <= 10 && ContactsController.getInstance(currentAccount).doneLoadingContacts && !ContactsController.getInstance(currentAccount).contacts.isEmpty()) {
@@ -1299,7 +1509,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             MessagesController.DialogFilter filter = messagesController.selectedDialogFilter[dialogsType - 7];
             if (filter != null && filter.isChatlist()) {
                 messagesController.checkChatlistFolderUpdate(filter.id, false);
-                TLRPC.TL_chatlists_chatlistUpdates updates = messagesController.getChatlistFolderUpdates(filter.id);
+                TL_chatlists.TL_chatlists_chatlistUpdates updates = messagesController.getChatlistFolderUpdates(filter.id);
                 if (updates != null && updates.missing_peers.size() > 0) {
                     hasChatlistHint = true;
                     itemInternals.add(new ItemInternal(updates));
@@ -1319,6 +1529,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     itemInternals.add(new ItemInternal(VIEW_TYPE_DIALOG, array.get(k)));
                 }
             }
+            itemInternals.add(new ItemInternal(VIEW_TYPE_LAST_EMPTY));
             return;
         }
 
@@ -1362,9 +1573,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 itemInternals.add(new ItemInternal(VIEW_TYPE_ME_URL, MessagesController.getInstance(currentAccount).hintDialogs.get(k)));
             }
             itemInternals.add(new ItemInternal(VIEW_TYPE_DIVIDER));
-        } else if (showArchiveHint) {
-            itemInternals.add(new ItemInternal(VIEW_TYPE_ARCHIVE));
-            itemInternals.add(new ItemInternal(VIEW_TYPE_SHADOW));
         } else if (dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_GROUPS || dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY) {
             itemInternals.add(new ItemInternal(VIEW_TYPE_HEADER));
             itemInternals.add(new ItemInternal(VIEW_TYPE_TEXT));
@@ -1389,6 +1597,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 if (dialogsCount != 0) {
                     itemInternals.add(new ItemInternal(VIEW_TYPE_FLICKER));
                 }
+                itemInternals.add(new ItemInternal(VIEW_TYPE_LAST_EMPTY));
             } else if (dialogsCount == 0) {
                 isEmpty = true;
                 if (requestPeerType != null) {
@@ -1403,7 +1612,10 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 itemInternals.add(new ItemInternal(VIEW_TYPE_LAST_EMPTY));
             }
         }
-        if (PrefsHelper.INSTANCE.getShowAiChatBotDialogs(currentAccount)) {
+        if (PrefsHelper.INSTANCE.getShowAiChatBotDialogs(currentAccount) ||
+                (PrefsHelper.INSTANCE.getShowPstDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getPstConfig().getShow()) ||
+                (PrefsHelper.INSTANCE.getShowNuHubDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getNuConfig().getShowPin()) ||
+                (PrefsHelper.INSTANCE.getShowAmbassadorDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPin())) {
             int positionToInsert = 0;
             if (SharedConfig.archiveHidden) {
                 for (int i = 0; i < itemInternals.size(); i++) {
@@ -1414,8 +1626,24 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     }
                 }
             }
-            itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_AI_CHAT_BOT));
-            itemInternals.add(positionToInsert + 1, new ItemInternal(VIEW_TYPE_SHADOW));
+
+            if (PrefsHelper.INSTANCE.getShowAmbassadorDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPin()) {
+                itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_AMBASSADOR));
+                positionToInsert++;
+            }
+            if (PrefsHelper.INSTANCE.getShowNuHubDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getNuConfig().getShowPin()) {
+                itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_NU_HUB));
+                positionToInsert++;
+            }
+            if (PrefsHelper.INSTANCE.getShowPstDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getPstConfig().getShow()) {
+                itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_PST));
+                positionToInsert++;
+            }
+            if (PrefsHelper.INSTANCE.getShowAiChatBotDialogs(currentAccount)) {
+                itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_AI_CHAT_BOT));
+                positionToInsert++;
+            }
+            itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_SHADOW));
         }
 
         if (!messagesController.hiddenUndoChats.isEmpty()) {
@@ -1427,5 +1655,17 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 }
             }
         }
+    }
+
+    public int getItemHeight(int position) {
+        int cellHeight = AndroidUtilities.dp(SharedConfig.useThreeLinesLayout ? 78 : 72);
+        if (itemInternals.get(position).viewType == VIEW_TYPE_DIALOG) {
+            if (itemInternals.get(position).isForumCell && !collapsedView) {
+                return AndroidUtilities.dp(SharedConfig.useThreeLinesLayout ? 86 : 91);
+            } else {
+                return cellHeight;
+            }
+        }
+        return 0;
     }
 }

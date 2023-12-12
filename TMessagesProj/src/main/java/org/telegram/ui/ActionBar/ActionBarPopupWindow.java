@@ -16,11 +16,13 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
@@ -166,6 +168,12 @@ public class ActionBarPopupWindow extends PopupWindow {
 
             try {
                 scrollView = new ScrollView(context);
+                scrollView.getViewTreeObserver().addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
+                    @Override
+                    public void onScrollChanged() {
+                        invalidate();
+                    }
+                });
                 scrollView.setVerticalScrollBarEnabled(false);
                 if (swipeBackLayout != null) {
                     swipeBackLayout.addView(scrollView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, shownFromBottom ? Gravity.BOTTOM : Gravity.TOP));
@@ -339,6 +347,7 @@ public class ActionBarPopupWindow extends PopupWindow {
             }
         }
 
+        @Override
         public void setBackgroundDrawable(Drawable drawable) {
             backgroundColor = Color.WHITE;
             backgroundDrawable = drawable;
@@ -416,6 +425,8 @@ public class ActionBarPopupWindow extends PopupWindow {
             return super.dispatchKeyEvent(event);
         }
 
+        Path path;
+
         @Override
         protected void dispatchDraw(Canvas canvas) {
             if (swipeBackGravityRight) {
@@ -462,7 +473,11 @@ public class ActionBarPopupWindow extends PopupWindow {
                         if (start > -AndroidUtilities.dp(16)) {
                             int h = (int) (getMeasuredHeight() * backScaleY);
                             if (a == 0) {
-                                AndroidUtilities.rectTmp2.set(0, -scrollView.getScrollY() + (gapStartY != -1000000 ? AndroidUtilities.dp(1) : 0), (int) (getMeasuredWidth() * backScaleX), (gapStartY != -1000000 ? Math.min(h, start + AndroidUtilities.dp(16)) : h) - subtractBackgroundHeight);
+                                if (swipeBackLayout != null && swipeBackLayout.stickToRight) {
+                                    AndroidUtilities.rectTmp2.set(getMeasuredWidth() - (int) (getMeasuredWidth() * backScaleX), -scrollView.getScrollY() + (gapStartY != -1000000 ? AndroidUtilities.dp(1) : 0), getMeasuredWidth(), (gapStartY != -1000000 ? Math.min(h, start + AndroidUtilities.dp(16)) : h) - subtractBackgroundHeight);
+                                } else {
+                                    AndroidUtilities.rectTmp2.set(0, -scrollView.getScrollY() + (gapStartY != -1000000 ? AndroidUtilities.dp(1) : 0), (int) (getMeasuredWidth() * backScaleX), (gapStartY != -1000000 ? Math.min(h, start + AndroidUtilities.dp(16)) : h) - subtractBackgroundHeight);
+                                }
                             } else {
                                 if (h < end) {
                                     if (gapStartY != -1000000) {
@@ -470,10 +485,18 @@ public class ActionBarPopupWindow extends PopupWindow {
                                     }
                                     continue;
                                 }
-                                AndroidUtilities.rectTmp2.set(0, end, (int) (getMeasuredWidth() * backScaleX), h - subtractBackgroundHeight);
+                                if (swipeBackLayout != null && swipeBackLayout.stickToRight) {
+                                    AndroidUtilities.rectTmp2.set(getMeasuredWidth() - (int) (getMeasuredWidth() * backScaleX), end, getMeasuredWidth(), h - subtractBackgroundHeight);
+                                } else {
+                                    AndroidUtilities.rectTmp2.set(0, end, (int) (getMeasuredWidth() * backScaleX), h - subtractBackgroundHeight);
+                                }
                             }
                         } else {
-                            AndroidUtilities.rectTmp2.set(0, (gapStartY < 0 ? 0 : -AndroidUtilities.dp(16)), (int) (getMeasuredWidth() * backScaleX), (int) (getMeasuredHeight() * backScaleY) - subtractBackgroundHeight);
+                            if (swipeBackLayout != null && swipeBackLayout.stickToRight) {
+                                AndroidUtilities.rectTmp2.set(getMeasuredWidth() - (int) (getMeasuredWidth() * backScaleX), (gapStartY < 0 ? 0 : -AndroidUtilities.dp(16)), getMeasuredWidth(), (int) (getMeasuredHeight() * backScaleY) - subtractBackgroundHeight);
+                            } else {
+                                AndroidUtilities.rectTmp2.set(0, (gapStartY < 0 ? 0 : -AndroidUtilities.dp(16)), (int) (getMeasuredWidth() * backScaleX), (int) (getMeasuredHeight() * backScaleY) - subtractBackgroundHeight);
+                            }
                         }
                     }
                     if (reactionsEnterProgress != 1f) {
@@ -487,9 +510,15 @@ public class ActionBarPopupWindow extends PopupWindow {
                     backgroundDrawable.draw(canvas);
                     if (hasGap) {
                         canvas.save();
-                        AndroidUtilities.rectTmp2.set(backgroundDrawable.getBounds());
-                        AndroidUtilities.rectTmp2.inset(AndroidUtilities.dp(8), AndroidUtilities.dp(8));
-                        canvas.clipRect(AndroidUtilities.rectTmp2);
+                        AndroidUtilities.rectTmp.set(backgroundDrawable.getBounds());
+                        AndroidUtilities.rectTmp.inset(AndroidUtilities.dp(8), AndroidUtilities.dp(8));
+                        if (path == null) {
+                            path = new Path();
+                        } else {
+                            path.rewind();
+                        }
+                        path.addRoundRect(AndroidUtilities.rectTmp, AndroidUtilities.dp(8), AndroidUtilities.dp(8), Path.Direction.CW);
+                        canvas.clipPath(path);
                         for (int i = 0; i < linearLayout.getChildCount(); i++) {
                             if (linearLayout.getChildAt(i) instanceof GapView && linearLayout.getChildAt(i).getVisibility() == View.VISIBLE) {
                                 canvas.save();
@@ -504,7 +533,7 @@ public class ActionBarPopupWindow extends PopupWindow {
                                         break;
                                     }
                                 }
-                                canvas.translate(x, y * scrollView.getScaleY());
+                                canvas.translate(x, y * scrollView.getScaleY() - scrollView.getScrollY());
                                 child.draw(canvas);
                                 canvas.restore();
                             }

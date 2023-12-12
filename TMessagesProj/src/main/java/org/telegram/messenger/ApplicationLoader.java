@@ -18,6 +18,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -37,6 +39,7 @@ import com.appvillis.feature_ai_chat.domain.UseResultManager;
 import com.appvillis.feature_ai_chat.domain.usecases.GetBalanceTopUpRequestUseCase;
 import com.appvillis.feature_ai_chat.domain.usecases.GetChatCommandsUseCase;
 import com.appvillis.feature_analytics.domain.AnalyticsManager;
+import com.appvillis.feature_nicegram_assistant.QrCodeHelper;
 import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase;
 import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase;
 import com.appvillis.feature_nicegram_assistant.domain.SetGrumStatusUseCase;
@@ -52,6 +55,7 @@ import androidx.multidex.MultiDex;
 import com.appvillis.nicegram.NicegramFeaturesHelper;
 
 import app.nicegram.DailyRewardsHelper;
+import app.nicegram.NicegramAnalyticsHelper;
 import app.nicegram.NicegramGroupCollectHelper;
 
 import com.appvillis.nicegram.NicegramPrefs;
@@ -66,12 +70,18 @@ import com.appvillis.rep_user.domain.ClaimDailyRewardUseCase;
 import com.appvillis.rep_user.domain.GetUserStatusUseCase;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.Components.ForegroundDetector;
+import org.telegram.ui.Components.Premium.boosts.BoostRepository;
+import org.telegram.ui.IUpdateLayout;
 import org.telegram.ui.LauncherIconController;
+import android.view.ViewGroup;
 
 import java.io.File;
 import java.util.HashMap;
@@ -85,7 +95,7 @@ import app.nicegram.TgThemeProxyImpl;
 
 public class ApplicationLoader extends Application {
 
-    private static ApplicationLoader applicationLoaderInstance;
+    public static ApplicationLoader applicationLoaderInstance;
 
     @SuppressLint("StaticFieldLeak")
     public static volatile Context applicationContext;
@@ -213,7 +223,15 @@ public class ApplicationLoader extends Application {
         return applicationLoaderInstance.isHuaweiBuild();
     }
 
+    public static boolean isStandaloneBuild() {
+        return applicationLoaderInstance.isStandalone();
+    }
+
     protected boolean isHuaweiBuild() {
+        return false;
+    }
+
+    protected boolean isStandalone() {
         return false;
     }
 
@@ -240,6 +258,7 @@ public class ApplicationLoader extends Application {
             return;
         }
         applicationInited = true;
+        NativeLoader.initNativeLibs(ApplicationLoader.applicationContext);
 
         try {
             LocaleController.getInstance(); //TODO improve
@@ -318,7 +337,6 @@ public class ApplicationLoader extends Application {
             ContactsController.getInstance(a).checkAppAccount();
             DownloadController.getInstance(a);
         }
-        ChatThemeController.init();
         BillingController.getInstance().startConnection();
     }
 
@@ -648,6 +666,7 @@ public class ApplicationLoader extends Application {
         NicegramAssistantHelper.INSTANCE.setAppSessionControlUseCase(appSessionControlUseCase);
         NicegramAssistantHelper.INSTANCE.setRemoteConfigRepo(remoteConfigRepoAi);
         NicegramGroupCollectHelper.INSTANCE.setCollectGroupInfoUseCase(collectGroupInfoUseCase);
+        NicegramAnalyticsHelper.INSTANCE.setAnalyticsManager(analyticsManager);
         NicegramBillingHelper.INSTANCE.setBillingManager(billingManager);
         PrefsHelper.INSTANCE.setRemoteConfigRepo(remoteConfigRepo);
 
@@ -670,6 +689,33 @@ public class ApplicationLoader extends Application {
             paramsMap.put("profiles_count", String.valueOf(accountCount));
             AnalyticsHelper.INSTANCE.logEvent("user_set_"+accountCountToLog+"_profiles", paramsMap);
         }, 5000);
+
+        setQrRenderer();
+    }
+
+    private void setQrRenderer() {
+        QrCodeHelper.INSTANCE.setQrRenderer((s, width, height) -> {
+            try {
+                QRCodeWriter writer = new QRCodeWriter();
+                BitMatrix bitMatrix = writer.encode(s, BarcodeFormat.QR_CODE, width, height);
+
+                int w = bitMatrix.getWidth();
+                int h = bitMatrix.getHeight();
+                int[] pixels = new int[w * h];
+                for (int y = 0; y < h; y++) {
+                    for (int x = 0; x < w; x++) {
+                        pixels[y * w + x] = bitMatrix.get(x, y) ? Color.BLACK : Color.WHITE;
+                    }
+                }
+
+                Bitmap bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+                bitmap.setPixels(pixels, 0, w, 0, 0, w, h);
+                return bitmap;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
     }
 
     private void setMaxAccountCount() {
@@ -728,6 +774,30 @@ public class ApplicationLoader extends Application {
 
     protected void startAppCenterInternal(Activity context) {
 
+    }
+
+    public static void logDualCamera(boolean success, boolean vendor) {
+        applicationLoaderInstance.logDualCameraInternal(success, vendor);
+    }
+
+    protected void logDualCameraInternal(boolean success, boolean vendor) {
+
+    }
+
+    public boolean checkApkInstallPermissions(final Context context) {
+        return false;
+    }
+
+    public boolean openApkInstall(Activity activity, TLRPC.Document document) {
+        return false;
+    }
+
+    public boolean showUpdateAppPopup(Context context, TLRPC.TL_help_appUpdate update, int account) {
+        return false;
+    }
+
+    public IUpdateLayout takeUpdateLayout(Activity activity, ViewGroup sideMenu, ViewGroup sideMenuContainer) {
+        return null;
     }
 
 }

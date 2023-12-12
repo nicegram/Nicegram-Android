@@ -26,6 +26,7 @@
 -keep class com.google.android.exoplayer2.extractor.FlacStreamMetadata { *; }
 -keep class com.google.android.exoplayer2.metadata.flac.PictureFrame { *; }
 -keep class com.google.android.exoplayer2.decoder.SimpleDecoderOutputBuffer { *; }
+-keep class org.telegram.ui.Stories.recorder.FfmpegAudioWaveformLoader { *; }
 
 # https://developers.google.com/ml-kit/known-issues#android_issues
 -keep class com.google.mlkit.nl.languageid.internal.LanguageIdentificationJni { *; }
@@ -128,6 +129,25 @@
 }
 
 -keep class com.appvillis.core_network.data.** { *; }
+-keep class com.appvillis.feature_nuhub.data.NuTagsRepositoryImpl$NuTagJson { *; }
+-keep class com.appvillis.feature_nicegram_assistant.data.SpecialOffersRepositoryImpl$SpecialOfferJson { *; }
+#-keep class com.appvillis.feature_ai_chat.data.FirebaseRemoteConfigRepo$.** { *; }
+#-keep class com.appvillis.feature_ai_chat.data.FirebaseRemoteConfigRepo.** { *; }
+#-keep class com.appvillis.feature_ai_chat.data.FirebaseRemoteConfigRepo
+#-keep class com.appvillis.feature_ai_chat.domain.RemoteConfigRepo$.** { *; }
+#-keep class com.appvillis.feature_ai_chat.domain.RemoteConfigRepo.** { *; }
+#-keep class com.appvillis.feature_ai_chat.domain.RemoteConfigRepo
+
+-keep class com.appvillis.feature_ai_chat.data.** { *; }
+
+# Keep generic signature of Call, Response (R8 full mode strips signatures from non-kept items).
+ -keep,allowobfuscation,allowshrinking interface retrofit2.Call
+ -keep,allowobfuscation,allowshrinking class retrofit2.Response
+
+ # With R8 full mode generic signatures are stripped for classes that are not
+ # kept. Suspend functions are wrapped in continuations where the type argument
+ # is used.
+ -keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
 
 -keepnames class * extends android.os.Parcelable
 -keepnames class * extends java.io.Serializable
@@ -138,3 +158,19 @@
 
 -keep class com.appvillis.nicegram.network.request.** { *; }
 -keep class com.appvillis.nicegram.network.response.** { *; }
+
+-keepattributes Signature
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken
+-keepattributes AnnotationDefault,RuntimeVisibleAnnotations
+
+
+-dontwarn org.bouncycastle.jsse.BCSSLParameters
+-dontwarn org.bouncycastle.jsse.BCSSLSocket
+-dontwarn org.bouncycastle.jsse.provider.BouncyCastleJsseProvider
+-dontwarn org.conscrypt.Conscrypt$Version
+-dontwarn org.conscrypt.Conscrypt
+-dontwarn org.conscrypt.ConscryptHostnameVerifier
+-dontwarn org.openjsse.javax.net.ssl.SSLParameters
+-dontwarn org.openjsse.javax.net.ssl.SSLSocket
+-dontwarn org.openjsse.net.ssl.OpenJSSE

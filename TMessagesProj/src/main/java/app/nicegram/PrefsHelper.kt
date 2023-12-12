@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.appvillis.nicegram.NicegramPrefs
 import com.appvillis.nicegram.domain.RemoteConfigRepo
 import org.telegram.messenger.MessagesController
+import java.util.concurrent.TimeUnit
 
 object PrefsHelper {
     var remoteConfigRepo: RemoteConfigRepo? = null
@@ -113,6 +114,42 @@ object PrefsHelper {
             .getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT)
     }
 
+    fun setShowPstDialogs(currentAccount: Int, show: Boolean) {
+        MessagesController.getNicegramSettings(currentAccount)
+            .edit()
+            .putBoolean(NicegramPrefs.PREF_SHOW_PST_DIALOGS, show)
+            .apply()
+    }
+
+    fun getShowPstDialogs(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_SHOW_PST_DIALOGS, NicegramPrefs.PREF_SHOW_PST_DIALOGS_DEFAULT)
+    }
+
+    fun setShowNuHubDialogs(currentAccount: Int, show: Boolean) {
+        MessagesController.getNicegramSettings(currentAccount)
+            .edit()
+            .putBoolean(NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS, show)
+            .apply()
+    }
+
+    fun getShowNuHubDialogs(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS, NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS_DEFAULT)
+    }
+
+    fun setShowAmbassadorDialogs(currentAccount: Int, show: Boolean) {
+        MessagesController.getNicegramSettings(currentAccount)
+            .edit()
+            .putBoolean(NicegramPrefs.PREF_SHOW_AMBASSADOR_DIALOGS, show)
+            .apply()
+    }
+
+    fun getShowAmbassadorDialogs(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_SHOW_AMBASSADOR_DIALOGS, NicegramPrefs.PREF_SHOW_AMBASSADOR_DIALOGS_DEFAULT)
+    }
+
     fun setShowAiChatBotChat(currentAccount: Int, show: Boolean) {
         MessagesController.getNicegramSettings(currentAccount)
             .edit()
@@ -146,6 +183,28 @@ object PrefsHelper {
         getNgGlobalPrefs(context)
             .edit()
             .putInt(NicegramPrefs.PREF_MAX_ACCOUNTS, count)
+            .apply()
+    }
+
+    fun canShowAmbassadorBanner(context: Context): Boolean {
+        return System.currentTimeMillis() - getNgGlobalPrefs(context).getLong(NicegramPrefs.PREF_AMBASSADOR_BANNER_TS, 0L) > TimeUnit.SECONDS.toMillis(60)
+    }
+
+    fun canShowNuHubBanner(context: Context): Boolean {
+        return System.currentTimeMillis() - getNgGlobalPrefs(context).getLong(NicegramPrefs.PREF_NU_HUB_BANNER_TS, 0L) > TimeUnit.SECONDS.toMillis(60)
+    }
+
+    fun setAmbassadorBannerTs(context: Context, ts: Long) {
+        getNgGlobalPrefs(context)
+            .edit()
+            .putLong(NicegramPrefs.PREF_AMBASSADOR_BANNER_TS, ts)
+            .apply()
+    }
+
+    fun setNuHubBannerTs(context: Context, ts: Long) {
+        getNgGlobalPrefs(context)
+            .edit()
+            .putLong(NicegramPrefs.PREF_NU_HUB_BANNER_TS, ts)
             .apply()
     }
 

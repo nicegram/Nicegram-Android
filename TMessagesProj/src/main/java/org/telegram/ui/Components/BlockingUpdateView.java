@@ -145,14 +145,14 @@ public class BlockingUpdateView extends FrameLayout implements NotificationCente
         acceptButton.setPadding(AndroidUtilities.dp(34), 0, AndroidUtilities.dp(34), 0);
         addView(acceptButton, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 46, Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM, 0, 0, 0, 45));
         acceptButton.setOnClickListener(view1 -> {
-            if (!checkApkInstallPermissions(getContext())) {
+            /*if (!checkApkInstallPermissions(getContext())) {
                 return;
-            }
+            }*/
             if (appUpdate.document instanceof TLRPC.TL_document) {
-                if (!openApkInstall((Activity) getContext(), appUpdate.document)) {
+                /*if (!openApkInstall((Activity) getContext(), appUpdate.document)) {
                     FileLoader.getInstance(accountNum).loadFile(appUpdate.document, "update", FileLoader.PRIORITY_HIGH, 1);
                     showProgress(true);
-                }
+                }*/
             } else if (appUpdate.url != null) {
                 Browser.openUrl(getContext(), appUpdate.url);
             }
@@ -209,7 +209,7 @@ public class BlockingUpdateView extends FrameLayout implements NotificationCente
             String location = (String) args[0];
             if (fileName != null && fileName.equals(location)) {
                 showProgress(false);
-                openApkInstall((Activity) getContext(), appUpdate.document);
+                //openApkInstall((Activity) getContext(), appUpdate.document);
             }
         } else if (id == NotificationCenter.fileLoadFailed) {
             String location = (String) args[0];
@@ -227,15 +227,15 @@ public class BlockingUpdateView extends FrameLayout implements NotificationCente
         }
     }
 
-    public static boolean checkApkInstallPermissions(final Context context) {
+    /*public static boolean checkApkInstallPermissions(final Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !ApplicationLoader.applicationContext.getPackageManager().canRequestPackageInstalls()) {
             AlertsCreator.createApkRestrictedDialog(context, null).show();
             return false;
         }
         return true;
-    }
+    }*/
 
-    public static boolean openApkInstall(Activity activity, TLRPC.Document document) {
+    /*public static boolean openApkInstall(Activity activity, TLRPC.Document document) {
         boolean exists = false;
         try {
             String fileName = FileLoader.getAttachFileName(document);
@@ -245,9 +245,9 @@ public class BlockingUpdateView extends FrameLayout implements NotificationCente
                 intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
                 if (Build.VERSION.SDK_INT >= 24) {
-                    intent.setDataAndType(FileProvider.getUriForFile(activity, ApplicationLoader.getApplicationId() + ".provider", f), "application/vnd.android.package-archive");
+                    //intent.setDataAndType(FileProvider.getUriForFile(activity, ApplicationLoader.getApplicationId() + ".provider", f), "application/vnd.android.package-archive");
                 } else {
-                    intent.setDataAndType(Uri.fromFile(f), "application/vnd.android.package-archive");
+                    //intent.setDataAndType(Uri.fromFile(f), "application/vnd.android.package-archive");
                 }
                 try {
                     activity.startActivityForResult(intent, 500);
@@ -259,7 +259,7 @@ public class BlockingUpdateView extends FrameLayout implements NotificationCente
             FileLog.e(e);
         }
         return exists;
-    }
+    }*/
 
     private void showProgress(final boolean show) {
         if (progressAnimation != null) {
@@ -332,7 +332,7 @@ public class BlockingUpdateView extends FrameLayout implements NotificationCente
         NotificationCenter.getInstance(accountNum).addObserver(this, NotificationCenter.fileLoaded);
         NotificationCenter.getInstance(accountNum).addObserver(this, NotificationCenter.fileLoadFailed);
         NotificationCenter.getInstance(accountNum).addObserver(this, NotificationCenter.fileLoadProgressChanged);
-        if (check) {
+        if (check && ApplicationLoader.isStandaloneBuild()) {
             TLRPC.TL_help_getAppUpdate req = new TLRPC.TL_help_getAppUpdate();
             try {
                 req.source = ApplicationLoader.applicationContext.getPackageManager().getInstallerPackageName(ApplicationLoader.applicationContext.getPackageName());

@@ -41,13 +41,18 @@ public class BackupImageView extends View {
 
     public BackupImageView(Context context) {
         super(context);
-        imageReceiver = new ImageReceiver(this);
+        imageReceiver = createImageReciever();
+        imageReceiver.setCrossfadeByScale(0);
         imageReceiver.setAllowLoadingOnAttachedOnly(true);
         imageReceiver.setDelegate((imageReceiver1, set, thumb, memCache) -> {
             if (set && !thumb) {
                 checkCreateBlurredImage();
             }
         });
+    }
+
+    protected ImageReceiver createImageReciever() {
+        return new ImageReceiver(this);
     }
 
     public void setBlurAllowed(boolean blurAllowed) {
@@ -136,6 +141,10 @@ public class BackupImageView extends View {
         onNewImageSet();
     }
 
+    public void clearImage() {
+        imageReceiver.clearImage();
+    }
+
     public void setForUserOrChat(TLObject object, AvatarDrawable avatarDrawable) {
         imageReceiver.setForUserOrChat(object, avatarDrawable);
         onNewImageSet();
@@ -172,6 +181,11 @@ public class BackupImageView extends View {
             thumb = new BitmapDrawable(null, thumbBitmap);
         }
         imageReceiver.setImage(imageLocation, imageFilter, thumbLocation, thumbFilter, thumb, size, ext, parentObject, 0);
+        onNewImageSet();
+    }
+
+    public void setImage(ImageLocation imageLocation, String imageFilter, ImageLocation thumbLocation, String thumbFilter, Drawable thumb, String ext, long size, int cacheType, Object parentObject) {
+        imageReceiver.setImage(imageLocation, imageFilter, thumbLocation, thumbFilter, thumb, size, ext, parentObject, cacheType);
         onNewImageSet();
     }
 

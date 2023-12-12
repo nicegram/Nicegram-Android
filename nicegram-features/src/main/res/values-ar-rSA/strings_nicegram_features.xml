@@ -78,4 +78,11 @@
     <string name="NicegarmTutorial_HelpBtnText">كيف يمكنني استلام الرمز؟</string>
     <string name="NicegarmTutorial_Dialog_Title">بدءا من فبراير 2023 ، اتبع الخطوات أدناه لتلقي الرمز:</string>
     <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. تسجيل الدخول <font color="#0A84FF">Telegram</font><br/>2. تسجيل الدخول <font color="#A134C7">Nicegram</font><br/>3. أدخل الرمز الذي ستصلك عليه <font color="#0A84FF">Telegram</font>]]></string>
+    <string name="NicegramMaxAccount_IncreaseTo">100 حساب كحد أقصى</string>
+    <string name="NicegramMaxAccount_Default">الحد الأقصى الافتراضي لعدد الحسابات هو 10</string>
+    <string name="NicegramMaxAccount_IncreaseWarn">زيادة الحد الأقصى لعدد الحسابات قد يكون له تأثير سلبي على سرعة تشغيل التطبيق وأدائه على بعض الأجهزة. يُرجى ملاحظة أنه قد تفقد الوصول إلى الحسابات التي تمت إضافتها حديثًا إذا قررت تقليل الحد الأقصى في المستقبل</string>
+    <string name="NicegramMaxAccount_Increase">زيادة</string>
+    <string name="NicegramMaxAccount_Reduce">تقليل</string>
+    <string name="NicegramMaxAccount_ReduceWarn">من المرجح أن يؤدي تقليل الحد الأقصى لعدد الحسابات إلى تحسين أداء التطبيق على بعض الأجهزة. ومع ذلك، يُرجى ملاحظة أنه سيتعين عليك تسجيل الدخول إلى جميع حساباتك مرة أخرى باستثناء الحساب الأول</string>
+    <string name="NicegramTryRelogin">تسجيل الخروج من حسابك وتسجيل الدخول مرة أخرى قد يصلح هذه المشكلة.</string>
 </resources>

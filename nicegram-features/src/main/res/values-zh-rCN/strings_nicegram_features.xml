@@ -59,7 +59,7 @@
     <string name="NicegramOnbroadingText5">安全的通讯工具，拥有强加密、群组音频和视频电话、公共频道、群聊和机器人、无限制的聊天云存储空间、媒体和文档共享功能。</string>
     <string name="NicegramOnbroadingTitle6">认识莉莉</string>
     <string name="NicegramOnbroadingText6">您的个人人工智能聊天机器人助手，简化您的生活!</string>
-    <string name="NicegramDoubleBottom">双底</string>
+    <string name="NicegramDoubleBottom">Double bottom</string>
     <string name="NicegramDoubleBottomDesc">要启用此功能，您需要有多个帐户并打开密码锁（转到“设置”→ 隐私&amp;amp；安全→ 密码锁）</string>
     <string name="NicegramDoubleBottomAnotherCode">请设置另一个与密码锁不同的密码</string>
     <string name="QuickReplies">快速回复</string>
@@ -78,4 +78,11 @@
     <string name="NicegarmTutorial_HelpBtnText">我如何才能收到该代码？</string>
     <string name="NicegarmTutorial_Dialog_Title">从2023年2月开始，请按照以下步骤接收该代码：</string>
     <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. 登录 <font color="#0A84FF">Telegram</font><br/>2. 登录 <font color="#A134C7">Nicegram</font><br/>3. 输入你将在 <font color="#0A84FF">Telegram</font>上收到的代码]]></string>
+    <string name="NicegramMaxAccount_IncreaseTo">最多100个账户</string>
+    <string name="NicegramMaxAccount_Default">默认的账户数量上限是10</string>
+    <string name="NicegramMaxAccount_IncreaseWarn">增加账户数量的上限可能会对某些设备的应用启动速度和性能产生负面影响。请注意，如果您决定在未来减少它们的最大数量，您可能会失去对新添加的账户的访问</string>
+    <string name="NicegramMaxAccount_Increase">增加</string>
+    <string name="NicegramMaxAccount_Reduce">减少</string>
+    <string name="NicegramMaxAccount_ReduceWarn">减少账户数量的上限可能会提高某些设备上的应用性能。然而，请注意，除了您的第一个账户外，您将不得不重新登录所有的账户</string>
+    <string name="NicegramTryRelogin">退出您的账户并重新登录可能会解决此问题。</string>
 </resources>

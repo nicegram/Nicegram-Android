@@ -1,5 +1,7 @@
 package org.telegram.ui.Components;
 
+import static org.telegram.ui.Components.Bulletin.DURATION_PROLONG;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
@@ -9,6 +11,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextPaint;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -30,13 +33,14 @@ import androidx.recyclerview.widget.ChatListItemAnimator;
 import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ContactsController;
-import org.telegram.messenger.FileLog;
+import org.telegram.messenger.Emoji;
 import org.telegram.messenger.GenericProvider;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -69,7 +73,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
     private WebProgressView progressView;
     private WebViewSwipeContainer swipeContainer;
     private ActionBarMenuItem otherItem;
-    private ActionBarMenuSubItem settingsItem;
+    public ActionBarMenuSubItem settingsItem;
 
     private int measureOffsetY;
 
@@ -92,7 +96,7 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             prolongWebView.query_id = queryId;
             prolongWebView.silent = silent;
             if (replyToMsgId != 0) {
-                prolongWebView.reply_to_msg_id = replyToMsgId;
+                prolongWebView.reply_to = SendMessagesHelper.getInstance(currentAccount).createReplyInput(replyToMsgId);
                 prolongWebView.flags |= 1;
             }
 
@@ -119,6 +123,44 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             }));
         }
     };
+    private boolean hasCustomActionBarBackground;
+    private int customActionBarBackground;
+
+    @Override
+    void onMenuItemClick(int id) {
+        if (id == -1) {
+            if (!webViewContainer.onBackPressed()) {
+                onCheckDismissByUser();
+            }
+        } else if (id == R.id.menu_open_bot) {
+            Bundle bundle = new Bundle();
+            bundle.putLong("user_id", botId);
+            parentAlert.baseFragment.presentFragment(new ChatActivity(bundle));
+            parentAlert.dismiss();
+        } else if (id == R.id.menu_reload_page) {
+            if (webViewContainer.getWebView() != null) {
+                webViewContainer.getWebView().animate().cancel();
+                webViewContainer.getWebView().animate().alpha(0).start();
+            }
+
+            progressView.setLoadProgress(0);
+            progressView.setAlpha(1f);
+            progressView.setVisibility(VISIBLE);
+
+            webViewContainer.setBotUser(MessagesController.getInstance(currentAccount).getUser(botId));
+            webViewContainer.loadFlickerAndSettingsItem(currentAccount, botId, settingsItem);
+            webViewContainer.reload();
+        } else if (id == R.id.menu_delete_bot) {
+            for (TLRPC.TL_attachMenuBot bot : MediaDataController.getInstance(currentAccount).getAttachMenuBots().bots) {
+                if (bot.bot_id == botId) {
+                    parentAlert.onLongClickBotButton(bot, MessagesController.getInstance(currentAccount).getUser(botId));
+                    break;
+                }
+            }
+        } else if (id == R.id.menu_settings) {
+            webViewContainer.onSettingsButtonPressed();
+        }
+    }
 
     public ChatAttachAlertBotWebViewLayout(ChatAttachAlert alert, Context context, Theme.ResourcesProvider resourcesProvider) {
         super(alert, context, resourcesProvider);
@@ -127,45 +169,9 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
         otherItem = menu.addItem(0, R.drawable.ic_ab_other);
         otherItem.addSubItem(R.id.menu_open_bot, R.drawable.msg_bot, LocaleController.getString(R.string.BotWebViewOpenBot));
         settingsItem = otherItem.addSubItem(R.id.menu_settings, R.drawable.msg_settings, LocaleController.getString(R.string.BotWebViewSettings));
+        settingsItem.setVisibility(View.GONE);
         otherItem.addSubItem(R.id.menu_reload_page, R.drawable.msg_retry, LocaleController.getString(R.string.BotWebViewReloadPage));
         otherItem.addSubItem(R.id.menu_delete_bot, R.drawable.msg_delete, LocaleController.getString(R.string.BotWebViewDeleteBot));
-        parentAlert.actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
-            @Override
-            public void onItemClick(int id) {
-                if (id == -1) {
-                    if (!webViewContainer.onBackPressed()) {
-                        onCheckDismissByUser();
-                    }
-                } else if (id == R.id.menu_open_bot) {
-                    Bundle bundle = new Bundle();
-                    bundle.putLong("user_id", botId);
-                    parentAlert.baseFragment.presentFragment(new ChatActivity(bundle));
-                    parentAlert.dismiss();
-                } else if (id == R.id.menu_reload_page) {
-                    if (webViewContainer.getWebView() != null) {
-                        webViewContainer.getWebView().animate().cancel();
-                        webViewContainer.getWebView().animate().alpha(0).start();
-                    }
-
-                    progressView.setLoadProgress(0);
-                    progressView.setAlpha(1f);
-                    progressView.setVisibility(VISIBLE);
-
-                    webViewContainer.setBotUser(MessagesController.getInstance(currentAccount).getUser(botId));
-                    webViewContainer.loadFlickerAndSettingsItem(currentAccount, botId, settingsItem);
-                    webViewContainer.reload();
-                } else if (id == R.id.menu_delete_bot) {
-                    for (TLRPC.TL_attachMenuBot bot : MediaDataController.getInstance(currentAccount).getAttachMenuBots().bots) {
-                        if (bot.bot_id == botId) {
-                            parentAlert.onLongClickBotButton(bot, MessagesController.getInstance(currentAccount).getUser(botId));
-                            break;
-                        }
-                    }
-                } else if (id == R.id.menu_settings) {
-                    webViewContainer.onSettingsButtonPressed();
-                }
-            }
-        });
 
         webViewContainer = new BotWebViewContainer(context, resourcesProvider, getThemedColor(Theme.key_dialogBackground)) {
             @Override
@@ -177,6 +183,11 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
                     }
                 }
                 return super.dispatchTouchEvent(ev);
+            }
+
+            @Override
+            public void onWebViewCreated() {
+                swipeContainer.setWebView(webViewContainer.getWebView());
             }
         };
         swipeContainer = new WebViewSwipeContainer(context) {
@@ -271,6 +282,21 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
         return customBackground;
     }
 
+    @Override
+    boolean hasCustomActionBarBackground() {
+        return hasCustomActionBarBackground;
+    }
+
+    @Override
+    int getCustomActionBarBackground() {
+        return customActionBarBackground;
+    }
+
+    public void setCustomActionBarBackground(int customActionBarBackground) {
+        hasCustomActionBarBackground = true;
+        this.customActionBarBackground = customActionBarBackground;
+    }
+
     public boolean canExpandByRequest() {
         return /* System.currentTimeMillis() - lastSwipeTime > 1000 && */ !swipeContainer.isSwipeInProgress();
     }
@@ -356,7 +382,13 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
 
     @Override
     void onShow(ChatAttachAlert.AttachAlertLayout previousLayout) {
-        parentAlert.actionBar.setTitle(UserObject.getUserName(MessagesController.getInstance(currentAccount).getUser(botId)));
+        CharSequence title = UserObject.getUserName(MessagesController.getInstance(currentAccount).getUser(botId));
+        try {
+            TextPaint tp = new TextPaint();
+            tp.setTextSize(AndroidUtilities.dp(20));
+            title = Emoji.replaceEmoji(title, tp.getFontMetricsInt(), false);
+        } catch (Exception ignore) {}
+        parentAlert.actionBar.setTitle(title);
         swipeContainer.setSwipeOffsetY(0);
         if (webViewContainer.getWebView() != null) {
             webViewContainer.getWebView().scrollTo(0, 0);
@@ -454,25 +486,15 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
         }
 
         if (replyToMsgId != 0) {
-            req.reply_to_msg_id = replyToMsgId;
+            req.reply_to = SendMessagesHelper.getInstance(currentAccount).createReplyInput(replyToMsgId);
             req.flags |= 1;
         }
 
-        try {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("bg_color", getThemedColor(Theme.key_dialogBackground));
-            jsonObject.put("secondary_bg_color", getThemedColor(Theme.key_windowBackgroundGray));
-            jsonObject.put("text_color", getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
-            jsonObject.put("hint_color", getThemedColor(Theme.key_windowBackgroundWhiteHintText));
-            jsonObject.put("link_color", getThemedColor(Theme.key_windowBackgroundWhiteLinkText));
-            jsonObject.put("button_color", getThemedColor(Theme.key_featuredStickers_addButton));
-            jsonObject.put("button_text_color", getThemedColor(Theme.key_featuredStickers_buttonText));
-
+        JSONObject theme_params = BotWebViewSheet.makeThemeParams(resourcesProvider);
+        if (theme_params != null) {
             req.theme_params = new TLRPC.TL_dataJSON();
-            req.theme_params.data = jsonObject.toString();
+            req.theme_params.data = theme_params.toString();
             req.flags |= 4;
-        } catch (Exception e) {
-            FileLog.e(e);
         }
 
         ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
@@ -480,7 +502,6 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
                 TLRPC.TL_webViewResultUrl resultUrl = (TLRPC.TL_webViewResultUrl) response;
                 queryId = resultUrl.query_id;
                 webViewContainer.loadUrl(currentAccount, resultUrl.url);
-                swipeContainer.setWebView(webViewContainer.getWebView());
 
                 AndroidUtilities.runOnUIThread(pollRunnable);
             }
@@ -620,6 +641,34 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
         } else if (id == NotificationCenter.didSetNewTheme) {
             webViewContainer.updateFlickerBackgroundColor(getThemedColor(Theme.key_dialogBackground));
         }
+    }
+
+    public void showJustAddedBulletin() {
+        TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(botId);
+        TLRPC.TL_attachMenuBot currentBot = null;
+        for (TLRPC.TL_attachMenuBot bot : MediaDataController.getInstance(currentAccount).getAttachMenuBots().bots) {
+            if (bot.bot_id == botId) {
+                currentBot = bot;
+                break;
+            }
+        }
+        if (currentBot == null) {
+            return;
+        }
+        String str;
+        if (currentBot.show_in_side_menu && currentBot.show_in_attach_menu) {
+            str = LocaleController.formatString("BotAttachMenuShortcatAddedAttachAndSide", R.string.BotAttachMenuShortcatAddedAttachAndSide, user.first_name);
+        } else if (currentBot.show_in_side_menu) {
+            str = LocaleController.formatString("BotAttachMenuShortcatAddedSide", R.string.BotAttachMenuShortcatAddedSide, user.first_name);
+        } else {
+            str = LocaleController.formatString("BotAttachMenuShortcatAddedAttach", R.string.BotAttachMenuShortcatAddedAttach, user.first_name);
+        }
+        AndroidUtilities.runOnUIThread(() -> {
+        BulletinFactory.of(parentAlert.getContainer(), resourcesProvider)
+                .createSimpleBulletin(R.raw.contact_check, AndroidUtilities.replaceTags(str))
+                .setDuration(DURATION_PROLONG)
+                .show(true);
+        }, 200);
     }
 
     public static class WebViewSwipeContainer extends FrameLayout {
@@ -843,6 +892,11 @@ public class ChatAttachAlertBotWebViewLayout extends ChatAttachAlert.AttachAlert
             setTranslationY(Math.max(topActionBarOffsetY, offsetY + swipeOffsetY));
             if (scrollListener != null) {
                 scrollListener.run();
+            }
+
+            if (Bulletin.getVisibleBulletin() != null) {
+                Bulletin bulletin = Bulletin.getVisibleBulletin();
+                bulletin.updatePosition();
             }
         }
 

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools"
-    package="org.telegram.messenger"
     android:installLocation="auto">
 
     <supports-screens android:anyDensity="true"
@@ -30,6 +29,9 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
@@ -52,6 +54,7 @@
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS"/>
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <uses-permission android:name="com.sec.android.provider.badge.permission.READ"/>
     <uses-permission android:name="com.sec.android.provider.badge.permission.WRITE"/>
@@ -221,6 +224,70 @@
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity-alias>
 
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.CommunityClassic"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_community_classic"
+            android:roundIcon="@mipmap/ic_community_classic_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.CommunityRuby"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_community_ruby"
+            android:roundIcon="@mipmap/ic_community_ruby_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.CommunityWatercolor"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_community_watercolor"
+            android:roundIcon="@mipmap/ic_community_watercolor_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
+        <activity-alias
+            android:enabled="false"
+            android:name="org.telegram.messenger.CommunityOnyx"
+            android:targetActivity="org.telegram.ui.LaunchActivity"
+            android:icon="@mipmap/ic_community_onyx"
+            android:roundIcon="@mipmap/ic_community_onyx_round"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
+
         <activity
             android:name="org.telegram.ui.LaunchActivity"
             android:theme="@style/Theme.TMessages.Start"
@@ -277,12 +344,20 @@
                 <data android:host="telegram.dog" android:scheme="https" />
                 <data android:host="t.me" android:scheme="http" />
                 <data android:host="t.me" android:scheme="https" />
+
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:host="nicegram.app" android:scheme="https" android:path="/deeplink" />
+                <data android:scheme="ncg" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ncg" />
             </intent-filter>
             <intent-filter android:icon="@mipmap/ic_launcher_default" android:roundIcon="@mipmap/ic_launcher_default_round" android:priority="1">
                 <action android:name="android.intent.action.VIEW" />
@@ -466,7 +541,8 @@
         <service android:name=".BringAppForegroundService" android:enabled="true" android:exported="true"/>
         <service android:name=".NotificationsService" android:enabled="true" android:exported="true"/>
         <service android:name=".NotificationRepeat" android:exported="false"/>
-        <service android:name=".VideoEncodingService" android:enabled="true" android:exported="true"/>
+        <service android:name=".VideoEncodingService" android:enabled="true" android:exported="true" android:foregroundServiceType="dataSync"/>
+        <service android:name="org.telegram.ui.Stories.recorder.StoryUploadingService" android:enabled="true" android:exported="true"/>
         <service android:name=".ImportingService" android:enabled="true" android:exported="true"/>
         <service android:name=".LocationSharingService"
             android:foregroundServiceType="location"

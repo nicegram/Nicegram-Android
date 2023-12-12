@@ -1632,6 +1632,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         ContactsController.getInstance(currentAccount).checkAppAccount();
         MessagesController.getInstance(currentAccount).checkPromoInfo(true);
         ConnectionsManager.getInstance(currentAccount).updateDcSettings();
+        MessagesController.getInstance(currentAccount).loadAppConfig();
 
         if (res.future_auth_token != null) {
             AuthTokensHelper.saveLogInToken(res);
@@ -2713,8 +2714,14 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && AndroidUtilities.isSimAvailable()) {
                             boolean allowCall = getParentActivity().checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED;
                             boolean allowCancelCall = getParentActivity().checkSelfPermission(Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED;
-                            boolean allowReadCallLog = Build.VERSION.SDK_INT < Build.VERSION_CODES.P || getParentActivity().checkSelfPermission(Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED;
+                            boolean allowReadCallLog = false;
                             boolean allowReadPhoneNumbers = Build.VERSION.SDK_INT < Build.VERSION_CODES.O || getParentActivity().checkSelfPermission(Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED;;
+                            if (codeField != null && "888".equals(codeField.getText())) {
+                                allowCall = true;
+                                allowCancelCall = true;
+                                allowReadCallLog = true;
+                                allowReadPhoneNumbers = true;
+                            }
                             if (checkPermissions) {
                                 permissionsItems.clear();
                                 if (!allowCall) {
@@ -2723,15 +2730,12 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                                 if (!allowCancelCall) {
                                     permissionsItems.add(Manifest.permission.CALL_PHONE);
                                 }
-                                if (!allowReadCallLog) {
-                                    permissionsItems.add(Manifest.permission.READ_CALL_LOG);
-                                }
                                 if (!allowReadPhoneNumbers && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                     permissionsItems.add(Manifest.permission.READ_PHONE_NUMBERS);
                                 }
                                 if (!permissionsItems.isEmpty()) {
                                     SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-                                    if (preferences.getBoolean("firstlogin", true) || getParentActivity().shouldShowRequestPermissionRationale(Manifest.permission.READ_PHONE_STATE) || getParentActivity().shouldShowRequestPermissionRationale(Manifest.permission.READ_CALL_LOG)) {
+                                    if (preferences.getBoolean("firstlogin", true) || getParentActivity().shouldShowRequestPermissionRationale(Manifest.permission.READ_PHONE_STATE)) {
                                         preferences.edit().putBoolean("firstlogin", false).commit();
                                         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
 
@@ -2788,7 +2792,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && simcardAvailable) {
                 allowCall = getParentActivity().checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED;
                 allowCancelCall = getParentActivity().checkSelfPermission(Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED;
-                allowReadCallLog = Build.VERSION.SDK_INT < Build.VERSION_CODES.P || getParentActivity().checkSelfPermission(Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED;
+                allowReadCallLog = false;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     allowReadPhoneNumbers = getParentActivity().checkSelfPermission(Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED;
                 }
@@ -2800,15 +2804,12 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                     if (!allowCancelCall) {
                         permissionsItems.add(Manifest.permission.CALL_PHONE);
                     }
-                    if (!allowReadCallLog) {
-                        permissionsItems.add(Manifest.permission.READ_CALL_LOG);
-                    }
                     if (!allowReadPhoneNumbers && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         permissionsItems.add(Manifest.permission.READ_PHONE_NUMBERS);
                     }
                     if (!permissionsItems.isEmpty()) {
                         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-                        if (preferences.getBoolean("firstlogin", true) || getParentActivity().shouldShowRequestPermissionRationale(Manifest.permission.READ_PHONE_STATE) || getParentActivity().shouldShowRequestPermissionRationale(Manifest.permission.READ_CALL_LOG)) {
+                        if (preferences.getBoolean("firstlogin", true) || getParentActivity().shouldShowRequestPermissionRationale(Manifest.permission.READ_PHONE_STATE)) {
                             preferences.edit().putBoolean("firstlogin", false).commit();
                             AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
 
@@ -2947,7 +2948,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
             preferences.edit().remove("sms_hash_code").apply();
             if (settings.allow_app_hash) {
-                preferences.edit().putString("sms_hash", BuildVars.SMS_HASH).apply();
+                preferences.edit().putString("sms_hash", BuildVars.getSmsHash()).apply();
             } else {
                 preferences.edit().remove("sms_hash").apply();
             }
@@ -3273,11 +3274,11 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         private TextView titleTextView;
         private ImageView blackImageView;
         private RLottieImageView blueImageView;
-        private TextView timeText;
+        private LoadingTextView timeText;
 
         private FrameLayout bottomContainer;
         private ViewSwitcher errorViewSwitcher;
-        private TextView problemText;
+        private LoadingTextView problemText;
         private LinearLayout problemFrame;
 
         private LinearLayout noSmsCodeButton;
@@ -3293,6 +3294,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         private TextView prefixTextView;
 
         private TextView missedCallDescriptionSubtitle;
+        private TextView missedCallDescriptionSubtitle2;
         private ImageView missedCallArrowIcon, missedCallPhoneIcon;
 
         private RLottieDrawable starsToDotsDrawable;
@@ -3411,13 +3413,13 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
                 addView(linearLayout, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, 34, Gravity.CENTER_HORIZONTAL, 0, 28, 0, 0));
 
-                missedCallDescriptionSubtitle = new TextView(context);
-                missedCallDescriptionSubtitle.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-                missedCallDescriptionSubtitle.setGravity(Gravity.CENTER_HORIZONTAL);
-                missedCallDescriptionSubtitle.setLineSpacing(AndroidUtilities.dp(2), 1.0f);
-                missedCallDescriptionSubtitle.setText(AndroidUtilities.replaceTags(LocaleController.getString("MissedCallDescriptionSubtitle2", R.string.MissedCallDescriptionSubtitle2)));
+                missedCallDescriptionSubtitle2 = new TextView(context);
+                missedCallDescriptionSubtitle2.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+                missedCallDescriptionSubtitle2.setGravity(Gravity.CENTER_HORIZONTAL);
+                missedCallDescriptionSubtitle2.setLineSpacing(AndroidUtilities.dp(2), 1.0f);
+                missedCallDescriptionSubtitle2.setText(AndroidUtilities.replaceTags(LocaleController.getString("MissedCallDescriptionSubtitle2", R.string.MissedCallDescriptionSubtitle2)));
 
-                addView(missedCallDescriptionSubtitle, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 36, 28, 36, 12));
+                addView(missedCallDescriptionSubtitle2, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 36, 28, 36, 12));
             } else if (currentType == AUTH_TYPE_FLASH_CALL) {
                 confirmTextView.setGravity(Gravity.CENTER_HORIZONTAL);
                 centerContainer = new FrameLayout(context);
@@ -3486,70 +3488,14 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             problemFrame.setOrientation(VERTICAL);
             problemFrame.setGravity(Gravity.CENTER_HORIZONTAL);
 
-            timeText = new TextView(context) {
-                private LoadingDrawable loadingDrawable = new LoadingDrawable();
-
-                {
-                    loadingDrawable.setAppearByGradient(true);
-                }
-
+            timeText = new LoadingTextView(context) {
                 @Override
-                public void setText(CharSequence text, BufferType type) {
-                    super.setText(text, type);
-
-                    updateLoadingLayout();
-                }
-
-                @Override
-                protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-                    super.onLayout(changed, left, top, right, bottom);
-
-                    updateLoadingLayout();
-                }
-
-                private void updateLoadingLayout() {
-                    Layout layout = getLayout();
-                    if (layout == null) {
-                        return;
-                    }
-                    CharSequence text = layout.getText();
-                    if (text == null) {
-                        return;
-                    }
-                    LinkPath path = new LinkPath(true);
-                    int start = 0;
-                    int end = text.length();
-                    path.setCurrentLayout(layout, start, 0);
-                    layout.getSelectionPath(start, end, path);
-                    loadingDrawable.usePath(path);
-                    loadingDrawable.setRadiiDp(4);
-
-                    int color = getThemedColor(Theme.key_chat_linkSelectBackground);
-                    loadingDrawable.setColors(
-                            Theme.multAlpha(color, 0.85f),
-                            Theme.multAlpha(color, 2f),
-                            Theme.multAlpha(color, 3.5f),
-                            Theme.multAlpha(color, 6f)
-                    );
-
-                    loadingDrawable.updateBounds();
-                }
-
-                @Override
-                protected void onDraw(Canvas canvas) {
-                    super.onDraw(canvas);
-
-                    if (isResendingCode) {
-                        canvas.save();
-                        canvas.translate(getPaddingLeft(), getPaddingTop());
-                        loadingDrawable.draw(canvas);
-                        canvas.restore();
-                        invalidate();
-                    }
+                protected boolean isRippleEnabled() {
+                    return getVisibility() == View.VISIBLE && !(time > 0 && timeTimer != null);
                 }
             };
             timeText.setLineSpacing(AndroidUtilities.dp(2), 1.0f);
-            timeText.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(8), AndroidUtilities.dp(6), AndroidUtilities.dp(16));
+            timeText.setPadding(AndroidUtilities.dp(14), AndroidUtilities.dp(8), AndroidUtilities.dp(14), AndroidUtilities.dp(16));
             timeText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
             timeText.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
             timeText.setOnClickListener(v-> {
@@ -3564,7 +3510,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 timeText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteValueText));
 
                 if (nextType == AUTH_TYPE_CALL || nextType == AUTH_TYPE_SMS || nextType == AUTH_TYPE_MISSED_CALL || nextType == AUTH_TYPE_FRAGMENT_SMS) {
-                    timeText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
+//                    timeText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
                     if (nextType == AUTH_TYPE_CALL || nextType == AUTH_TYPE_MISSED_CALL) {
                         timeText.setText(LocaleController.getString("Calling", R.string.Calling));
                     } else {
@@ -3639,72 +3585,16 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 anim.setInterpolator(Easings.easeInOutQuad);
                 errorViewSwitcher.setOutAnimation(anim);
 
-                problemText = new TextView(context) {
-                    private LoadingDrawable loadingDrawable = new LoadingDrawable();
-
-                    {
-                        loadingDrawable.setAppearByGradient(true);
-                    }
-
+                problemText = new LoadingTextView(context) {
                     @Override
-                    public void setText(CharSequence text, BufferType type) {
-                        super.setText(text, type);
-
-                        updateLoadingLayout();
-                    }
-
-                    @Override
-                    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-                        super.onLayout(changed, left, top, right, bottom);
-
-                        updateLoadingLayout();
-                    }
-
-                    private void updateLoadingLayout() {
-                        Layout layout = getLayout();
-                        if (layout == null) {
-                            return;
-                        }
-                        CharSequence text = layout.getText();
-                        if (text == null) {
-                            return;
-                        }
-                        LinkPath path = new LinkPath(true);
-                        int start = 0;
-                        int end = text.length();
-                        path.setCurrentLayout(layout, start, 0);
-                        layout.getSelectionPath(start, end, path);
-                        loadingDrawable.usePath(path);
-                        loadingDrawable.setRadiiDp(4);
-
-                        int color = getThemedColor(Theme.key_chat_linkSelectBackground);
-                        loadingDrawable.setColors(
-                                Theme.multAlpha(color, 0.85f),
-                                Theme.multAlpha(color, 2f),
-                                Theme.multAlpha(color, 3.5f),
-                                Theme.multAlpha(color, 6f)
-                        );
-
-                        loadingDrawable.updateBounds();
-                    }
-
-                    @Override
-                    protected void onDraw(Canvas canvas) {
-                        super.onDraw(canvas);
-
-                        if (isResendingCode) {
-                            canvas.save();
-                            canvas.translate(getPaddingLeft(), getPaddingTop());
-                            loadingDrawable.draw(canvas);
-                            canvas.restore();
-                            invalidate();
-                        }
+                    protected boolean isRippleEnabled() {
+                        return isClickable() && getVisibility() == View.VISIBLE && !(nextPressed || timeText != null && timeText.getVisibility() != View.GONE || isResendingCode);
                     }
                 };
                 problemText.setLineSpacing(AndroidUtilities.dp(2), 1.0f);
                 problemText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
                 problemText.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.TOP);
-                problemText.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(8), AndroidUtilities.dp(6), AndroidUtilities.dp(16));
+                problemText.setPadding(AndroidUtilities.dp(14), AndroidUtilities.dp(8), AndroidUtilities.dp(14), AndroidUtilities.dp(16));
                 problemFrame.addView(problemText, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
                 errorViewSwitcher.addView(problemFrame, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
             } else {
@@ -3762,7 +3652,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
             if (currentType != AUTH_TYPE_FRAGMENT_SMS) {
                 problemText.setOnClickListener(v -> {
-                    if (nextPressed || timeText.getVisibility() != View.GONE || isResendingCode) {
+                    if (nextPressed || timeText != null && timeText.getVisibility() != View.GONE || isResendingCode) {
                         return;
                     }
                     boolean email = nextType == 0;
@@ -3806,6 +3696,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
             if (currentType == AUTH_TYPE_MISSED_CALL) {
                 missedCallDescriptionSubtitle.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
+                missedCallDescriptionSubtitle2.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
                 missedCallArrowIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteInputFieldActivated), PorterDuff.Mode.SRC_IN));
                 missedCallPhoneIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText), PorterDuff.Mode.SRC_IN));
                 prefixTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
@@ -4088,6 +3979,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 if (currentType == AUTH_TYPE_MESSAGE) {
                     if (nextType == AUTH_TYPE_FLASH_CALL || nextType == AUTH_TYPE_CALL || nextType == AUTH_TYPE_MISSED_CALL) {
                         problemText.setText(LocaleController.getString("DidNotGetTheCodePhone", R.string.DidNotGetTheCodePhone));
+                    } else if (nextType == AUTH_TYPE_FRAGMENT_SMS) {
+                        problemText.setText(LocaleController.getString("DidNotGetTheCodeFragment", R.string.DidNotGetTheCodeFragment));
                     } else if (nextType == 0) {
                         problemText.setText(LocaleController.getString("DidNotGetTheCode", R.string.DidNotGetTheCode));
                     } else {
@@ -4134,7 +4027,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 } else if (nextType == AUTH_TYPE_CALL || nextType == AUTH_TYPE_SMS || nextType == AUTH_TYPE_MISSED_CALL) {
                     createTimer();
                 }
-            } else if (currentType == AUTH_TYPE_SMS && (nextType == AUTH_TYPE_CALL || nextType == AUTH_TYPE_FLASH_CALL)) {
+            } else if (currentType == AUTH_TYPE_SMS && (nextType == AUTH_TYPE_SMS || nextType == AUTH_TYPE_CALL || nextType == AUTH_TYPE_FLASH_CALL)) {
                 timeText.setText(LocaleController.formatString("CallAvailableIn", R.string.CallAvailableIn, 2, 0));
                 setProblemTextVisible(time < 1000);
                 timeText.setVisibility(time < 1000 ? GONE : VISIBLE);
@@ -4167,6 +4060,18 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                     problemText.setVisibility(time < 1000 ? VISIBLE : GONE);
                 }
                 createTimer();
+            } else if (currentType == AUTH_TYPE_MISSED_CALL) {
+                if (nextType == AUTH_TYPE_CALL || nextType == AUTH_TYPE_SMS || nextType == AUTH_TYPE_MISSED_CALL) {
+                    setProblemTextVisible(false);
+                    timeText.setVisibility(VISIBLE);
+                    problemText.setVisibility(GONE);
+                    if (nextType == AUTH_TYPE_CALL || nextType == AUTH_TYPE_MISSED_CALL) {
+                        timeText.setText(LocaleController.formatString("CallAvailableIn", R.string.CallAvailableIn, 1, 0));
+                    } else if (nextType == AUTH_TYPE_SMS) {
+                        timeText.setText(LocaleController.formatString("SmsAvailableIn", R.string.SmsAvailableIn, 1, 0));
+                    }
+                    createTimer();
+                }
             } else {
                 timeText.setVisibility(GONE);
                 if (problemText != null) {
@@ -4194,6 +4099,104 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             }
         }
 
+        private class LoadingTextView extends TextView {
+
+            private final Drawable rippleDrawable = Theme.createSelectorDrawable(Theme.multAlpha(Theme.getColor(Theme.key_windowBackgroundWhiteValueText), .10f), Theme.RIPPLE_MASK_ROUNDRECT_6DP);
+            public final LoadingDrawable loadingDrawable = new LoadingDrawable();
+            
+            public LoadingTextView(Context context) {
+                super(context);
+                rippleDrawable.setCallback(this);
+                loadingDrawable.setAppearByGradient(true);
+                loadingDrawable.setSpeed(.8f);
+            }
+
+            @Override
+            public void setText(CharSequence text, BufferType type) {
+                super.setText(text, type);
+
+                updateLoadingLayout();
+            }
+
+            @Override
+            protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+                super.onLayout(changed, left, top, right, bottom);
+
+                updateLoadingLayout();
+            }
+
+            private void updateLoadingLayout() {
+                Layout layout = getLayout();
+                if (layout == null) {
+                    return;
+                }
+                CharSequence text = layout.getText();
+                if (text == null) {
+                    return;
+                }
+                LinkPath path = new LinkPath(true);
+                path.setInset(AndroidUtilities.dp(3), AndroidUtilities.dp(6));
+                int start = 0;
+                int end = text.length();
+                path.setCurrentLayout(layout, start, 0);
+                layout.getSelectionPath(start, end, path);
+                path.getBounds(AndroidUtilities.rectTmp);
+                rippleDrawable.setBounds((int) AndroidUtilities.rectTmp.left, (int) AndroidUtilities.rectTmp.top, (int) AndroidUtilities.rectTmp.right, (int) AndroidUtilities.rectTmp.bottom);
+                loadingDrawable.usePath(path);
+                loadingDrawable.setRadiiDp(4);
+
+                int color = getThemedColor(Theme.key_chat_linkSelectBackground);
+                loadingDrawable.setColors(
+                        Theme.multAlpha(color, 0.85f),
+                        Theme.multAlpha(color, 2f),
+                        Theme.multAlpha(color, 3.5f),
+                        Theme.multAlpha(color, 6f)
+                );
+
+                loadingDrawable.updateBounds();
+            }
+
+            @Override
+            protected void onDraw(Canvas canvas) {
+                canvas.save();
+                canvas.translate(getPaddingLeft(), getPaddingTop());
+                rippleDrawable.draw(canvas);
+                canvas.restore();
+
+                super.onDraw(canvas);
+
+                if (isResendingCode || loadingDrawable.isDisappearing()) {
+                    canvas.save();
+                    canvas.translate(getPaddingLeft(), getPaddingTop());
+                    loadingDrawable.draw(canvas);
+                    canvas.restore();
+                    invalidate();
+                }
+            }
+
+            @Override
+            protected boolean verifyDrawable(@NonNull Drawable who) {
+                return who == rippleDrawable || super.verifyDrawable(who);
+            }
+
+            @Override
+            public boolean onTouchEvent(MotionEvent event) {
+                if (isRippleEnabled() && event.getAction() == MotionEvent.ACTION_DOWN) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        rippleDrawable.setHotspot(event.getX(), event.getY());
+                    }
+                    rippleDrawable.setState(new int[]{android.R.attr.state_enabled, android.R.attr.state_pressed});
+                } else if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_UP) {
+                    rippleDrawable.setState(new int[]{});
+                }
+                return super.onTouchEvent(event);
+            }
+
+            protected boolean isRippleEnabled() {
+                return true;
+            }
+        }
+
         private void setProblemTextVisible(boolean visible) {
             if (problemText == null) {
                 return;
@@ -4210,6 +4213,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 return;
             }
             codeTime = 15000;
+            if (time > codeTime) {
+                codeTime = time;
+            }
             codeTimer = new Timer();
             lastCodeTime = System.currentTimeMillis();
             codeTimer.schedule(new TimerTask() {
@@ -4272,6 +4278,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                             int seconds = time / 1000 - minutes * 60;
                             if (nextType == AUTH_TYPE_CALL || nextType == AUTH_TYPE_FLASH_CALL || nextType == AUTH_TYPE_MISSED_CALL) {
                                 timeText.setText(LocaleController.formatString("CallAvailableIn", R.string.CallAvailableIn, minutes, seconds));
+                            } else if (currentType == AUTH_TYPE_SMS && nextType == AUTH_TYPE_SMS) {
+                                timeText.setText(LocaleController.formatString("ResendSmsAvailableIn", R.string.ResendSmsAvailableIn, minutes, seconds));
                             } else if (nextType == AUTH_TYPE_SMS) {
                                 timeText.setText(LocaleController.formatString("SmsAvailableIn", R.string.SmsAvailableIn, minutes, seconds));
                             }
@@ -4457,7 +4465,11 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         tryHideProgress(false);
                         nextPressed = false;
                         if (error == null) {
-                            animateSuccess(() -> new AlertDialog.Builder(getParentActivity())
+                            Activity activity = getParentActivity();
+                            if (activity == null) {
+                                return;
+                            }
+                            animateSuccess(() -> new AlertDialog.Builder(activity)
                                     .setTitle(LocaleController.getString(R.string.CancelLinkSuccessTitle))
                                     .setMessage(LocaleController.formatString("CancelLinkSuccess", R.string.CancelLinkSuccess, PhoneFormat.getInstance().format("+" + phone)))
                                     .setPositiveButton(LocaleController.getString(R.string.Close), null)
@@ -5855,7 +5867,12 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                                 .requestIdToken(BuildVars.GOOGLE_AUTH_CLIENT_ID)
                                 .requestEmail()
                                 .build());
-                googleClient.signOut().addOnCompleteListener(command -> getParentActivity().startActivityForResult(googleClient.getSignInIntent(), BasePermissionsActivity.REQUEST_CODE_SIGN_IN_WITH_GOOGLE));
+                googleClient.signOut().addOnCompleteListener(command -> {
+                    if (getParentActivity() == null) {
+                        return;
+                    }
+                    getParentActivity().startActivityForResult(googleClient.getSignInIntent(), BasePermissionsActivity.REQUEST_CODE_SIGN_IN_WITH_GOOGLE);
+                });
             });
 
             cantAccessEmailFrameLayout = new FrameLayout(context);
@@ -6028,6 +6045,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             req.phone_number = requestPhone;
             req.phone_code_hash = phoneHash;
             getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                if (getParentActivity() == null) {
+                    return;
+                }
                 requestingEmailReset = false;
                 if (response instanceof TLRPC.TL_auth_sentCode) {
                     TLRPC.TL_auth_sentCode sentCode = (TLRPC.TL_auth_sentCode) response;

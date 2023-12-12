@@ -81,6 +81,9 @@ import java.util.Objects;
 
 public class SessionsActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
+    public static final int TYPE_DEVICES = 0;
+    public static final int TYPE_WEB_SESSIONS = 1;
+
     private ListAdapter listAdapter;
     private RecyclerListView listView;
     private EmptyTextProgressView emptyView;
@@ -603,6 +606,10 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
                     listAdapter.notifyDataSetChanged();
                 }
 
+                if (delegate != null) {
+                    delegate.sessionsLoaded();
+                }
+
                 if (repeatLoad > 0) {
                     repeatLoad--;
                     if (repeatLoad > 0) {
@@ -625,6 +632,10 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
 //                itemsEnterAnimator.showItemsAnimated(0);
                 if (listAdapter != null) {
                     listAdapter.notifyDataSetChanged();
+                }
+
+                if (delegate != null) {
+                    delegate.sessionsLoaded();
                 }
 
                 if (repeatLoad > 0) {
@@ -1243,11 +1254,11 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
         }
     }
 
-    int getSessionsCount() {
+    public int getSessionsCount() {
         if (sessions.size() == 0 && loading) {
             return 0;
         }
-        return sessions.size() + 1;
+        return sessions.size() + (currentType == TYPE_DEVICES ? 1 : 0);
     }
 
     public void setDelegate(Delegate delegate) {

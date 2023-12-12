@@ -103,7 +103,7 @@ public class PhotoUtilities {
                                 args.putLong("user_id", UserConfig.getInstance(currentAccount).clientUserId);
                                 layout.getLastFragment().presentFragment(new ProfileActivity(args));
                             });
-                            BulletinFactory.of(layout.getLastFragment()).createUsersBulletin(Collections.singletonList(user), title, subtitle).show();
+                            BulletinFactory.of(layout.getLastFragment()).createUsersBulletin(Collections.singletonList(user), title, subtitle, null).show();
                         }
                     }
                 }
@@ -211,7 +211,7 @@ public class PhotoUtilities {
                             File src = FileLoader.getInstance(chatActivity.getCurrentAccount()).getPathToAttach(avatarBig[0], true);
                             src.renameTo(destFile);
                         }
-                        chatActivity.getMessagesStorage().addDialogPhoto(user.id, ((TLRPC.TL_photos_photo) response).photo);
+                        chatActivity.getMessagesController().getDialogPhotos(user.id).addPhotoAtStart(((TLRPC.TL_photos_photo) response).photo);
                         ArrayList<TLRPC.User> users = new ArrayList<>();
                         users.add(user);
                         chatActivity.getMessagesStorage().putUsersAndChats(users, null, false, true);
@@ -224,7 +224,7 @@ public class PhotoUtilities {
                             args.putLong("user_id", userId);
                             chatActivity.presentFragment(new ProfileActivity(args));
                         });
-                        BulletinFactory.of(chatActivity).createUsersBulletin(Collections.singletonList(user), title, subtitle).show();
+                        BulletinFactory.of(chatActivity).createUsersBulletin(Collections.singletonList(user), title, subtitle, null).show();
                     }
                 }));
             } else {

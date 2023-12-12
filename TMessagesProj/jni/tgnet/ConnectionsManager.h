@@ -59,12 +59,13 @@ public:
     void setDelegate(ConnectiosManagerDelegate *connectiosManagerDelegate);
     ConnectionState getConnectionState();
     void setUserId(int64_t userId);
+    void setUserPremium(bool premium);
     void switchBackend(bool restart);
     void resumeNetwork(bool partial);
     void pauseNetwork();
     void setNetworkAvailable(bool value, int32_t type, bool slow);
     void setIpStrategy(uint8_t value);
-    void init(uint32_t version, int32_t layer, int32_t apiId, std::string deviceModel, std::string systemVersion, std::string appVersion, std::string langCode, std::string systemLangCode, std::string configPath, std::string logPath, std::string regId, std::string cFingerprint, std::string installerId, std::string packageId, int32_t timezoneOffset, int64_t userId, bool isPaused, bool enablePushConnection, bool hasNetwork, int32_t networkType, int32_t performanceClass);
+    void init(uint32_t version, int32_t layer, int32_t apiId, std::string deviceModel, std::string systemVersion, std::string appVersion, std::string langCode, std::string systemLangCode, std::string configPath, std::string logPath, std::string regId, std::string cFingerprint, std::string installerId, std::string packageId, int32_t timezoneOffset, int64_t userId, bool userPremium, bool isPaused, bool enablePushConnection, bool hasNetwork, int32_t networkType, int32_t performanceClass);
     void setProxySettings(std::string address, uint16_t port, std::string username, std::string password, std::string secret);
     void setLangCode(std::string langCode);
     void setRegId(std::string regId);
@@ -78,6 +79,9 @@ public:
     void sendRequest(TLObject *object, onCompleteFunc onComplete, onQuickAckFunc onQuickAck, onWriteToSocketFunc onWriteToSocket, uint32_t flags, uint32_t datacenterId, ConnectionType connetionType, bool immediate, int32_t requestToken, jobject ptr1, jobject ptr2, jobject ptr3);
     static void useJavaVM(JavaVM *vm, bool useJavaByteBuffers);
 #endif
+
+    void reconnect(int32_t datacentrId, int32_t connectionType);
+    void failNotRunningRequest(int32_t token);
 
 private:
     static void *ThreadProc(void *data);
@@ -203,6 +207,7 @@ private:
     int *pipeFd = nullptr;
     NativeByteBuffer *networkBuffer;
 
+    requestsList waitingLoginRequests;
     requestsList requestsQueue;
     requestsList runningRequests;
     std::vector<uint32_t> requestingSaltsForDc;
@@ -227,6 +232,7 @@ private:
     std::string currentConfigPath;
     std::string currentLogPath;
     int64_t currentUserId = 0;
+    bool currentUserPremium = false;
     bool registeredForInternalPush = false;
     bool pushConnectionEnabled = true;
     int32_t currentPerformanceClass = -1;
@@ -237,6 +243,7 @@ private:
     std::vector<uint32_t> unknownDatacenterIds;
     std::vector<std::pair<Datacenter *, ConnectionType>> neededDatacenters;
     std::map<uint32_t, uint32_t> downloadRunningRequestCount;
+    std::map<uint32_t, uint32_t> downloadCancelRunningRequestCount;
     std::vector<Datacenter *> unauthorizedDatacenters;
     NativeByteBuffer *sizeCalculator;
 
@@ -252,6 +259,7 @@ private:
     friend class Config;
     friend class FileLog;
     friend class Handshake;
+
 };
 
 #ifdef ANDROID
