@@ -101,4 +101,4 @@ NicegramNetworkConsts.kt
 nicegram-assistant-android/
 .gitmodules
 gradle.properties
-BuildVars.java
+TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java
