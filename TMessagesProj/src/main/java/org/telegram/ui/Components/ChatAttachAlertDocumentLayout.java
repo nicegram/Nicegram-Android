@@ -454,7 +454,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
                             }
                         });
                         fragment.setMaxSelectedPhotos(maxSelectedFiles, false);
-                        parentAlert.baseFragment.presentFragment(fragment);
+                        parentAlert.presentFragment(fragment);
                         parentAlert.dismiss(true);
                     } else if (item.icon == R.drawable.files_music) {
                         if (delegate != null) {
@@ -786,7 +786,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
                     return false;
                 }
                 if ((item.file.length() > FileLoader.DEFAULT_MAX_FILE_SIZE && !UserConfig.getInstance(UserConfig.selectedAccount).isPremium()) || item.file.length() > FileLoader.DEFAULT_MAX_FILE_SIZE_PREMIUM) {
-                    LimitReachedBottomSheet limitReachedBottomSheet = new LimitReachedBottomSheet(parentAlert.baseFragment, parentAlert.getContainer().getContext(), LimitReachedBottomSheet.TYPE_LARGE_FILE, UserConfig.selectedAccount);
+                    LimitReachedBottomSheet limitReachedBottomSheet = new LimitReachedBottomSheet(parentAlert.baseFragment, parentAlert.getContainer().getContext(), LimitReachedBottomSheet.TYPE_LARGE_FILE, UserConfig.selectedAccount, null);
                     limitReachedBottomSheet.setVeryLargeFile(true);
                     limitReachedBottomSheet.show();
                     return false;
@@ -947,11 +947,15 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
 
     private void checkDirectory(File rootDir) {
         File[] files = rootDir.listFiles();
+        File storiesDir = FileLoader.checkDirectory(FileLoader.MEDIA_DIR_STORIES);
         if (files != null) {
             for (int a = 0; a < files.length; a++) {
                 File file = files[a];
                 if (file.isDirectory() && file.getName().equals("Telegram")) {
                     checkDirectory(file);
+                    continue;
+                }
+                if (file.equals(storiesDir)) {
                     continue;
                 }
                 ListItem item = new ListItem();
@@ -1165,9 +1169,15 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
         }
         currentDir = dir;
         listAdapter.items.clear();
+
+        File storiesDir = FileLoader.checkDirectory(FileLoader.MEDIA_DIR_STORIES);
         for (int a = 0; a < files.length; a++) {
             File file = files[a];
             if (file.getName().indexOf('.') == 0) {
+                continue;
+            }
+
+            if (file.equals(storiesDir)) {
                 continue;
             }
             ListItem item = new ListItem();

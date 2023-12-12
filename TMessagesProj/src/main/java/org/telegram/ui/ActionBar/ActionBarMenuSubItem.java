@@ -15,6 +15,7 @@ import android.widget.TextView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
+import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.CheckBox2;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RLottieImageView;
@@ -23,7 +24,7 @@ public class ActionBarMenuSubItem extends FrameLayout {
 
     private TextView textView;
     private TextView subtextView;
-    private RLottieImageView imageView;
+    public RLottieImageView imageView;
     private CheckBox2 checkView;
     private ImageView rightIcon;
 
@@ -99,6 +100,9 @@ public class ActionBarMenuSubItem extends FrameLayout {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, View.MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(itemHeight), View.MeasureSpec.EXACTLY));
+        if (expandIfMultiline && textView.getLayout().getLineCount() > 1) {
+            super.onMeasure(widthMeasureSpec, View.MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(itemHeight + 8), View.MeasureSpec.EXACTLY));
+        }
     }
 
     public void setItemHeight(int itemHeight) {
@@ -137,6 +141,13 @@ public class ActionBarMenuSubItem extends FrameLayout {
             }
             addView(rightIcon, LayoutHelper.createFrame(24, LayoutHelper.MATCH_PARENT, Gravity.CENTER_VERTICAL | (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT)));
         }
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) textView.getLayoutParams();
+        if (LocaleController.isRTL) {
+            layoutParams.leftMargin = rightIcon != null ? AndroidUtilities.dp(32) : 0;
+        } else {
+            layoutParams.rightMargin = rightIcon != null ? AndroidUtilities.dp(32) : 0;
+        }
+        textView.setLayoutParams(layoutParams);
         setPadding(AndroidUtilities.dp(LocaleController.isRTL ? 8 : 18), 0, AndroidUtilities.dp(LocaleController.isRTL ? 18 : 8), 0);
         rightIcon.setImageResource(icon);
     }
@@ -145,9 +156,19 @@ public class ActionBarMenuSubItem extends FrameLayout {
         setTextAndIcon(text, icon, null);
     }
 
+    boolean expandIfMultiline;
+
     public void setMultiline() {
+        setMultiline(true);
+    }
+
+    public void setMultiline(boolean changeSize) {
         textView.setLines(2);
-        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+        if (changeSize) {
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+        } else {
+            expandIfMultiline = true;
+        }
         textView.setSingleLine(false);
         textView.setGravity(Gravity.CENTER_VERTICAL);
     }
@@ -188,6 +209,10 @@ public class ActionBarMenuSubItem extends FrameLayout {
 
     public void setIcon(int resId) {
         imageView.setImageResource(resId);
+    }
+
+    public void setIcon(Drawable drawable) {
+        imageView.setImageDrawable(drawable);
     }
 
     public void setAnimatedIcon(int resId) {
@@ -256,7 +281,7 @@ public class ActionBarMenuSubItem extends FrameLayout {
         updateBackground();
     }
 
-    void updateBackground() {
+    public void updateBackground() {
         setBackground(Theme.createRadSelectorDrawable(selectorColor, top ? 6 : 0, bottom ? 6 : 0));
     }
 

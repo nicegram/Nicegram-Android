@@ -152,6 +152,7 @@ import org.telegram.ui.Components.voip.GroupCallStatusIcon;
 import org.telegram.ui.Components.voip.PrivateVideoPreviewDialog;
 import org.telegram.ui.Components.voip.RTMPStreamPipOverlay;
 import org.telegram.ui.Components.voip.VoIPToggleButton;
+import org.webrtc.voiceengine.WebRtcAudioTrack;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -7019,7 +7020,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             imageView.setRoundRadius(AndroidUtilities.dp(20));
             frameLayout.addView(imageView, LayoutHelper.createFrame(40, 40, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, 22, 5, 22, 0));
 
-            avatarDrawable.setInfo(object);
+            avatarDrawable.setInfo(currentAccount, object);
             String name;
             if (object instanceof TLRPC.User) {
                 TLRPC.User user = (TLRPC.User) object;
@@ -8452,7 +8453,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                                     src.renameTo(destFile);
                                 }
 
-                                accountInstance.getMessagesStorage().clearUserPhotos(user.id);
+                                accountInstance.getMessagesController().getDialogPhotos(user.id).reset();
                                 ArrayList<TLRPC.User> users = new ArrayList<>();
                                 users.add(user);
                                 accountInstance.getMessagesStorage().putUsersAndChats(users, null, false, true);
@@ -8703,5 +8704,27 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
 
     public boolean isRtmpStream() {
         return call != null && call.call.rtmp_stream;
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(@NonNull KeyEvent event) {
+        if (parentActivity == null) {
+            return super.dispatchKeyEvent(event);
+        }
+        if (event.getAction() == KeyEvent.ACTION_DOWN && (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP || event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            if (VoIPService.getSharedInstance() != null) {
+                if (Build.VERSION.SDK_INT >= 32) {
+                    boolean oldValue = WebRtcAudioTrack.isSpeakerMuted();
+                    AudioManager am = (AudioManager) parentActivity.getSystemService(AUDIO_SERVICE);
+                    int minVolume = am.getStreamMinVolume(AudioManager.STREAM_VOICE_CALL);
+                    boolean mute = am.getStreamVolume(AudioManager.STREAM_VOICE_CALL) == minVolume && event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN;
+                    WebRtcAudioTrack.setSpeakerMute(mute);
+                    if (oldValue != WebRtcAudioTrack.isSpeakerMuted()) {
+                        getUndoView().showWithAction(0, mute ? UndoView.ACTION_VOIP_SOUND_MUTED : UndoView.ACTION_VOIP_SOUND_UNMUTED, null);
+                    }
+                }
+            }
+        }
+        return super.dispatchKeyEvent(event);
     }
 }

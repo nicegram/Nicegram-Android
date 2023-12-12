@@ -25,9 +25,11 @@
     <string name="NicegramShowRegistrationDate">顯示註冊日期</string>
     <string name="NicegramOpenLinksInBrowser">在瀏覽器中開啟連結</string>
     <string name="NicegramUnblockGuide">解鎖指南</string>
+    <string name="NicegramPremiumFeatures">Nicegram\n高级功能</string>
     <string name="NicegramPrivacyPolicy">隱私權政策</string>
     <string name="NicegramEULA">授權條款</string>
     <string name="NicegramSubRenews">自動續訂</string>
+    <string name="NicegramSubPerMonth">订阅每月%s</string>
     <string name="NicegramBuildInTranslator">內建翻譯</string>
     <string name="NicegramBuildInTranslatorDesc">即時翻譯任何訊息，無需切換到第三方翻譯 App</string>
     <string name="NicegramSpeech2Text">語音轉文字</string>
@@ -73,5 +75,14 @@
     <string name="NicegramShareChannelInfo">分享頻道資訊</string>
     <string name="NicegramShareChannelInfoDesc">將頻道資訊與連結自動提交給我們的資料庫，來為最全面的 Telegram 頻道與群組維基百科做出貢獻。我們不會連接您的 Telegram 個人檔案與頻道，也不會分享您的個人資料。</string>
     <string name="NicegarmBypassCopyProtection">繞過複製保護</string>
+    <string name="NicegarmTutorial_HelpBtnText">我怎样能够收到验证码？</string>
     <string name="NicegarmTutorial_Dialog_Title">从2023年2月开始，请按照以下步骤接收该代码：</string>
+    <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. 登录到 <font color="#0A84FF">Telegram</font><br/>2. 登录到 <font color="#A134C7">Nicegram</font><br/>3. 输入你将在 <font color="#0A84FF">Telegram</font> 上收到的验证码]]></string>
+    <string name="NicegramMaxAccount_IncreaseTo">最多100個帳戶</string>
+    <string name="NicegramMaxAccount_Default">默認的帳戶數量上限是10</string>
+    <string name="NicegramMaxAccount_IncreaseWarn">增加帳戶數量的上限可能會對某些設備的應用啟動速度和性能產生負面影響。請注意，如果您決定在未來減少它們的最大數量，您可能會失去對新添加的帳戶的訪問</string>
+    <string name="NicegramMaxAccount_Increase">增加</string>
+    <string name="NicegramMaxAccount_Reduce">減少</string>
+    <string name="NicegramMaxAccount_ReduceWarn">減少帳戶數量的上限可能會提高某些設備上的應用性能。然而，請注意，除了您的第一個帳戶外，您將不得不重新登錄所有的帳戶</string>
+    <string name="NicegramTryRelogin">登出您的帳戶並重新登錄可能修復此問題。</string>
 </resources>

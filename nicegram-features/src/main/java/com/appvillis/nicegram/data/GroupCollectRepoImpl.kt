@@ -1,8 +1,7 @@
 package com.appvillis.nicegram.data
 
 import android.content.SharedPreferences
-import android.util.Log
-import app.nicegram.BuildConfig
+import com.appvillis.nicegram.BuildConfig
 import com.appvillis.nicegram.domain.GroupCollectRepo
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken

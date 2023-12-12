@@ -10,6 +10,7 @@ package org.telegram.ui.Cells;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.text.Layout;
@@ -46,13 +47,14 @@ import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.Premium.PremiumGradient;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.NotificationsSettingsActivity;
+import org.telegram.ui.Stories.StoriesUtilities;
 
 import java.util.Locale;
 
 public class ProfileSearchCell extends BaseCell implements NotificationCenter.NotificationCenterDelegate {
 
     private CharSequence currentName;
-    private ImageReceiver avatarImage;
+    public ImageReceiver avatarImage;
     private AvatarDrawable avatarDrawable;
     private CharSequence subLabel;
     private Theme.ResourcesProvider resourcesProvider;
@@ -102,6 +104,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
     private int statusLeft;
     private StaticLayout statusLayout;
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable statusDrawable;
+    public StoriesUtilities.AvatarStoryParams avatarStoryParams = new StoriesUtilities.AvatarStoryParams(false);
 
     private RectF rect = new RectF();
 
@@ -127,6 +130,13 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
 
         statusDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, AndroidUtilities.dp(20));
         statusDrawable.setCallback(this);
+    }
+
+    private boolean customPaints;
+    private TextPaint namePaint, statusPaint;
+    public ProfileSearchCell useCustomPaints() {
+        customPaints = true;
+        return this;
     }
 
     @Override
@@ -320,6 +330,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             drawPremium = !savedMessages && MessagesController.getInstance(currentAccount).isPremiumUser(user);
             updateStatus(drawCheck, user, false);
         } else if (contact != null) {
+            dialog_id = 0;
             if (!LocaleController.isRTL) {
                 nameLeft = AndroidUtilities.dp(AndroidUtilities.leftBaseline);
             } else {
@@ -361,7 +372,19 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
                 nameString = LocaleController.getString("HiddenName", R.string.HiddenName);
             }
         }
-        if (encryptedChat != null) {
+        if (customPaints) {
+            if (namePaint == null) {
+                namePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+                namePaint.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM));
+            }
+            namePaint.setTextSize(AndroidUtilities.dp(16));
+            if (encryptedChat != null) {
+                namePaint.setColor(Theme.getColor(Theme.key_chats_secretName, resourcesProvider));
+            } else {
+                namePaint.setColor(Theme.getColor(Theme.key_chats_name, resourcesProvider));
+            }
+            currentNamePaint = namePaint;
+        } else if (encryptedChat != null) {
             currentNamePaint = Theme.dialogs_searchNameEncryptedPaint;
         } else {
             currentNamePaint = Theme.dialogs_searchNamePaint;
@@ -486,6 +509,18 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             }
             nameTop = AndroidUtilities.dp(19);
         }
+        if (customPaints) {
+            if (statusPaint == null) {
+                statusPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+            }
+            statusPaint.setTextSize(AndroidUtilities.dp(15));
+            if (currentStatusPaint == Theme.dialogs_offlinePaint) {
+                statusPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText3, resourcesProvider));
+            } else if (currentStatusPaint == Theme.dialogs_onlinePaint) {
+                statusPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText3, resourcesProvider));
+            }
+            currentStatusPaint = statusPaint;
+        }
 
         if (!TextUtils.isEmpty(statusString)) {
             CharSequence statusStringFinal = TextUtils.ellipsize(statusString, currentStatusPaint, statusWidth - AndroidUtilities.dp(12), TextUtils.TruncateAt.END);
@@ -503,8 +538,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         } else {
             avatarLeft = AndroidUtilities.dp(11) + getPaddingLeft();
         }
-
-        avatarImage.setImageCoords(avatarLeft, AndroidUtilities.dp(7), AndroidUtilities.dp(46), AndroidUtilities.dp(46));
+        avatarStoryParams.originalAvatarRect.set(avatarLeft, AndroidUtilities.dp(7), avatarLeft + AndroidUtilities.dp(46), AndroidUtilities.dp(7) + AndroidUtilities.dp(46));
 
         double widthpx;
         float left;
@@ -576,7 +610,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
     public void update(int mask) {
         TLRPC.FileLocation photo = null;
         if (user != null) {
-            avatarDrawable.setInfo(user);
+            avatarDrawable.setInfo(currentAccount, user);
             if (UserObject.isReplyUser(user)) {
                 avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_REPLIES);
                 avatarImage.setImage(null, null, avatarDrawable, null, null, 0);
@@ -601,7 +635,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
                     thumb = chat.photo.strippedBitmap;
                 }
             }
-            avatarDrawable.setInfo(chat);
+            avatarDrawable.setInfo(currentAccount, chat);
             avatarImage.setImage(ImageLocation.getForUserOrChat(chat, ImageLocation.TYPE_SMALL), "50_50", ImageLocation.getForUserOrChat(chat, ImageLocation.TYPE_STRIPPED), "50_50", thumb, chat, 0);
         } else if (contact != null) {
             avatarDrawable.setInfo(0, contact.first_name, contact.last_name);
@@ -682,10 +716,17 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         }
 
         if (useSeparator) {
+            Paint dividerPaint = null;
+            if (customPaints && resourcesProvider != null) {
+                dividerPaint = resourcesProvider.getPaint(Theme.key_paint_divider);
+            }
+            if (dividerPaint == null) {
+                dividerPaint = Theme.dividerPaint;
+            }
             if (LocaleController.isRTL) {
-                canvas.drawLine(0, getMeasuredHeight() - 1, getMeasuredWidth() - AndroidUtilities.dp(AndroidUtilities.leftBaseline), getMeasuredHeight() - 1, Theme.dividerPaint);
+                canvas.drawLine(0, getMeasuredHeight() - 1, getMeasuredWidth() - AndroidUtilities.dp(AndroidUtilities.leftBaseline), getMeasuredHeight() - 1, dividerPaint);
             } else {
-                canvas.drawLine(AndroidUtilities.dp(AndroidUtilities.leftBaseline), getMeasuredHeight() - 1, getMeasuredWidth(), getMeasuredHeight() - 1, Theme.dividerPaint);
+                canvas.drawLine(AndroidUtilities.dp(AndroidUtilities.leftBaseline), getMeasuredHeight() - 1, getMeasuredWidth(), getMeasuredHeight() - 1, dividerPaint);
             }
         }
 
@@ -745,7 +786,14 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             actionLayout.draw(canvas);
             canvas.restore();
         }
-        avatarImage.draw(canvas);
+        if (user != null) {
+            StoriesUtilities.drawAvatarWithStory(user.id, canvas, avatarImage, avatarStoryParams);
+        } else if (chat != null) {
+            StoriesUtilities.drawAvatarWithStory(-chat.id, canvas, avatarImage, avatarStoryParams);
+        } else {
+            avatarImage.setImageCoords(avatarStoryParams.originalAvatarRect);
+            avatarImage.draw(canvas);
+        }
     }
 
     @Override
@@ -790,6 +838,9 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        if ((user != null || chat != null) && avatarStoryParams.checkOnTouchEvent(event, this)) {
+            return true;
+        }
         if (actionButton != null && actionButton.checkTouchEvent(event)) {
             return true;
         }

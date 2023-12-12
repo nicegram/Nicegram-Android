@@ -19,7 +19,6 @@ import androidx.annotation.UiThread;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 
 public class NotificationCenter {
@@ -111,6 +110,7 @@ public class NotificationCenter {
     public static final int paymentFinished = totalEvents++;
     public static final int channelRightsUpdated = totalEvents++;
     public static final int openArticle = totalEvents++;
+    public static final int articleClosed = totalEvents++;
     public static final int updateMentionsCount = totalEvents++;
     public static final int didUpdatePollResults = totalEvents++;
     public static final int chatOnlineCountDidLoad = totalEvents++;
@@ -137,6 +137,7 @@ public class NotificationCenter {
     public static final int animatedEmojiDocumentLoaded = totalEvents++;
     public static final int recentEmojiStatusesUpdate = totalEvents++;
     public static final int updateSearchSettings = totalEvents++;
+    public static final int updateTranscriptionLock = totalEvents++;
 
     public static final int messageTranslated = totalEvents++;
     public static final int messageTranslating = totalEvents++;
@@ -209,12 +210,20 @@ public class NotificationCenter {
 
     public static final int updateBotMenuButton = totalEvents++;
 
+    public static final int boostedChannelByUser = totalEvents++;
+    public static final int boostByChannelCreated = totalEvents++;
     public static final int didUpdatePremiumGiftStickers = totalEvents++;
     public static final int didUpdatePremiumGiftFieldIcon = totalEvents++;
+    public static final int storiesEnabledUpdate = totalEvents++;
+    public static final int storiesBlocklistUpdate = totalEvents++;
+    public static final int storiesLimitUpdate = totalEvents++;
+    public static final int storiesSendAsUpdate = totalEvents++;
+    public static final int unconfirmedAuthUpdate = totalEvents++;
+    public static final int dialogPhotosUpdate = totalEvents++;
+    public static final int channelRecommendationsLoaded = totalEvents++;
 
     //global
     public static final int pushMessagesUpdated = totalEvents++;
-    public static final int stopEncodingService = totalEvents++;
     public static final int wallpapersDidLoad = totalEvents++;
     public static final int wallpapersNeedReload = totalEvents++;
     public static final int didReceiveSmsCode = totalEvents++;
@@ -271,6 +280,7 @@ public class NotificationCenter {
     public static final int premiumStatusChangedGlobal = totalEvents++;
     public static final int currentUserShowLimitReachedDialog = totalEvents++;
     public static final int billingProductDetailsUpdated = totalEvents++;
+    public static final int billingConfirmPurchaseError = totalEvents++;
     public static final int premiumStickersPreviewLoaded = totalEvents++;
     public static final int userEmojiStatusUpdated = totalEvents++;
     public static final int requestPermissions = totalEvents++;
@@ -280,8 +290,16 @@ public class NotificationCenter {
     public static int didUpdateGlobalAutoDeleteTimer = totalEvents++;
     public static int onDatabaseReset = totalEvents++;
     public static int wallpaperSettedToUser = totalEvents++;
-
+    public static int storiesUpdated = totalEvents++;
+    public static int storiesListUpdated = totalEvents++;
+    public static int storiesDraftsUpdated = totalEvents++;
     public static int chatlistFolderUpdate = totalEvents++;
+    public static final int uploadStoryProgress = totalEvents++;
+    public static final int uploadStoryEnd = totalEvents++;
+    public static final int customTypefacesLoaded = totalEvents++;
+    public static final int stealthModeChanged = totalEvents++;
+    public static final int onReceivedChannelDifference = totalEvents++;
+    public static final int storiesReadUpdated = totalEvents++;
 
     public static final int translationLanguageChanged = totalEvents++; // ng translate input text
 
@@ -476,6 +494,10 @@ public class NotificationCenter {
 
     public ArrayList<NotificationCenterDelegate> getObservers(int id) {
         return observers.get(id);
+    }
+
+    public void postNotificationNameOnUIThread(final int id, final Object... args) {
+        AndroidUtilities.runOnUIThread(() -> postNotificationName(id, args));
     }
 
     public void postNotificationName(int id, Object... args) {

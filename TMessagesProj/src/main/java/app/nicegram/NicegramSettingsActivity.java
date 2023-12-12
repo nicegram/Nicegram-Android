@@ -2,6 +2,7 @@ package app.nicegram;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -11,10 +12,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
+import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.nicegram.NicegramConsts;
 import com.appvillis.nicegram.NicegramPrefs;
 import com.appvillis.nicegram.network.NicegramNetwork;
 
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
@@ -26,7 +29,9 @@ import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.Cells.DividerCell;
 import org.telegram.ui.Cells.HeaderCell;
+import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Components.AlertsCreator;
@@ -41,8 +46,14 @@ public class NicegramSettingsActivity extends BaseFragment {
     private RecyclerListView listView;
     private ListAdapter adapter;
 
-    private int nicegramSectionRow;
+
+    private int pinSectionHeaderRow;
+    private int lilyToggleRow;
+    private int pstToggleRow;
+    private int imageGenerationToggleRow;
     private int unblockGuideRow;
+
+    private int nicegramSectionRow;
 
     private int maxAccountsRow;
     private int skipReadHistoryRow;
@@ -61,7 +72,11 @@ public class NicegramSettingsActivity extends BaseFragment {
 
     @Override
     public boolean onFragmentCreate() {
-        nicegramSectionRow = -1;
+        pinSectionHeaderRow = rowCount++;
+        lilyToggleRow = rowCount++;
+        pstToggleRow = NicegramAssistantHelper.INSTANCE.getPstConfig().getShow() ? rowCount++ : -1;
+        imageGenerationToggleRow = NicegramAssistantHelper.INSTANCE.getNuConfig().getShowPin() ? rowCount++ : -1;
+        nicegramSectionRow = rowCount++;
         unblockGuideRow = rowCount++;
         maxAccountsRow = rowCount++;
         startWithRearCameraRow = rowCount++;
@@ -171,6 +186,24 @@ public class NicegramSettingsActivity extends BaseFragment {
                 enabled = preferences.getBoolean(NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER, NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER_DEFAULT);
                 editor.putBoolean(NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER, !enabled);
                 editor.apply();
+            } else if (position == lilyToggleRow) {
+                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, !enabled);
+                editor.apply();
+            } else if (position == pstToggleRow) {
+                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_PST_DIALOGS, NicegramPrefs.PREF_SHOW_PST_DIALOGS_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_SHOW_PST_DIALOGS, !enabled);
+                editor.apply();
+            } else if (position == imageGenerationToggleRow) {
+                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
+                SharedPreferences.Editor editor = preferences.edit();
+                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS, NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS_DEFAULT);
+                editor.putBoolean(NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS, !enabled);
+                editor.apply();
             } else if (position == unblockGuideRow) {
                 Browser.openUrl(getParentActivity(), NicegramConsts.UNBLOCK_URL);
             } else if (position == doubleBottomRow) {
@@ -189,6 +222,7 @@ public class NicegramSettingsActivity extends BaseFragment {
             } else if (position == restoreRow) {
                 NicegramNetwork.INSTANCE.restorePremium(getAccountInstance().getUserConfig().clientUserId, success -> {
                     if (success) {
+                        Toast.makeText(getParentActivity(), "Success! Now you can use Nicegram Premium!", Toast.LENGTH_LONG).show();
                         NicegramBillingHelper.INSTANCE.setGiftedPremium(true);
                     } else {
                         if (getParentActivity() == null) return null;
@@ -261,6 +295,9 @@ public class NicegramSettingsActivity extends BaseFragment {
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view;
             switch (viewType) {
+                case 3:
+                    view = new ShadowSectionCell(mContext);
+                    break;
                 case 2:
                     view = new TextCell(mContext);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
@@ -285,6 +322,8 @@ public class NicegramSettingsActivity extends BaseFragment {
                     HeaderCell headerCell = (HeaderCell) holder.itemView;
                     if (position == nicegramSectionRow) {
                         headerCell.setText("Nicegram");
+                    } else if (position == pinSectionHeaderRow) {
+                        headerCell.setText(LocaleController.getString("Nicegram_PinSection"));
                     }
                     break;
                 }
@@ -315,6 +354,12 @@ public class NicegramSettingsActivity extends BaseFragment {
                     } else if (position == maxAccountsRow) {
                         checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramMaxAccount_IncreaseTo"), LocaleController.getString("NicegramMaxAccount_Default"), PrefsHelper.INSTANCE.getMaxAccountCount(getContext()) == NicegramPrefs.PREF_MAX_ACCOUNTS_MAX, true, false);
                         checkCell.setEnabled(false);
+                    } else if (position == lilyToggleRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("Chatbot_AIChatbot"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT), false);
+                    } else if (position == pstToggleRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("Pst_Title"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_PST_DIALOGS, NicegramPrefs.PREF_SHOW_PST_DIALOGS_DEFAULT), false);
+                    } else if (position == imageGenerationToggleRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("NuHub_Title"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS, NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS_DEFAULT), false);
                     }
                     break;
                 }
@@ -329,20 +374,28 @@ public class NicegramSettingsActivity extends BaseFragment {
                     }
                     break;
                 }
+                case 3:
+                    View sectionCell = holder.itemView;
+                    sectionCell.setTag(position);
+                    sectionCell.setBackgroundDrawable(Theme.getThemedDrawable(mContext, R.drawable.greydivider, getThemedColor(Theme.key_windowBackgroundGrayShadow)));
+                    break;
             }
         }
 
         @Override
         public int getItemViewType(int position) {
-            if (position == nicegramSectionRow) {
+            if (position == pinSectionHeaderRow) {
                 return 0;
             } else if (position == skipReadHistoryRow || position == openLinksRow ||
                     position == showRegDateRow || position == showProfileIdRow ||
                     position == startWithRearCameraRow || position == downloadVideosToGallery ||
-                    position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow || position == maxAccountsRow || position == shareChannelsInfoRow) {
+                    position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow || position == maxAccountsRow || position == shareChannelsInfoRow ||
+            position == lilyToggleRow || position == pstToggleRow || position == imageGenerationToggleRow) {
                 return 1;
             } else if (position == unblockGuideRow || position == quickRepliesRow || position == restoreRow) {
                 return 2;
+            } else if (position == nicegramSectionRow) {
+                return 3;
             } else {
                 return 0;
             }

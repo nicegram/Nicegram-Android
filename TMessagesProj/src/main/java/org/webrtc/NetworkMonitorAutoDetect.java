@@ -10,6 +10,8 @@
 
 package org.webrtc;
 
+import static com.appvillis.assistant_core.MainActivity.BROADCAST_ACTION_ON_RESUME;
+
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -29,6 +31,8 @@ import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+
 import android.telephony.TelephonyManager;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -474,7 +478,8 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
       IntentFilter intentFilter = new IntentFilter();
       intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
       intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-      context.registerReceiver(this, intentFilter);
+      ContextCompat.registerReceiver(context, this, intentFilter, ContextCompat.RECEIVER_EXPORTED); // ng
+
       if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
         // Starting with Android Q (10), WIFI_P2P_CONNECTION_CHANGED_ACTION is no longer sticky.
         // This means we have to explicitly request WifiP2pGroup info during initialization in order
@@ -672,7 +677,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver implements Netwo
       return;
 
     isRegistered = true;
-    context.registerReceiver(this, intentFilter);
+    ContextCompat.registerReceiver(context, this, intentFilter, ContextCompat.RECEIVER_EXPORTED);
   }
 
   /**

@@ -552,7 +552,7 @@ public class LinkSpanDrawable<S extends CharacterStyle> {
             y -= getPaddingTop();
             final int line = textLayout.getLineForVertical(y);
             final int off = textLayout.getOffsetForHorizontal(line, x);
-            final float left = getLayout().getLineLeft(line);
+            final float left = textLayout.getLineLeft(line);
             if (left <= x && left + textLayout.getLineWidth(line) >= x && y >= 0 && y <= textLayout.getHeight()) {
                 Spannable buffer = new SpannableString(textLayout.getText());
                 ClickableSpan[] spans = buffer.getSpans(off, off, ClickableSpan.class);
@@ -563,6 +563,10 @@ public class LinkSpanDrawable<S extends CharacterStyle> {
             return null;
         }
 
+        public int overrideColor() {
+            return Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider);
+        }
+
         @Override
         public boolean onTouchEvent(MotionEvent event) {
             if (links != null) {
@@ -571,6 +575,7 @@ public class LinkSpanDrawable<S extends CharacterStyle> {
                 if ((span = hit((int) event.getX(), (int) event.getY())) != null) {
                     if (event.getAction() == MotionEvent.ACTION_DOWN) {
                         final LinkSpanDrawable link = new LinkSpanDrawable<ClickableSpan>(span, resourcesProvider, event.getX(), event.getY());
+                        link.setColor(overrideColor());
                         pressedLink = link;
                         links.addLink(pressedLink);
                         Spannable buffer = new SpannableString(textLayout.getText());

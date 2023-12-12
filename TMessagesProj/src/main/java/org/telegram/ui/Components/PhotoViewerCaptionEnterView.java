@@ -61,8 +61,9 @@ import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.PremiumPreviewFragment;
+import org.telegram.ui.Stories.DarkThemeResourceProvider;
 
-public class PhotoViewerCaptionEnterView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate, SizeNotifierFrameLayoutPhoto.SizeNotifierFrameLayoutPhotoDelegate {
+public class PhotoViewerCaptionEnterView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate, SizeNotifierFrameLayout.SizeNotifierFrameLayoutDelegate {
 
     private final ImageView doneButton;
 
@@ -494,7 +495,7 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
     }
 
     public void updateColors() {
-        Theme.setDrawableColor(doneDrawable, getThemedColor(Theme.key_dialogFloatingButton));
+        Theme.setDrawableColor(doneDrawable, getThemedColor(Theme.key_chat_editMediaButton));
         int color = getThemedColor(Theme.key_dialogFloatingIcon);
         int alpha = Color.alpha(color);
         Theme.setDrawableColor(checkDrawable, ColorUtils.setAlphaComponent(color, (int) (alpha * (0.58f + 0.42f * sendButtonEnabledProgress))));
@@ -618,17 +619,14 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
                 return 771751936;
             } else if (key == Theme.key_divider) {
                 return -16777216;
-            } else if (key == Theme.key_dialogFloatingButton) {
+            } else if (key == Theme.key_chat_editMediaButton) {
                 return -10177041;
             } else if (key == Theme.key_dialogFloatingIcon) {
                 return 0xffffffff;
+            } else if (key == Theme.key_chat_emojiPanelStickerSetName) {
+                return 0x73ffffff;
             }
             return 0;
-        }
-
-        @Override
-        public boolean contains(int key) {
-            return getColor(key) != 0;
         }
     }
 
@@ -640,7 +638,8 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
         if (emojiView != null) {
             return;
         }
-        emojiView = new EmojiView(null, true, false, false, getContext(), false, null, null, resourcesProvider);
+        emojiView = new EmojiView(null, true, false, false, getContext(), false, null, null, true, resourcesProvider, false);
+        emojiView.emojiCacheType = AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW;
         emojiView.setDelegate(new EmojiView.EmojiViewDelegate() {
             @Override
             public boolean onBackspace() {
@@ -716,6 +715,7 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
                     }
                     if (!isRecent) {
                         span.fromEmojiKeyboard = true;
+                        span.cacheType = AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW;
                     }
                     spannable.setSpan(span, 0, spannable.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     messageEditText.setText(messageEditText.getText().insert(i, spannable));

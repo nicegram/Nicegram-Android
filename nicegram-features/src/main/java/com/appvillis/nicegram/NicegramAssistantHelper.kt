@@ -16,6 +16,10 @@ object NicegramAssistantHelper {
 
     fun canShowGrum() = remoteConfigRepo?.grumConfig?.showGrum ?: false
 
+    val pstConfig: RemoteConfigRepo.PstConfig get() = remoteConfigRepo?.pstConfig ?: RemoteConfigRepo.PstConfig(false)
+    val nuConfig: RemoteConfigRepo.NuHubConfig get() = remoteConfigRepo?.nuHubConfig ?: RemoteConfigRepo.NuHubConfig(false, false, false)
+    val ambassadorConfig: RemoteConfigRepo.AmbassadorConfig get() = remoteConfigRepo?.ambassadorConfig ?: RemoteConfigRepo.AmbassadorConfig()
+
     fun setGrumPopupShown() {
         setGrumStatusUseCase?.setGrumPopupWasShown(true)
     }
@@ -33,5 +37,9 @@ object NicegramAssistantHelper {
         }
 
         return null
+    }
+
+    fun findSpecialOffer(id: Int): SpecialOffersRepository.SpecialOffer? {
+        return getSpecialOfferUseCase?.allOffers?.find { it.id == id }
     }
 }

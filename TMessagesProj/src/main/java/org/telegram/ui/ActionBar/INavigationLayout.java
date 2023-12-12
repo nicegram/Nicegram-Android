@@ -277,6 +277,14 @@ public interface INavigationLayout {
         return null;
     }
 
+    void setIsSheet(boolean isSheet);
+
+    boolean isSheet();
+
+    void updateTitleOverlay();
+
+    void setWindow(Window window);
+
     interface INavigationLayoutDelegate {
         default boolean needPresentFragment(INavigationLayout layout, NavigationParams params) {
             return needPresentFragment(params.fragment, params.removeLast, params.noAnimation, layout);
@@ -392,12 +400,11 @@ public interface INavigationLayout {
 
         @Override
         public int getColor(int key) {
-            return colors.get(key);
-        }
-
-        @Override
-        public boolean contains(int key) {
-            return colors.indexOfKey(key) >= 0;
+            int index = colors.indexOfKey(key);
+            if (index >= 0) {
+                return colors.valueAt(index);
+            }
+            return Theme.getColor(key);
         }
 
         @Override

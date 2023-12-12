@@ -20,6 +20,8 @@ import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Message;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -46,6 +48,7 @@ import androidx.core.util.Consumer;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BotWebViewVibrationEffect;
@@ -57,6 +60,7 @@ import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
@@ -81,11 +85,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class BotWebViewContainer extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
+public abstract class BotWebViewContainer extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
     private final static String DURGER_KING_USERNAME = "DurgerKingBot";
     private final static int REQUEST_CODE_WEB_VIEW_FILE = 3000, REQUEST_CODE_WEB_PERMISSION = 4000, REQUEST_CODE_QR_CAMERA_PERMISSION = 5000;
     private final static int DIALOG_SEQUENTIAL_COOLDOWN_TIME = 3000;
-    private final static boolean ENABLE_REQUEST_PHONE = false;
 
     private final static List<String> WHITELISTED_SCHEMES = Arrays.asList("http", "https");
 
@@ -98,7 +101,7 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
     private TextView webViewNotAvailableText;
     private boolean webViewNotAvailable;
 
-    private CellFlickerDrawable flickerDrawable = new CellFlickerDrawable();
+    private final CellFlickerDrawable flickerDrawable = new CellFlickerDrawable();
     private BackupImageView flickerView;
     private boolean isFlickeringCenter;
 
@@ -118,6 +121,7 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
     private long lastClickMs;
 
     private boolean isBackButtonVisible;
+    private boolean isSettingsButtonVisible;
 
     private boolean hasUserPermissions;
     private TLRPC.User botUser;
@@ -267,6 +271,18 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
                 }
                 return super.onTouchEvent(event);
             }
+
+            @Override
+            protected void onAttachedToWindow() {
+                AndroidUtilities.checkAndroidTheme(getContext(), true);
+                super.onAttachedToWindow();
+            }
+
+            @Override
+            protected void onDetachedFromWindow() {
+                AndroidUtilities.checkAndroidTheme(getContext(), false);
+                super.onDetachedFromWindow();
+            }
         };
         webView.setBackgroundColor(getColor(Theme.key_windowBackgroundWhite));
         WebSettings settings = webView.getSettings();
@@ -274,6 +290,7 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
         settings.setGeolocationEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
+        settings.setSupportMultipleWindows(true);
 
         // Hackfix text on some Xiaomi devices
         settings.setTextSize(WebSettings.TextSize.NORMAL);
@@ -288,21 +305,14 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                Uri uriOrig = Uri.parse(mUrl);
                 Uri uriNew = Uri.parse(url);
-
-                boolean override;
-                if (isPageLoaded && (!Objects.equals(uriOrig.getHost(), uriNew.getHost()) || !Objects.equals(uriOrig.getPath(), uriNew.getPath()))) {
-                    override = true;
-
+                if (Browser.isInternalUri(uriNew, null)) {
                     if (WHITELISTED_SCHEMES.contains(uriNew.getScheme())) {
                         onOpenUri(uriNew);
                     }
-                } else {
-                    override = false;
+                    return true;
                 }
-
-                return override;
+                return false;
             }
 
             @Override
@@ -314,12 +324,27 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
             private Dialog lastPermissionsDialog;
 
             @Override
+            public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
+                WebView newWebView = new WebView(view.getContext());
+                newWebView.setWebViewClient(new WebViewClient() {
+                    @Override
+                    public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                        onOpenUri(Uri.parse(url));
+                        return true;
+                    }
+                });
+                WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+                transport.setWebView(newWebView);
+                resultMsg.sendToTarget();
+                return true;
+            }
+
+            @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-                Context ctx = getContext();
-                if (!(ctx instanceof Activity)) {
+                Activity activity = AndroidUtilities.findActivity(getContext());
+                if (activity == null) {
                     return false;
                 }
-                Activity activity = (Activity) ctx;
 
                 if (mFilePathCallback != null) {
                     mFilePathCallback.onReceiveValue(null);
@@ -441,6 +466,30 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
                             break;
                         }
                     }
+                } else if (
+                    resources.length == 2 &&
+                        (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resources[0]) || PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resources[0])) &&
+                        (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resources[1]) || PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resources[1]))
+                ) {
+                    lastPermissionsDialog = AlertsCreator.createWebViewPermissionsRequestDialog(parentActivity, resourcesProvider, new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, R.raw.permission_request_camera, LocaleController.formatString(R.string.BotWebViewRequestCameraMicPermission, UserObject.getUserName(botUser)), LocaleController.formatString(R.string.BotWebViewRequestCameraMicPermissionWithHint, UserObject.getUserName(botUser)), allow -> {
+                        if (lastPermissionsDialog != null) {
+                            lastPermissionsDialog = null;
+
+                            if (allow) {
+                                runWithPermissions(new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, allowSystem -> {
+                                    if (allowSystem) {
+                                        request.grant(new String[] {resources[0], resources[1]});
+                                        hasUserPermissions = true;
+                                    } else {
+                                        request.deny();
+                                    }
+                                });
+                            } else {
+                                request.deny();
+                            }
+                        }
+                    });
+                    lastPermissionsDialog.show();
                 }
             }
 
@@ -460,6 +509,8 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             webView.addJavascriptInterface(new WebViewProxy(), "TelegramWebviewProxy");
         }
+
+        onWebViewCreated();
     }
 
     private void onOpenUri(Uri uri) {
@@ -467,7 +518,7 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
     }
 
     private void onOpenUri(Uri uri, boolean tryInstantView, boolean suppressPopup) {
-        if (isRequestingPageOpen || System.currentTimeMillis() - lastClickMs > 10000 && suppressPopup) {
+        if (isRequestingPageOpen || System.currentTimeMillis() - lastClickMs > 1000 && suppressPopup) {
             return;
         }
 
@@ -485,21 +536,12 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
                 InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
 
-                delegate.onCloseRequested(() -> Browser.openUrl(getContext(), uri, true, tryInstantView));
+                Browser.openUrl(getContext(), uri, true, tryInstantView);
             } else {
                 Browser.openUrl(getContext(), uri, true, tryInstantView);
             }
-        } else if (suppressPopup) {
-            Browser.openUrl(getContext(), uri, true, tryInstantView);
         } else {
-            isRequestingPageOpen = true;
-            new AlertDialog.Builder(getContext(), resourcesProvider)
-                    .setTitle(LocaleController.getString(R.string.OpenUrlTitle))
-                    .setMessage(LocaleController.formatString(R.string.OpenUrlAlert2, uri.toString()))
-                    .setPositiveButton(LocaleController.getString(R.string.Open), (dialog, which) -> Browser.openUrl(getContext(), uri, true, tryInstantView))
-                    .setNegativeButton(LocaleController.getString(R.string.Cancel), null)
-                    .setOnDismissListener(dialog -> isRequestingPageOpen = false)
-                    .show();
+            Browser.openUrl(getContext(), uri, true, tryInstantView);
         }
     }
 
@@ -771,10 +813,6 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
                 flickerView.setImage(ImageLocation.getForDocument(botIcon.icon), null, (Drawable) null, cachedBot);
                 setupFlickerParams(center);
             }
-
-            if (settingsItem != null) {
-                settingsItem.setVisibility(cachedBot.has_settings ? VISIBLE : GONE);
-            }
         } else {
             TLRPC.TL_messages_getAttachMenuBot req = new TLRPC.TL_messages_getAttachMenuBot();
             req.bot = MessagesController.getInstance(currentAccount).getInputUser(botId);
@@ -794,12 +832,6 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
                         flickerView.setImage(ImageLocation.getForDocument(botIcon.icon), null, (Drawable) null, bot);
                         setupFlickerParams(center);
                     }
-
-                    if (settingsItem != null) {
-                        settingsItem.setVisibility(bot.has_settings ? VISIBLE : GONE);
-                    }
-                } else if (settingsItem != null) {
-                    settingsItem.setVisibility(GONE);
                 }
             }));
         }
@@ -820,27 +852,36 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
     }
 
     public void reload() {
-        checkCreateWebView();
+        NotificationCenter.getInstance(currentAccount).doOnIdle(() -> {
+            if (isSettingsButtonVisible) {
+                isSettingsButtonVisible = false;
+                if (delegate != null) {
+                    delegate.onSetSettingsButtonVisible(isSettingsButtonVisible);
+                }
+            }
 
-        isPageLoaded = false;
-        lastClickMs = 0;
-        hasUserPermissions = false;
-        if (webView != null) {
-            webView.reload();
-        }
+            checkCreateWebView();
+            isPageLoaded = false;
+            lastClickMs = 0;
+            hasUserPermissions = false;
+            if (webView != null) {
+                webView.reload();
+            }
+        });
     }
 
     public void loadUrl(int currentAccount, String url) {
-        checkCreateWebView();
-
         this.currentAccount = currentAccount;
-        isPageLoaded = false;
-        lastClickMs = 0;
-        hasUserPermissions = false;
-        mUrl = url;
-        if (webView != null) {
-            webView.loadUrl(url);
-        }
+        NotificationCenter.getInstance(currentAccount).doOnIdle(() -> {
+            isPageLoaded = false;
+            lastClickMs = 0;
+            hasUserPermissions = false;
+            mUrl = url;
+            checkCreateWebView();
+            if (webView != null) {
+                webView.loadUrl(url);
+            }
+        });
     }
 
     @Override
@@ -850,6 +891,17 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.didSetNewTheme);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.onActivityResultReceived);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.onRequestPermissionResultReceived);
+
+        Bulletin.addDelegate(this, new Bulletin.Delegate() {
+            @Override
+            public int getBottomOffset(int tag) {
+                if (getParent() instanceof ChatAttachAlertBotWebViewLayout.WebViewSwipeContainer) {
+                    ChatAttachAlertBotWebViewLayout.WebViewSwipeContainer swipeContainer = (ChatAttachAlertBotWebViewLayout.WebViewSwipeContainer) getParent();
+                    return (int) (swipeContainer.getOffsetY() + swipeContainer.getSwipeOffsetY() - swipeContainer.getTopActionBarOffsetY());
+                }
+                return 0;
+            }
+        });
     }
 
     @Override
@@ -859,6 +911,8 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didSetNewTheme);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.onActivityResultReceived);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.onRequestPermissionResultReceived);
+
+        Bulletin.removeDelegate(this);
     }
 
     public void destroyWebView() {
@@ -881,22 +935,25 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
 
     @SuppressWarnings("deprecation")
     public void evaluateJs(String script, boolean create) {
-        if (create) {
-            checkCreateWebView();
-        }
-        if (webView == null) {
-            return;
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            webView.evaluateJavascript(script, value -> {});
-        } else {
-            try {
-                webView.loadUrl("javascript:" + URLEncoder.encode(script, "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                webView.loadUrl("javascript:" + URLEncoder.encode(script));
+        NotificationCenter.getInstance(currentAccount).doOnIdle(() -> {
+            if (create) {
+                checkCreateWebView();
             }
-        }
+            if (webView == null) {
+                return;
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                webView.evaluateJavascript(script, value -> {
+                });
+            } else {
+                try {
+                    webView.loadUrl("javascript:" + URLEncoder.encode(script, "UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    webView.loadUrl("javascript:" + URLEncoder.encode(script));
+                }
+            }
+        });
     }
 
     @Override
@@ -1017,36 +1074,6 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
                 } catch (JSONException e) {
                     FileLog.e(e);
                 }
-                break;
-            }
-            case "web_app_request_phone": {
-                if (currentDialog != null || !ENABLE_REQUEST_PHONE) {
-                    break;
-                }
-
-                AtomicBoolean notifiedPhone = new AtomicBoolean(false);
-                AlertDialog.Builder builder = new AlertDialog.Builder(getContext())
-                        .setTitle(LocaleController.getString(R.string.ShareYouPhoneNumberTitle))
-                        .setMessage(LocaleController.getString(R.string.AreYouSureShareMyContactInfoBot))
-                        .setPositiveButton(LocaleController.getString("ShareContact", R.string.ShareContact), (dialogInterface, i) -> {
-                            TLRPC.User currentUser = UserConfig.getInstance(currentAccount).getCurrentUser();
-                            if (currentUser != null) {
-                                try {
-                                    notifyEvent("phone_requested", new JSONObject().put("phone_number", currentUser.phone));
-                                } catch (JSONException e) {
-                                    FileLog.e(e);
-                                }
-                                notifiedPhone.set(true);
-                            }
-                        }).setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null)
-                        .setOnDismissListener(dialog1 -> {
-                            if (!notifiedPhone.get()) {
-                                notifyEvent("phone_requested", new JSONObject());
-                            }
-                            currentDialog = null;
-                        });
-                currentDialog = builder.show();
-
                 break;
             }
             case "web_app_open_popup": {
@@ -1181,20 +1208,28 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
             case "web_app_set_header_color": {
                 try {
                     JSONObject jsonObject = new JSONObject(eventData);
-                    String key = jsonObject.getString("color_key");
-                    int themeKey = -1;
-                    switch (key) {
-                        case "bg_color": {
-                            themeKey = Theme.key_windowBackgroundWhite;
-                            break;
+                    String overrideColorString = jsonObject.optString("color", null);
+                    if (!TextUtils.isEmpty(overrideColorString)) {
+                        int color = Color.parseColor(overrideColorString);
+                        if (color != 0) {
+                            delegate.onWebAppSetActionBarColor(color, true);
                         }
-                        case "secondary_bg_color": {
-                            themeKey = Theme.key_windowBackgroundGray;
-                            break;
+                    } else {
+                        String key = jsonObject.optString("color_key");
+                        int themeKey = -1;
+                        switch (key) {
+                            case "bg_color": {
+                                themeKey = Theme.key_windowBackgroundWhite;
+                                break;
+                            }
+                            case "secondary_bg_color": {
+                                themeKey = Theme.key_windowBackgroundGray;
+                                break;
+                            }
                         }
-                    }
-                    if (themeKey >= 0) {
-                        delegate.onWebAppSetActionBarColor(themeKey);
+                        if (themeKey >= 0) {
+                            delegate.onWebAppSetActionBarColor(Theme.getColor(themeKey, resourcesProvider), false);
+                        }
                     }
                 } catch (JSONException e) {
                     FileLog.e(e);
@@ -1311,6 +1346,20 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
                 }
                 break;
             }
+            case "web_app_setup_settings_button": {
+                try {
+                    JSONObject jsonData = new JSONObject(eventData);
+                    boolean newVisible = jsonData.optBoolean("is_visible");
+                    if (newVisible != isSettingsButtonVisible) {
+                        isSettingsButtonVisible = newVisible;
+
+                        delegate.onSetSettingsButtonVisible(isSettingsButtonVisible);
+                    }
+                } catch (JSONException e) {
+                    FileLog.e(e);
+                }
+                break;
+            }
             case "web_app_open_invoice": {
                 try {
                     JSONObject jsonData = new JSONObject(eventData);
@@ -1378,7 +1427,245 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
                 }
                 break;
             }
+            case "web_app_request_write_access": {
+                if (ignoreDialog(3)) {
+                    try {
+                        JSONObject data = new JSONObject();
+                        data.put("status", "cancelled");
+                        notifyEvent("write_access_requested", data);
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                    }
+                    return;
+                }
+                TLRPC.TL_bots_canSendMessage req = new TLRPC.TL_bots_canSendMessage();
+                req.bot = MessagesController.getInstance(currentAccount).getInputUser(botUser);
+                ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
+                    if (res instanceof TLRPC.TL_boolTrue) {
+                        try {
+                            JSONObject data = new JSONObject();
+                            data.put("status", "allowed");
+                            notifyEvent("write_access_requested", data);
+                        } catch (Exception e) {
+                            FileLog.e(e);
+                        }
+                        return;
+                    } else if (err != null) {
+                        unknownError(err.text);
+                        return;
+                    }
+
+                    final String[] status = new String[] { "cancelled" };
+                    showDialog(3, new AlertDialog.Builder(getContext())
+                        .setTitle(LocaleController.getString(R.string.BotWebViewRequestWriteTitle))
+                        .setMessage(LocaleController.getString(R.string.BotWebViewRequestWriteMessage))
+                        .setPositiveButton(LocaleController.getString(R.string.BotWebViewRequestAllow), (di, w) -> {
+                            TLRPC.TL_bots_allowSendMessage req2 = new TLRPC.TL_bots_allowSendMessage();
+                            req2.bot = MessagesController.getInstance(currentAccount).getInputUser(botUser);
+                            ConnectionsManager.getInstance(currentAccount).sendRequest(req2, (res2, err2) -> AndroidUtilities.runOnUIThread(() -> {
+                                if (res2 != null) {
+                                    status[0] = "allowed";
+                                    if (res2 instanceof TLRPC.Updates) {
+                                        MessagesController.getInstance(currentAccount).processUpdates((TLRPC.Updates) res2, false);
+                                    }
+                                }
+                                if (err2 != null) {
+                                    unknownError(err2.text);
+                                }
+                                di.dismiss();
+                            }));
+                        })
+                        .setNegativeButton(LocaleController.getString(R.string.BotWebViewRequestDontAllow), (di, w) -> {
+                            di.dismiss();
+                        })
+                        .create(),
+                        () -> {
+                            try {
+                                JSONObject data = new JSONObject();
+                                data.put("status", status[0]);
+                                notifyEvent("write_access_requested", data);
+                            } catch (Exception e) {
+                                FileLog.e(e);
+                            }
+                        }
+                    );
+                }));
+                break;
+            }
+            case "web_app_invoke_custom_method": {
+                String reqId, method, paramsString;
+                try {
+                    JSONObject jsonObject = new JSONObject(eventData);
+                    reqId = jsonObject.getString("req_id");
+                    method = jsonObject.getString("method");
+                    Object params = jsonObject.get("params");
+                    paramsString = params.toString();
+                } catch (Exception e) {
+                    FileLog.e(e);
+                    if (e instanceof JSONException) {
+                        error("JSON Parse error");
+                    } else {
+                        unknownError();
+                    }
+                    return;
+                }
+
+                TLRPC.TL_bots_invokeWebViewCustomMethod req = new TLRPC.TL_bots_invokeWebViewCustomMethod();
+                req.bot = MessagesController.getInstance(currentAccount).getInputUser(botUser);
+                req.custom_method = method;
+                req.params = new TLRPC.TL_dataJSON();
+                req.params.data = paramsString;
+                ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
+                    try {
+                        JSONObject data = new JSONObject();
+                        data.put("req_id", reqId);
+                        if (res instanceof TLRPC.TL_dataJSON) {
+                            Object json = new JSONTokener(((TLRPC.TL_dataJSON) res).data).nextValue();
+                            data.put("result", json);
+                        } else if (err != null) {
+                            data.put("error", err.text);
+                        }
+                        notifyEvent("custom_method_invoked", data);
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                        unknownError();
+                    }
+                }));
+                break;
+            }
+            case "web_app_request_phone": {
+                if (ignoreDialog(4)) {
+                    try {
+                        JSONObject data = new JSONObject();
+                        data.put("status", "cancelled");
+                        notifyEvent("phone_requested", data);
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                    }
+                    return;
+                }
+
+                final String[] status = new String[] { "cancelled" };
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), resourcesProvider);
+                builder.setTitle(LocaleController.getString("ShareYouPhoneNumberTitle", R.string.ShareYouPhoneNumberTitle));
+                SpannableStringBuilder message = new SpannableStringBuilder();
+                String botName = UserObject.getUserName(botUser);
+                if (!TextUtils.isEmpty(botName)) {
+                    message.append(AndroidUtilities.replaceTags(LocaleController.formatString(R.string.AreYouSureShareMyContactInfoWebapp, botName)));
+                } else {
+                    message.append(AndroidUtilities.replaceTags(LocaleController.getString(R.string.AreYouSureShareMyContactInfoBot)));
+                }
+                final boolean blocked = MessagesController.getInstance(currentAccount).blockePeers.indexOfKey(botUser.id) >= 0;
+                if (blocked) {
+                    message.append("\n\n");
+                    message.append(LocaleController.getString(R.string.AreYouSureShareMyContactInfoBotUnblock));
+                }
+                builder.setMessage(message);
+                builder.setPositiveButton(LocaleController.getString("ShareContact", R.string.ShareContact), (di, i) -> {
+                    status[0] = null;
+                    di.dismiss();
+
+                    if (blocked) {
+                        MessagesController.getInstance(currentAccount).unblockPeer(botUser.id, () -> {
+                            SendMessagesHelper.getInstance(currentAccount).sendMessage(SendMessagesHelper.SendMessageParams.of(UserConfig.getInstance(currentAccount).getCurrentUser(), botUser.id, null, null, null, null, true, 0));
+
+                            try {
+                                JSONObject data = new JSONObject();
+                                data.put("status", "sent");
+                                notifyEvent("phone_requested", data);
+                            } catch (Exception e) {
+                                FileLog.e(e);
+                            }
+                        });
+                    } else {
+                        SendMessagesHelper.getInstance(currentAccount).sendMessage(SendMessagesHelper.SendMessageParams.of(UserConfig.getInstance(currentAccount).getCurrentUser(), botUser.id, null, null, null, null, true, 0));
+
+                        try {
+                            JSONObject data = new JSONObject();
+                            data.put("status", "sent");
+                            notifyEvent("phone_requested", data);
+                        } catch (Exception e) {
+                            FileLog.e(e);
+                        }
+                    }
+                });
+                builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), (di, i) -> {
+                    di.dismiss();
+                });
+                showDialog(4, builder.create(), () -> {
+                    if (status[0] == null) {
+                        return;
+                    }
+                    try {
+                        JSONObject data = new JSONObject();
+                        data.put("status", status[0]);
+                        notifyEvent("phone_requested", data);
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                    }
+                });
+                break;
+            }
+            default: {
+                FileLog.d("unknown webapp event " + eventType);
+                break;
+            }
         }
+    }
+
+    private void unknownError() {
+        unknownError(null);
+    }
+
+    private void unknownError(String errCode) {
+        error(LocaleController.getString("UnknownError", R.string.UnknownError) + (errCode != null ? ": " + errCode : ""));
+    }
+
+    private void error(String reason) {
+        BulletinFactory.of(this, resourcesProvider).createSimpleBulletin(R.raw.error, reason).show();
+    }
+
+    private int lastDialogType = -1;
+    private int shownDialogsCount = 0;
+    private long blockedDialogsUntil;
+
+    private boolean ignoreDialog(int type) {
+        if (currentDialog != null) {
+            return true;
+        }
+        if (blockedDialogsUntil > 0 && System.currentTimeMillis() < blockedDialogsUntil) {
+            return true;
+        }
+        if (lastDialogType == type && shownDialogsCount > 3) {
+            blockedDialogsUntil = System.currentTimeMillis() + 3 * 1000L;
+            shownDialogsCount = 0;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean showDialog(int type, AlertDialog dialog, Runnable onDismiss) {
+        if (dialog == null || ignoreDialog(type)) {
+            return false;
+        }
+        dialog.setOnDismissListener(di -> {
+            if (onDismiss != null) {
+                onDismiss.run();
+            }
+            currentDialog = null;
+        });
+        currentDialog = dialog;
+        currentDialog.setDismissDialogByButtons(false);
+        currentDialog.show();
+
+        if (lastDialogType != type) {
+            lastDialogType = type;
+            shownDialogsCount = 0;
+            blockedDialogsUntil = 0;
+        }
+        shownDialogsCount++;
+
+        return true;
     }
 
     private void openQrScanActivity() {
@@ -1411,23 +1698,18 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
 
     private JSONObject buildThemeParams() {
         try {
-            JSONObject object = new JSONObject();
-            object.put("bg_color", formatColor(Theme.key_windowBackgroundWhite));
-            object.put("secondary_bg_color", formatColor(Theme.key_windowBackgroundGray));
-            object.put("text_color", formatColor(Theme.key_windowBackgroundWhiteBlackText));
-            object.put("hint_color", formatColor(Theme.key_windowBackgroundWhiteHintText));
-            object.put("link_color", formatColor(Theme.key_windowBackgroundWhiteLinkText));
-            object.put("button_color", formatColor(Theme.key_featuredStickers_addButton));
-            object.put("button_text_color", formatColor(Theme.key_featuredStickers_buttonText));
-            return new JSONObject().put("theme_params", object);
+            JSONObject object = BotWebViewSheet.makeThemeParams(resourcesProvider);
+            if (object != null) {
+                return new JSONObject().put("theme_params", object);
+            }
         } catch (Exception e) {
             FileLog.e(e);
-            return new JSONObject();
         }
+        return new JSONObject();
     }
 
     private int getColor(int colorKey) {
-        if (resourcesProvider != null && resourcesProvider.contains(colorKey)) {
+        if (resourcesProvider != null) {
             return resourcesProvider.getColor(colorKey);
         }
         return Theme.getColor(colorKey);
@@ -1444,6 +1726,10 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
             hex = "0" + hex;
         }
         return hex;
+    }
+
+    public void onWebViewCreated() {
+
     }
 
     private class WebViewProxy {
@@ -1488,8 +1774,9 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
          * Called when WebView requests to set action bar color
          *
          * @param colorKey  Color theme key
+         * @param isOverrideColor
          */
-        void onWebAppSetActionBarColor(int colorKey);
+        void onWebAppSetActionBarColor(int colorKey, boolean isOverrideColor);
 
         /**
          * Called when WebView requests to set background color
@@ -1530,6 +1817,8 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
          */
         void onSetBackButtonVisible(boolean visible);
 
+        void onSetSettingsButtonVisible(boolean visible);
+
         /**
          * Called when WebView is ready (Called web_app_ready or page load finished)
          */
@@ -1539,7 +1828,12 @@ public class BotWebViewContainer extends FrameLayout implements NotificationCent
          * @return If clipboard access is available to webapp
          */
         default boolean isClipboardAvailable() {
+
             return false;
+        }
+
+        default String getWebAppName() {
+            return null;
         }
     }
 

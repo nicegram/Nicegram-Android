@@ -17,9 +17,14 @@ object NicegramPrefs {
     const val PREF_SHARE_CHANNEL_INFO = "ShareChannelInfo"
     const val PREF_BYPASS_COPY_PROTECTION = "BypassCopyProtection"
     const val PREF_SHOW_AI_CHAT_BOT_DIALOGS = "ShowAiChatBotDialogs"
+    const val PREF_SHOW_PST_DIALOGS = "ShowPstDialogs3"
+    const val PREF_SHOW_NU_HUB_DIALOGS = "ShowNuHubDialogs"
+    const val PREF_SHOW_AMBASSADOR_DIALOGS = "ShowAmbassadorDialogs0"
     const val PREF_SHOW_AI_CHAT_BOT_CHAT = "ShowAiChatBotChat"
     const val PREF_MAX_ACCOUNTS = "MaxAccountCount"
     const val PREF_MAX_ACCOUNTS_SET = "MaxAccountCountSet"
+    const val PREF_AMBASSADOR_BANNER_TS = "AmbassadorBannerTs"
+    const val PREF_NU_HUB_BANNER_TS = "NuHubBannerTs"
 
     const val PREF_MENTION_ALL_ENABLED_DEFAULT = true
     const val PREF_SKIP_READ_HISTORY_DEFAULT = false
@@ -37,6 +42,9 @@ object NicegramPrefs {
     const val PREF_SHARE_CHANNEL_INFO_DEFAULT = true
     const val PREF_BYPASS_COPY_PROTECTION_DEFAULT = true
     const val PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT = true
+    const val PREF_SHOW_PST_DIALOGS_DEFAULT = true
+    const val PREF_SHOW_NU_HUB_DIALOGS_DEFAULT = true
+    const val PREF_SHOW_AMBASSADOR_DIALOGS_DEFAULT = true
     const val PREF_SHOW_AI_CHAT_BOT_CHAT_DEFAULT = true
     const val PREF_MAX_ACCOUNTS_DEFAULT = 10
     const val PREF_MAX_ACCOUNTS_MAX = 100

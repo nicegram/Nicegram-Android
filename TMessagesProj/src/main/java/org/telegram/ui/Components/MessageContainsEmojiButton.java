@@ -4,6 +4,8 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.text.Layout;
 import android.text.Spannable;
@@ -25,6 +27,7 @@ import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 
@@ -53,6 +56,8 @@ public class MessageContainsEmojiButton extends FrameLayout implements Notificat
 
     public final static int EMOJI_TYPE = 0;
     public final static int REACTIONS_TYPE = 1;
+    public final static int EMOJI_STICKER_TYPE = 2;
+    public final static int SINGLE_REACTION_TYPE = 3;
     int type;
 
     private class BoldAndAccent extends CharacterStyle {
@@ -67,6 +72,7 @@ public class MessageContainsEmojiButton extends FrameLayout implements Notificat
 
     public MessageContainsEmojiButton(int currentAccount, Context context, Theme.ResourcesProvider resourcesProvider, @NonNull ArrayList<TLRPC.InputStickerSet> inputStickerSets, int type) {
         super(context);
+
         this.currentAccount = currentAccount;
         this.type = type;
 
@@ -96,6 +102,8 @@ public class MessageContainsEmojiButton extends FrameLayout implements Notificat
             String string;
             if (type == EMOJI_TYPE) {
                 string = LocaleController.getString("MessageContainsEmojiPack", R.string.MessageContainsEmojiPack);
+            } else if (type == SINGLE_REACTION_TYPE) {
+                string = LocaleController.getString("MessageContainsReactionPack", R.string.MessageContainsReactionPack);
             } else {
                 string = LocaleController.getString("MessageContainsReactionsPack", R.string.MessageContainsReactionsPack);
             }
@@ -130,7 +138,7 @@ public class MessageContainsEmojiButton extends FrameLayout implements Notificat
                         }
                     }, 0, emoji.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     emojiDrawable = AnimatedEmojiDrawable.make(currentAccount, AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES, document);
-                    emojiDrawable.setColorFilter(Theme.chat_animatedEmojiTextColorFilter);
+                    emojiDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText, resourcesProvider), PorterDuff.Mode.SRC_IN));
                     emojiDrawable.addView(this);
 
                     SpannableString stickerPack = new SpannableString(stickerPackName);

@@ -335,6 +335,14 @@ public:
     std::string bot_inline_placeholder;
     std::string lang_code;
     std::vector<std::unique_ptr<TL_username>> usernames;
+    int32_t stories_max_id;
+    int32_t emojiStatusMagic;
+    int64_t emojiStatusDocumentId;
+    int32_t emojiStatusUntil;
+    int32_t color_color;
+    int64_t color_background_emoji_id;
+    int32_t profile_color_color;
+    int64_t profile_color_background_emoji_id;
 
     static User *TLdeserialize(NativeByteBuffer *stream, uint32_t constructor, int32_t instanceNum, bool &error);
 };
@@ -351,7 +359,7 @@ public:
 class TL_user : public User {
 
 public:
-    static const uint32_t constructor = 0x8f97c628;
+    static const uint32_t constructor = 0x215c4438;
 
     void readParams(NativeByteBuffer *stream, int32_t instanceNum, bool &error);
     void serializeToStream(NativeByteBuffer *stream);

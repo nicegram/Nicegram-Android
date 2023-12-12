@@ -1,5 +1,6 @@
 package app.nicegram
 
+import com.google.android.exoplayer2.util.Log
 import org.telegram.messenger.LocaleController.LocaleInfo
 
 object NicegramLocales {
@@ -49,9 +50,12 @@ object NicegramLocales {
         "LimitReachedPinDialogs",
         "TelegramPremiumUserDialogSubtitle",
         "PremiumPreviewNoAdsDescription2",
+        "StoriesPremiumHint",
+        "TelegramFAQ",
+        "TelegramFaq",
+        "ArticleByAuthor"
         // endregion
     )
 
-    fun String.replaceTgTitle(key: String) =
-        if (forbiddenKeys.contains(key)) this else this.replace("Telegram", "Nicegram")
+    fun String.replaceTgTitle(key: String) = if (forbiddenKeys.contains(key)) this else this.replace("Telegram", "Nicegram")
 }

@@ -8,13 +8,13 @@
     <string name="NicegramReplyPrivately">Ответить конфиденциально</string>
     <string name="NicegramRegistered">Зарегистрирован</string>
     <string name="NicegramGetRegistrationDate">Узнать дату регистрации</string>
-    <string name="NicegramGetIdCopied">Данный ID был перенесен в буфер обмена</string>
-    <string name="NicegramLoading">Идет загрузка...</string>
-    <string name="NicegramRegDateError">Произошла ошибка, не удалось получить дату регистрации</string>
-    <string name="NicegramUndoTranslate">Отменить перевод сообщения</string>
+    <string name="NicegramGetIdCopied">ID скопирован в буфер обмена</string>
+    <string name="NicegramLoading">Загрузка…</string>
+    <string name="NicegramRegDateError">Извините, не могу получить дату регистрации</string>
+    <string name="NicegramUndoTranslate">Отменить перевод</string>
     <string name="NicegramToLanguage">На язык: %1$s</string>
     <string name="NicegramLanguageDeterminateError">Нам не удалось определить язык, на который вы хотите перевести текст. Выберите его вручную и повторите попытку.</string>
-    <string name="NicegramTranslationUnavailable">Извините, перевод сообщения недоступен</string>
+    <string name="NicegramTranslationUnavailable">Извините, перевод недоступен</string>
     <string name="NicegramForwardAsCopy">Переслать как копию</string>
     <string name="NicegramForwardToSave">Сохранить в Избранное</string>
     <string name="NicegramSkipReadHistory">Пропустить историю чата</string>
@@ -22,12 +22,12 @@
     <string name="NicegramNewerThan">Новее, чем</string>
     <string name="NicegramApproximately">Приблизительно</string>
     <string name="NicegramShowProfileID">Показать ID данного профиля</string>
-    <string name="NicegramShowRegistrationDate">Показать дату регистрации человека</string>
+    <string name="NicegramShowRegistrationDate">Показать дату регистрации</string>
     <string name="NicegramOpenLinksInBrowser">Открывать во внешнем браузере</string>
-    <string name="NicegramUnblockGuide">Руководство по разблокировке канала</string>
+    <string name="NicegramUnblockGuide">Руководство по разблокировке</string>
     <string name="NicegramPremiumFeatures">Возможности\nNicegram Premium</string>
-    <string name="NicegramPrivacyPolicy">Политика конфиденциальности Nicegram</string>
-    <string name="NicegramEULA">Пользовательское соглашение Nicegram</string>
+    <string name="NicegramPrivacyPolicy">Политика конфиденциальности</string>
+    <string name="NicegramEULA">Пользовательское соглашение</string>
     <string name="NicegramSubRenews">Подписка продлевается автоматически</string>
     <string name="NicegramSubPerMonth">Оформить подписку за %s в месяц</string>
     <string name="NicegramBuildInTranslator">Встроенный переводчик</string>
@@ -59,7 +59,7 @@
     <string name="NicegramOnbroadingText5">Безопасный мессенджер с надежным шифрованием, групповыми аудио- и видеозвонками, общедоступными каналами, группами и ботами, неограниченным облачным хранилищем для чатов, а также возможностью обмена медиафайлами и документами.</string>
     <string name="NicegramOnbroadingTitle6">Встречайте ИИ-чатбота Лили!</string>
     <string name="NicegramOnbroadingText6">Ваш личный ИИ-помощник, призванный облегчить вам жизнь!</string>
-    <string name="NicegramDoubleBottom">Двойное дно</string>
+    <string name="NicegramDoubleBottom">Double bottom</string>
     <string name="NicegramDoubleBottomDesc">Чтобы включить эту функцию, у вас должно быть более одного аккаунта и включена блокировка паролем (перейдите в «Настройки» → «Конфиденциальность и безопасность» → «Блокировка паролем»).</string>
     <string name="NicegramDoubleBottomAnotherCode">Установите другой код доступа, отличающийся от того, который Вы используете для Блокировки кодом доступа.</string>
     <string name="QuickReplies">Быстрые ответы</string>
@@ -78,4 +78,11 @@
     <string name="NicegarmTutorial_HelpBtnText">Как получить код?</string>
     <string name="NicegarmTutorial_Dialog_Title">Начиная с февраля 2023 года, выполните следующие действия для получения кода:</string>
     <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. Войдите в <font color="#0A84FF">Telegram</font><br/>2. Войдите в <font color="#A134C7">Nicegram</font><br/>3. Введите код, который вы получите в <font color="#0A84FF">Telegram</font>]]></string>
+    <string name="NicegramMaxAccount_IncreaseTo">Максимум 100 аккаунтов</string>
+    <string name="NicegramMaxAccount_Default">Максимальное количество аккаунтов по умолчанию - 10</string>
+    <string name="NicegramMaxAccount_IncreaseWarn">Увеличение максимального количества аккаунтов может негативно сказаться на скорость запуска приложения и его производительность на некоторых устройствах. Обратите внимание, что вы можете потерять доступ к недавно добавленным аккаунтам, если решите уменьшить их максимальное количество в будущем</string>
+    <string name="NicegramMaxAccount_Increase">Увеличить</string>
+    <string name="NicegramMaxAccount_Reduce">Уменьшить</string>
+    <string name="NicegramMaxAccount_ReduceWarn">Уменьшение максимального количества аккаунтов, вероятно, улучшит производительность приложения на некоторых устройствах. Однако обратите внимание, что вам придется войти во все ваши аккаунты заново, кроме первого</string>
+    <string name="NicegramTryRelogin">Выйдите из своей учетной записи и снова войдите, это может исправить эту проблему.</string>
 </resources>

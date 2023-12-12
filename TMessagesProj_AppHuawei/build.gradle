@@ -34,12 +34,12 @@ dependencies {
     implementation 'com.huawei.hms:maps:6.6.0.300'
     implementation 'com.huawei.hms:location:6.4.0.300'
 
-    implementation 'com.google.dagger:hilt-android:2.40.5'
-    kapt 'com.google.dagger:hilt-compiler:2.40.5'
+    implementation 'com.google.dagger:hilt-android:2.48'
+    kapt 'com.google.dagger:hilt-compiler:2.48'
 }
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34
     buildToolsVersion '33.0.0'
 
     defaultConfig.applicationId = APP_PACKAGE
@@ -57,8 +57,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
 
         coreLibraryDesugaringEnabled true
     }
@@ -147,7 +147,7 @@ android {
 
     defaultConfig {
         minSdkVersion 23
-        targetSdkVersion 31
+        targetSdkVersion 33
         versionName APP_VERSION_NAME
         ndkVersion "21.4.7075529"
 
@@ -158,7 +158,7 @@ android {
         externalNativeBuild {
             cmake {
                 version '3.10.2'
-                arguments '-DANDROID_STL=c++_static', '-DANDROID_PLATFORM=android-16', "-j=16"
+                arguments '-DANDROID_STL=c++_static', '-DANDROID_PLATFORM=android-16'/*, "-j=16"*/
             }
         }
     }
@@ -166,6 +166,7 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    namespace 'org.telegram.messenger.huawei'
 
     lintOptions {
         checkReleaseBuilds false

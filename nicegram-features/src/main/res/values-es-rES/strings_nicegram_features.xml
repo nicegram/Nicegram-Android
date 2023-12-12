@@ -78,4 +78,11 @@
     <string name="NicegarmTutorial_HelpBtnText">¿Cómo puedo recibir el código?</string>
     <string name="NicegarmTutorial_Dialog_Title">A partir del febrero de 2023 sigue los pasos siguientes para recibir el código:</string>
     <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. Inicia sesión en <font color="#0A84FF">Telegram</font><br/>2. Inicia sesión en <font color="#A134C7">Nicegram</font><br/>3. Introduce el código que recibirás en <font color="#0A84FF">Telegram</font>]]></string>
+    <string name="NicegramMaxAccount_IncreaseTo">Máximo de 100 cuentas</string>
+    <string name="NicegramMaxAccount_Default">El número máximo predeterminado de cuentas es 10</string>
+    <string name="NicegramMaxAccount_IncreaseWarn">Aumentar el número máximo de cuentas podría tener un impacto negativo en la velocidad de lanzamiento de la aplicación y su rendimiento en ciertos dispositivos. Ten en cuenta que puedes perder el acceso a tus cuentas recién añadidas si decides reducir su número máximo en el futuro</string>
+    <string name="NicegramMaxAccount_Increase">Aumentar</string>
+    <string name="NicegramMaxAccount_Reduce">Reducir</string>
+    <string name="NicegramMaxAccount_ReduceWarn">Reducir el número máximo de cuentas probablemente mejorará el rendimiento de la aplicación en ciertos dispositivos. Sin embargo, ten en cuenta que tendrás que iniciar sesión en todas tus cuentas de nuevo, excepto en la primera</string>
+    <string name="NicegramTryRelogin">Cerrar sesión en tu cuenta y volver a iniciar sesión puede solucionar este problema.</string>
 </resources>

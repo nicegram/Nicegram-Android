@@ -1,5 +1,6 @@
 package app.nicegram
 
+import com.appvillis.nicegram.BuildConfig
 import com.google.gson.Gson
 import org.telegram.messenger.MessagesController
 

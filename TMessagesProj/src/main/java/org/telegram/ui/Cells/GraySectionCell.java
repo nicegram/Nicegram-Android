@@ -24,6 +24,7 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.Premium.CarouselView;
 import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.List;
@@ -33,6 +34,7 @@ public class GraySectionCell extends FrameLayout {
     private TextView textView;
     private AnimatedTextView rightTextView;
     private final Theme.ResourcesProvider resourcesProvider;
+    private int layerHeight = 32;
 
     public GraySectionCell(Context context) {
         this(context, null);
@@ -69,7 +71,14 @@ public class GraySectionCell extends FrameLayout {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(32), MeasureSpec.EXACTLY));
+        super.onMeasure(
+                MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(layerHeight), MeasureSpec.EXACTLY));
+    }
+
+    public void setLayerHeight(int dp){
+        layerHeight = dp;
+        requestLayout();
     }
 
     public void setTextColor(int key) {
@@ -82,7 +91,7 @@ public class GraySectionCell extends FrameLayout {
         return textView.getText();
     }
 
-    public void setText(String text) {
+    public void setText(CharSequence text) {
         textView.setText(text);
         rightTextView.setVisibility(GONE);
         rightTextView.setOnClickListener(null);
@@ -101,6 +110,18 @@ public class GraySectionCell extends FrameLayout {
 
     public void setRightText(String right, boolean moveDown) {
         rightTextView.setText(right, true, moveDown);
+        rightTextView.setVisibility(VISIBLE);
+    }
+
+    public void setRightText(String right, OnClickListener onClickListener) {
+        rightTextView.setText(right, false);
+        rightTextView.setOnClickListener(onClickListener);
+        rightTextView.setVisibility(VISIBLE);
+    }
+
+    public void setRightText(String right, boolean moveDown, OnClickListener onClickListener) {
+        rightTextView.setText(right, true, moveDown);
+        rightTextView.setOnClickListener(onClickListener);
         rightTextView.setVisibility(VISIBLE);
     }
 

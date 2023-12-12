@@ -94,6 +94,8 @@
     <string name="NicegramMaxAccount_Reduce">Reduce</string>
     <string name="NicegramMaxAccount_ReduceWarn">Reducing the maximum number of accounts is likely to improve the app’s performance on certain devices. However, please note that you will have to log into all your accounts again apart from your first one</string>
 
+    <string name="NicegramTryRelogin">Logging out of your account and logging back in may fix this issue.</string>
+
     <string name="NicegramIconDefault" translatable="false">Default</string>
     <string name="NicegramIconMonoBlack" translatable="false">Mono Black</string>
     <string name="NicegramIconFilled" translatable="false">Filled</string>
@@ -102,6 +104,10 @@
     <string name="NicegramIconNicegramLight" translatable="false">Light</string>
     <string name="NicegramIconNicegramClassic" translatable="false">Classic</string>
     <string name="NicegramIconSpecial" translatable="false">Special</string>
+    <string name="CommunityIconClassic" translatable="false">NGC Classic</string>
+    <string name="CommunityIconOnyx" translatable="false">NGC Onyx</string>
+    <string name="CommunityIconWatercolor" translatable="false">NGC Water</string>
+    <string name="CommunityIconRuby" translatable="false">NGC Ruby</string>
 
     <string name="NicegramAppName" translatable="false">Nicegram</string>
 </resources>

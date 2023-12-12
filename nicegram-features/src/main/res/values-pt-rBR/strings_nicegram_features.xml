@@ -59,7 +59,7 @@
     <string name="NicegramOnbroadingText5">Proteja o Aplicativo de Mensagens com Criptografia de Alta Segurança, Chamadas de Áudio e Vídeo em Grupo, Canais Públicos, Grupos e Bots, Armazenamento Ilimitado em Nuvem para as Conversas, compartilhamento de Mídia e Documentos.</string>
     <string name="NicegramOnbroadingTitle6">Conheça a Lily</string>
     <string name="NicegramOnbroadingText6">Seu assistente pessoal de IA Chatbot para simplificar sua vida!</string>
-    <string name="NicegramDoubleBottom">Fundo Duplo</string>
+    <string name="NicegramDoubleBottom">Double Bottom</string>
     <string name="NicegramDoubleBottomDesc">Para ativar o recurso, deve-se ter mais de uma conta e ativar Bloqueio por Código (em Configurações→Privacidade e Segurança→Bloqueio por Código)</string>
     <string name="NicegramDoubleBottomAnotherCode">Por favor, defina outra senha, diferente da que você usa como senha de bloqueio</string>
     <string name="QuickReplies">Respostas rápidas</string>
@@ -78,4 +78,11 @@
     <string name="NicegarmTutorial_HelpBtnText">Como posso receber o código?</string>
     <string name="NicegarmTutorial_Dialog_Title">A partir de fevereiro de 2023, siga os passos abaixo para receber o código:</string>
     <string name="NicegarmTutorial_Dialog_Steps_Styled"><![CDATA[1. Entra no <font color="#0A84FF">Telegram</font><br/>2. Entra no <font color="#A134C7">Nicegram</font><br/>3. Digite o código que você receberá no <font color="#0A84FF">Telegram</font>]]></string>
+    <string name="NicegramMaxAccount_IncreaseTo">Máximo de 100 contas</string>
+    <string name="NicegramMaxAccount_Default">O número máximo padrão de contas é 10</string>
+    <string name="NicegramMaxAccount_IncreaseWarn">Aumentar o número máximo de contas pode ter um impacto negativo na velocidade de lançamento do aplicativo e no desempenho em alguns dispositivos. Observe que você pode perder o acesso às suas contas recém-adicionadas se decidir reduzir o número máximo delas no futuro</string>
+    <string name="NicegramMaxAccount_Increase">Aumentar</string>
+    <string name="NicegramMaxAccount_Reduce">Reduzir</string>
+    <string name="NicegramMaxAccount_ReduceWarn">Reduzir o número máximo de contas provavelmente melhorará o desempenho do aplicativo em alguns dispositivos. No entanto, observe que você terá que fazer login em todas as suas contas novamente, exceto na primeira</string>
+    <string name="NicegramTryRelogin">Fazer o logout da sua conta e fazer o login novamente pode resolver esse problema.</string>
 </resources>
