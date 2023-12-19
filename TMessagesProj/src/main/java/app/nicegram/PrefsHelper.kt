@@ -187,11 +187,11 @@ object PrefsHelper {
     }
 
     fun canShowAmbassadorBanner(context: Context): Boolean {
-        return System.currentTimeMillis() - getNgGlobalPrefs(context).getLong(NicegramPrefs.PREF_AMBASSADOR_BANNER_TS, 0L) > TimeUnit.SECONDS.toMillis(60)
+        return System.currentTimeMillis() - getNgGlobalPrefs(context).getLong(NicegramPrefs.PREF_AMBASSADOR_BANNER_TS, 0L) > TimeUnit.DAYS.toMillis(30)
     }
 
     fun canShowNuHubBanner(context: Context): Boolean {
-        return System.currentTimeMillis() - getNgGlobalPrefs(context).getLong(NicegramPrefs.PREF_NU_HUB_BANNER_TS, 0L) > TimeUnit.SECONDS.toMillis(60)
+        return System.currentTimeMillis() - getNgGlobalPrefs(context).getLong(NicegramPrefs.PREF_NU_HUB_BANNER_TS, 0L) > TimeUnit.DAYS.toMillis(30)
     }
 
     fun setAmbassadorBannerTs(context: Context, ts: Long) {
