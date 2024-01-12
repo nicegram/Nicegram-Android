@@ -70,6 +70,8 @@ import androidx.dynamicanimation.animation.SpringForce;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.nicegram.RoundedVideoHelper;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ChatObject;
@@ -2557,7 +2559,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     sendButtonColorAnimator.setDuration(150).start();
                 }
 
-//                if (!captionLimitBulletinShown && !MessagesController.getInstance(currentAccount).premiumLocked && !UserConfig.getInstance(currentAccount).isPremium() && codepointCount > MessagesController.getInstance(currentAccount).captionLengthLimitDefault && codepointCount < MessagesController.getInstance(currentAccount).captionLengthLimitPremium) {
+//                if (!captionLimitBulletinShown && !MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && !UserConfig.getInstance(currentAccount).isPremium() && codepointCount > MessagesController.getInstance(currentAccount).captionLengthLimitDefault && codepointCount < MessagesController.getInstance(currentAccount).captionLengthLimitPremium) {
 //                    captionLimitBulletinShown = true;
 //                    showCaptionLimitBulletin(parentFragment);
 //                }
@@ -2616,6 +2618,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
         writeButtonContainer.addView(writeButton, LayoutHelper.createFrame(Build.VERSION.SDK_INT >= 21 ? 56 : 60, Build.VERSION.SDK_INT >= 21 ? 56 : 60, Gravity.LEFT | Gravity.TOP, Build.VERSION.SDK_INT >= 21 ? 2 : 0, 0, 0, 0));
         writeButton.setOnClickListener(v -> {
+            RoundedVideoHelper.INSTANCE.setMakeVideoRounded(false);
+
             if (currentLimit - codepointCount < 0) {
                 AndroidUtilities.shakeView(captionLimitView);
                 try {
@@ -2623,7 +2627,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 } catch (Exception ignored) {
                 }
 
-                if (!MessagesController.getInstance(currentAccount).premiumLocked && MessagesController.getInstance(currentAccount).captionLengthLimitPremium > codepointCount) {
+                if (!MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && MessagesController.getInstance(currentAccount).captionLengthLimitPremium > codepointCount) {
                     showCaptionLimitBulletin(parentFragment);
                 }
                 return;
@@ -2693,9 +2697,10 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             });
             sendPopupLayout.setShownFromBottom(false);
 
-            itemCells = new ActionBarMenuSubItem[2];
+            int itemsSize = ChatAttachAlertPhotoLayout.canShowSendAsRounded() ? 3 : 2; // ng
+            itemCells = new ActionBarMenuSubItem[itemsSize];
             int i = 0;
-            for (int a = 0; a < 2; a++) {
+            for (int a = 0; a < itemCells.length; a++) {
                 if (a == 0) {
                     if ((chatActivity != null && !chatActivity.canScheduleMessage()) || !currentAttachLayout.canScheduleMessages()) {
                         continue;
@@ -2713,12 +2718,16 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     }
                 } else if (num == 1) {
                     itemCells[a].setTextAndIcon(LocaleController.getString("SendWithoutSound", R.string.SendWithoutSound), R.drawable.input_notify_off);
+                } else if (num == 2) {
+                    itemCells[a].setTextAndIcon(LocaleController.getString("NicegarmSendAsRounded", R.string.NicegarmSendAsRounded), R.drawable.input_video);
                 }
                 itemCells[a].setMinimumWidth(AndroidUtilities.dp(196));
 
                 sendPopupLayout.addView(itemCells[a], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
                 long finalDialogId = dialogId;
                 itemCells[a].setOnClickListener(v -> {
+                    RoundedVideoHelper.INSTANCE.setMakeVideoRounded(false);
+
                     if (sendPopupWindow != null && sendPopupWindow.isShowing()) {
                         sendPopupWindow.dismiss();
                     }
@@ -2738,6 +2747,9 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                             currentAttachLayout.sendSelectedItems(false, 0);
                             dismiss();
                         }
+                    } else if (num == 2) {
+                        RoundedVideoHelper.INSTANCE.setMakeVideoRounded(true);
+                        sendPressed(false, 0);
                     }
                 });
                 i++;

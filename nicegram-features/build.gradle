@@ -45,6 +45,10 @@ android {
     }
     buildFeatures {
         viewBinding true
+        compose true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.3"
     }
     namespace 'com.appvillis.nicegram'
 }
@@ -66,8 +70,6 @@ dependencies {
 
     implementation 'com.google.firebase:firebase-config:21.4.1'
 
-    implementation 'com.tbuonomo:dotsindicator:4.3'
-    implementation 'androidx.viewpager2:viewpager2:1.0.0'
 
     implementation "com.google.android.play:review:2.0.1"
 

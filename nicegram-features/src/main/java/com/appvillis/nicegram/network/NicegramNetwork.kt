@@ -24,16 +24,6 @@ import java.util.concurrent.TimeUnit
 object NicegramNetwork {
     private const val TIMEOUT = 60L
 
-    val googleCloudApi by lazy {
-        val retrofit = Retrofit.Builder()
-            .baseUrl(NicegramNetworkConsts.GOOGLE_CLOUD_BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-
-        retrofit.create(GoogleCloudApi::class.java)
-    }
-
     private val nicegramApi by lazy {
         val retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL)
@@ -138,7 +128,7 @@ object NicegramNetwork {
                 unblockReasons.clear()
                 unblockReasons.addAll(result.reasons)
 
-                NicegramBillingHelper.setGiftedPremium(result.premium)
+                if (result.premium) NicegramBillingHelper.setGiftedPremium(true)
             } catch (e: Exception) {
                 if (BuildConfig.DEBUG) e.printStackTrace()
             }

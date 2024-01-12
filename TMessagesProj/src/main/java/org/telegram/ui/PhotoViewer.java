@@ -133,7 +133,8 @@ import androidx.recyclerview.widget.LinearSmoothScrollerEnd;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
-import com.appvillis.nicegram.presentation.NicegramPremiumActivity;
+import com.appvillis.nicegram.RoundedVideoHelper;
+import com.appvillis.feature_nicegram_client.presentation.premium.NicegramPremiumActivity;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.analytics.AnalyticsListener;
@@ -5988,7 +5989,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
 
             @Override
-            protected boolean ignoreTouches() {
+            protected boolean ignoreTouches(float x, float y) {
                 return !keyboardShown && currentEditMode != EDIT_MODE_NONE;
             }
 
@@ -6100,10 +6101,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         pickerViewSendButton.setContentDescription(LocaleController.getString("Send", R.string.Send));
         ScaleStateListAnimator.apply(pickerViewSendButton);
         pickerViewSendButton.setOnClickListener(v -> {
+            RoundedVideoHelper.INSTANCE.setMakeVideoRounded(false);
             if (captionEdit.isCaptionOverLimit()) {
                 AndroidUtilities.shakeViewSpring(captionEdit.limitTextView, shiftDp = -shiftDp);
                 BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                if (!MessagesController.getInstance(currentAccount).premiumLocked && MessagesController.getInstance(currentAccount).captionLengthLimitPremium > captionEdit.getCodePointCount()) {
+                if (!MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && MessagesController.getInstance(currentAccount).captionLengthLimitPremium > captionEdit.getCodePointCount()) {
                     showCaptionLimitBulletin(containerView);
                 }
                 return;
@@ -6150,7 +6152,10 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             sendPopupLayout.setBackgroundColor(0xf9222222);
 
             final boolean canReplace = placeProvider != null && placeProvider.canReplace(currentIndex);
+            //final int[] order = {4, 3, 2, 0, 1, 5};
             final int[] order = {4, 3, 2, 0, 1};
+            //int itemsSize = isCurrentVideo ? order.length : order.length - 1;
+            // (int i = 0; i < itemsSize; i++) {
             for (int i = 0; i < 5; i++) {
                 final int a = order[i];
                 if (a != 2 && a != 3 && canReplace) {
@@ -6207,11 +6212,15 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     } else {
                         cell.setTextAndIcon(LocaleController.getString(R.string.SendAsFile), R.drawable.msg_sendfile);
                     }
+                } else if (a == 5) {
+                    cell.setTextAndIcon(LocaleController.getString(R.string.NicegarmSendAsRounded), R.drawable.input_video);
                 }
                 cell.setMinimumWidth(dp(196));
                 cell.setColors(0xffffffff, 0xffffffff);
                 sendPopupLayout.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
                 cell.setOnClickListener(v -> {
+                    RoundedVideoHelper.INSTANCE.setMakeVideoRounded(false);
+                    
                     if (sendPopupWindow != null && sendPopupWindow.isShowing()) {
                         sendPopupWindow.dismiss();
                     }
@@ -6225,6 +6234,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         sendPressed(true, 0);
                     } else if (a == 4) {
                         sendPressed(true, 0, false, true, false);
+                    } else if (a == 5) {
+                        RoundedVideoHelper.INSTANCE.setMakeVideoRounded(true);
+                        sendPressed(false, 0);
                     }
                 });
             }
@@ -10741,6 +10753,10 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 updateMinMax(scale);
                 padImageForHorizontalInsets = true;
                 containerView.invalidate();
+
+                if (placeProvider == null || !placeProvider.closeKeyboard()) {
+                    makeFocusable();
+                }
             }
         });
         imageMoveAnimation.start();

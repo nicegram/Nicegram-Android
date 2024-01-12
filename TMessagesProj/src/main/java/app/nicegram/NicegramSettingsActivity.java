@@ -2,7 +2,6 @@ package app.nicegram;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -13,11 +12,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
-import com.appvillis.nicegram.NicegramConsts;
+import com.appvillis.feature_nicegram_client.NicegramConsts;
 import com.appvillis.nicegram.NicegramPrefs;
 import com.appvillis.nicegram.network.NicegramNetwork;
 
-import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
@@ -29,7 +27,6 @@ import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
-import org.telegram.ui.Cells.DividerCell;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
@@ -56,7 +53,6 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int nicegramSectionRow;
 
     private int maxAccountsRow;
-    private int skipReadHistoryRow;
     private int showProfileIdRow;
     private int showRegDateRow;
     private int openLinksRow;
@@ -89,7 +85,6 @@ public class NicegramSettingsActivity extends BaseFragment {
         showProfileIdRow = rowCount++;
         showRegDateRow = rowCount++;
         hideReactionsRow = rowCount++;
-        skipReadHistoryRow = rowCount++;
         openLinksRow = rowCount++;
         shareChannelsInfoRow = rowCount++;
 
@@ -156,12 +151,6 @@ public class NicegramSettingsActivity extends BaseFragment {
                 editor.putBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, !enabled);
                 editor.apply();
                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.mainUserInfoChanged);
-            } else if (position == skipReadHistoryRow) {
-                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_SKIP_READ_HISTORY, NicegramPrefs.PREF_SKIP_READ_HISTORY_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_SKIP_READ_HISTORY, !enabled);
-                editor.apply();
             } else if (position == showProfileIdRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
@@ -330,9 +319,7 @@ public class NicegramSettingsActivity extends BaseFragment {
                 case 1: {
                     TextCheckCell checkCell = (TextCheckCell) holder.itemView;
                     SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                    if (position == skipReadHistoryRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("NicegramSkipReadHistory"), preferences.getBoolean(NicegramPrefs.PREF_SKIP_READ_HISTORY, NicegramPrefs.PREF_SKIP_READ_HISTORY_DEFAULT), false);
-                    } else if (position == showProfileIdRow) {
+                    if (position == showProfileIdRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramShowProfileID"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_PROFILE_ID, NicegramPrefs.PREF_SHOW_PROFILE_ID_DEFAULT), false);
                     } else if (position == showRegDateRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramShowRegistrationDate"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT), false);
@@ -386,7 +373,7 @@ public class NicegramSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == pinSectionHeaderRow) {
                 return 0;
-            } else if (position == skipReadHistoryRow || position == openLinksRow ||
+            } else if (position == openLinksRow ||
                     position == showRegDateRow || position == showProfileIdRow ||
                     position == startWithRearCameraRow || position == downloadVideosToGallery ||
                     position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow || position == maxAccountsRow || position == shareChannelsInfoRow ||

@@ -15,6 +15,7 @@ def modules = [
         'feature-ads',
         'feature-nuhub',
         'feature-rewards',
+        'feature-nicegram-client',
         'rep-user',
         'lib-android-base',
         'core-ui',

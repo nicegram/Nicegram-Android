@@ -2,18 +2,13 @@ package app.nicegram
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.appvillis.feature_nicegram_client.domain.CommonRemoteConfigRepo
 import com.appvillis.nicegram.NicegramPrefs
-import com.appvillis.nicegram.domain.RemoteConfigRepo
 import org.telegram.messenger.MessagesController
 import java.util.concurrent.TimeUnit
 
 object PrefsHelper {
-    var remoteConfigRepo: RemoteConfigRepo? = null
-
-    fun shouldSkipRead(currentAccount: Int): Boolean {
-        return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(NicegramPrefs.PREF_SKIP_READ_HISTORY, NicegramPrefs.PREF_SKIP_READ_HISTORY_DEFAULT)
-    }
+    var remoteConfigRepo: CommonRemoteConfigRepo? = null
 
     fun showProfileId(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
@@ -47,7 +42,10 @@ object PrefsHelper {
 
     fun shouldDownloadVideosToGallery(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY, NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY_DEFAULT)
+            .getBoolean(
+                NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY,
+                NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY_DEFAULT
+            )
     }
 
     fun hidePhoneNumber(currentAccount: Int): Boolean {
@@ -59,10 +57,14 @@ object PrefsHelper {
         return MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, NicegramPrefs.PREF_HIDE_REACTIONS_DEFAULT)
     }
+
     // region ng translate input text
     fun getTranslateLanguageToShortName(currentAccount: Int, currentChat: Long): String {
         return MessagesController.getNicegramSettings(currentAccount)
-            .getString(NicegramPrefs.PREF_CHAT_LANGUAGE_TO_TRANSLATE + currentChat, NicegramPrefs.PREF_CHAT_LANGUAGE_TO_TRANSLATE_DEFAULT) ?: NicegramPrefs.PREF_CHAT_LANGUAGE_TO_TRANSLATE_DEFAULT
+            .getString(
+                NicegramPrefs.PREF_CHAT_LANGUAGE_TO_TRANSLATE + currentChat,
+                NicegramPrefs.PREF_CHAT_LANGUAGE_TO_TRANSLATE_DEFAULT
+            ) ?: NicegramPrefs.PREF_CHAT_LANGUAGE_TO_TRANSLATE_DEFAULT
     }
 
     fun setTranslateLanguageToShortName(currentAccount: Int, currentChat: Long, newLocaleShortName: String) {
@@ -111,7 +113,10 @@ object PrefsHelper {
 
     fun getShowAiChatBotDialogs(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT)
+            .getBoolean(
+                NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS,
+                NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT
+            )
     }
 
     fun setShowPstDialogs(currentAccount: Int, show: Boolean) {
@@ -168,7 +173,7 @@ object PrefsHelper {
     }
 
     fun setMaxAccountCountWasSet(context: Context) {
-       getNgGlobalPrefs(context)
+        getNgGlobalPrefs(context)
             .edit()
             .putBoolean(NicegramPrefs.PREF_MAX_ACCOUNTS_SET, true)
             .apply()
@@ -187,11 +192,17 @@ object PrefsHelper {
     }
 
     fun canShowAmbassadorBanner(context: Context): Boolean {
-        return System.currentTimeMillis() - getNgGlobalPrefs(context).getLong(NicegramPrefs.PREF_AMBASSADOR_BANNER_TS, 0L) > TimeUnit.DAYS.toMillis(30)
+        return System.currentTimeMillis() - getNgGlobalPrefs(context).getLong(
+            NicegramPrefs.PREF_AMBASSADOR_BANNER_TS,
+            0L
+        ) > TimeUnit.DAYS.toMillis(30)
     }
 
     fun canShowNuHubBanner(context: Context): Boolean {
-        return System.currentTimeMillis() - getNgGlobalPrefs(context).getLong(NicegramPrefs.PREF_NU_HUB_BANNER_TS, 0L) > TimeUnit.DAYS.toMillis(30)
+        return System.currentTimeMillis() - getNgGlobalPrefs(context).getLong(
+            NicegramPrefs.PREF_NU_HUB_BANNER_TS,
+            0L
+        ) > TimeUnit.DAYS.toMillis(30)
     }
 
     fun setAmbassadorBannerTs(context: Context, ts: Long) {
@@ -208,5 +219,32 @@ object PrefsHelper {
             .apply()
     }
 
-    private fun getNgGlobalPrefs(context: Context) = context.getSharedPreferences("NG_GLOBAL_PREFS", Context.MODE_PRIVATE)
+    fun getSpeech2TextOpenAi(context: Context): Boolean {
+        return getNgGlobalPrefs(context)
+            .getBoolean(NicegramPrefs.PREF_S2TEXT_OPEN_AI_ENABLED, NicegramPrefs.PREF_S2TEXT_OPEN_AI_ENABLED_DEFAULT)
+    }
+
+    fun setSpeech2TextOpenAi(context: Context, enabled: Boolean) {
+        getNgGlobalPrefs(context)
+            .edit()
+            .putBoolean(NicegramPrefs.PREF_S2TEXT_OPEN_AI_ENABLED, enabled)
+            .apply()
+    }
+
+    fun setSpeech2TextBulletinSeen(context: Context) {
+        getNgGlobalPrefs(context)
+            .edit()
+            .putBoolean(NicegramPrefs.PREF_S2TEXT_BULLET_SEEN, true)
+            .apply()
+    }
+
+    fun getSpeech2TextBulletinSeen(context: Context): Boolean {
+        return getNgGlobalPrefs(context)
+            .getBoolean(NicegramPrefs.PREF_S2TEXT_BULLET_SEEN, NicegramPrefs.PREF_S2TEXT_BULLET_SEEN_DEFAULT)
+    }
+
+    fun alwaysShowSpeech2Text() = remoteConfigRepo?.alwaysShowSpeech2Text ?: false
+
+    private fun getNgGlobalPrefs(context: Context) =
+        context.getSharedPreferences("NG_GLOBAL_PREFS", Context.MODE_PRIVATE)
 }

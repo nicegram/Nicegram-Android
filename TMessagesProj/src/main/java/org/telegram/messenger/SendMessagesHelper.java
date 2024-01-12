@@ -34,7 +34,6 @@ import android.provider.OpenableColumns;
 import android.text.Spannable;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.Log;
 import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -47,6 +46,8 @@ import android.widget.Toast;
 import androidx.annotation.UiThread;
 import androidx.collection.LongSparseArray;
 import androidx.core.view.inputmethod.InputContentInfoCompat;
+
+import com.appvillis.nicegram.RoundedVideoHelper;
 
 import org.json.JSONObject;
 import org.telegram.messenger.audioinfo.AudioInfo;
@@ -596,6 +597,30 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         public boolean updateStickersOrder;
         public boolean hasMediaSpoilers;
         public TLRPC.VideoSize emojiMarkup;
+
+        public SendingMediaInfo copy() {
+            SendingMediaInfo newItem = new SendingMediaInfo();
+            newItem.canDeleteAfter = this.canDeleteAfter;
+            newItem.emojiMarkup = this.emojiMarkup;
+            newItem.caption = this.caption;
+            newItem.forceImage = this.forceImage;
+            newItem.hasMediaSpoilers = this.hasMediaSpoilers;
+            newItem.entities = this.entities;
+            newItem.inlineResult = this.inlineResult;
+            newItem.isVideo = this.isVideo;
+            newItem.masks = this.masks;
+            newItem.paintPath = this.paintPath;
+            newItem.params = this.params;
+            newItem.path = this.path;
+            newItem.thumbPath = this.thumbPath;
+            newItem.searchImage = this.searchImage;
+            newItem.ttl = this.ttl;
+            newItem.uri = this.uri;
+            newItem.updateStickersOrder = this.updateStickersOrder;
+            newItem.videoEditedInfo = this.videoEditedInfo;
+
+            return newItem;
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -7625,8 +7650,97 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         return bmOptions.outWidth < 800 && bmOptions.outHeight < 800;
     }
 
+
+    private static VideoEditedInfo createCircleVideoInfo(SendingMediaInfo mediaItem) {
+        VideoEditedInfo videoInfo = createCompressionSettings(mediaItem.path);
+        videoInfo.paintPath = mediaItem.paintPath;
+        MediaController.CropState cropState;
+        if (mediaItem.videoEditedInfo != null && mediaItem.videoEditedInfo.cropState != null) {
+            cropState = mediaItem.videoEditedInfo.cropState;
+        } else {
+            cropState =  new MediaController.CropState();
+            cropState.cropPx = 0.0f;
+            cropState.cropPy = 0.0f;
+            if ((videoInfo.rotationValue == 90 || videoInfo.rotationValue == 270) && videoInfo.originalWidth > videoInfo.originalHeight) {
+                cropState.cropPh = (float) videoInfo.originalHeight / videoInfo.originalWidth;
+                cropState.cropPw = 1.0f;
+            } else if (videoInfo.originalHeight > videoInfo.originalWidth) {
+                cropState.cropPh = (float) videoInfo.originalWidth / videoInfo.originalHeight;
+                cropState.cropPw = 1.0f;
+            }  else {
+                cropState.cropPh = 1.0f;
+                cropState.cropPw = (float) videoInfo.originalHeight / videoInfo.originalWidth;
+            }
+
+            cropState.cropRotate = 0.0f;
+            cropState.cropScale = 1.0f;
+            cropState.freeform = true;
+            cropState.width = videoInfo.resultWidth;
+            cropState.height = videoInfo.resultHeight;
+            cropState.transformRotation = 0;
+        }
+        cropState.transformHeight = 640;
+        cropState.transformWidth = 640;
+
+        videoInfo.cropState = cropState;
+        return videoInfo;
+    }
+
     @UiThread
     public static void prepareSendingMedia(AccountInstance accountInstance, ArrayList<SendingMediaInfo> media, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, boolean forceDocument, boolean groupMedia, MessageObject editingMessageObject, boolean notify, int scheduleDate, boolean updateStikcersOrder, InputContentInfoCompat inputContent) {
+        if (RoundedVideoHelper.INSTANCE.getMakeVideoRounded() && !media.isEmpty() && media.get(0).isVideo) {
+            ArrayList<SendingMediaInfo> adjustedMedia = new ArrayList<>();
+            ArrayList<VideoEditedInfo> videoInfos = new ArrayList<>();
+            for (int i = 0, N = media.size(); i < N; i++) {
+                SendingMediaInfo mediaItem = media.get(i);
+                VideoEditedInfo videoEditedInfoNew = createCompressionSettings(mediaItem.path);
+                if (videoEditedInfoNew.originalDuration <= TimeUnit.SECONDS.toMicros(60)) {
+                    adjustedMedia.add(mediaItem);
+                    videoInfos.add(createCircleVideoInfo(mediaItem));
+                } else {
+                    int partsN = (int) Math.ceil((float) videoEditedInfoNew.originalDuration / TimeUnit.SECONDS.toMicros(60));
+                    for (int j = 0; j < partsN; j++) {
+                        SendingMediaInfo newItem = mediaItem.copy();
+                        VideoEditedInfo videoInfo = createCircleVideoInfo(mediaItem);
+
+                        long startTime = j * TimeUnit.SECONDS.toMicros(60);
+                        long endTime = Math.min(videoInfo.originalDuration, startTime + TimeUnit.SECONDS.toMicros(60));
+                        videoInfo.end = (float) endTime / videoInfo.originalDuration;
+                        videoInfo.endTime = (int) (videoInfo.originalDuration * videoInfo.end);
+                        videoInfo.start = (float) startTime / videoInfo.originalDuration;
+                        videoInfo.startTime = (int) (videoInfo.originalDuration * videoInfo.start);
+                        videoInfo.estimatedDuration = (videoInfo.endTime - videoInfo.startTime) / 1000;
+                        videoInfo.estimatedSize = Math.round(videoInfo.estimatedSize * (videoInfo.estimatedDuration * 1000f / videoInfo.originalDuration));
+
+                        adjustedMedia.add(newItem);
+                        videoInfos.add(videoInfo);
+                    }
+
+                }
+            }
+            new Thread(() -> {
+                for (int i = 0, N = adjustedMedia.size(); i < N; i++) {
+                    try {
+                        SendingMediaInfo mediaItem = adjustedMedia.get(i);
+                        prepareSendingVideo(accountInstance, mediaItem.path, videoInfos.get(i), dialogId, replyToMsg, replyToTopMsg, storyItem, quote, null, 0, editingMessageObject, notify, scheduleDate, forceDocument, false, null);
+                        if (mediaItem.caption != null && !mediaItem.caption.isEmpty()) {
+                            SendMessageParams msgParams = new SendMessageParams();
+                            msgParams.message = mediaItem.caption;
+                            msgParams.peer = dialogId;
+                            SendMessagesHelper.getInstance(accountInstance.getCurrentAccount()).sendMessage(msgParams);
+                        }
+                        if (i < N - 1) Thread.sleep(1000L);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }).start();
+
+            return;
+        } else if (RoundedVideoHelper.INSTANCE.getMakeVideoRounded() && !media.isEmpty() && !media.get(0).isVideo) {
+            RoundedVideoHelper.INSTANCE.setMakeVideoRounded(false);
+        }
+
         if (media.isEmpty()) {
             return;
         }
@@ -8081,7 +8195,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                 if (editingMessageObject != null) {
                                     accountInstance.getSendMessagesHelper().editMessage(editingMessageObject, null, videoEditedInfo, videoFinal, finalPath, params, false, info.hasMediaSpoilers, parentFinal);
                                 } else {
-                                    SendMessageParams sendMessageParams = SendMessageParams.of(videoFinal, videoEditedInfo, finalPath, dialogId, replyToMsg, replyToTopMsg, info.caption, info.entities, null, params, notify, scheduleDate, info.ttl, parentFinal, null, false, info.hasMediaSpoilers);
+                                    boolean forceRounded = RoundedVideoHelper.INSTANCE.getMakeVideoRounded();
+                                    if (forceRounded) ((TLRPC.TL_documentAttributeVideo) videoFinal.attributes.get(0)).round_message = true;
+                                    SendMessageParams sendMessageParams = SendMessageParams.of(videoFinal, forceRounded ? createCompressionSettings(info.path) : videoEditedInfo, finalPath, dialogId, replyToMsg, replyToTopMsg, info.caption, info.entities, null, params, notify, scheduleDate, info.ttl, parentFinal, null, false, info.hasMediaSpoilers);
                                     sendMessageParams.replyToStoryItem = storyItem;
                                     sendMessageParams.replyQuote = quote;
                                     accountInstance.getSendMessagesHelper().sendMessage(sendMessageParams);
@@ -8559,11 +8675,19 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 videoEditedInfo.resultWidth = Math.round(videoEditedInfo.originalWidth * scale / 2) * 2;
                 videoEditedInfo.resultHeight = Math.round(videoEditedInfo.originalHeight * scale / 2) * 2;
             }
+            if (RoundedVideoHelper.INSTANCE.getMakeVideoRounded()) {
+                videoEditedInfo.framerate = 25;
+                videoEditedInfo.roundVideo = true;
+                videoEditedInfo.resultHeight = 640;
+                videoEditedInfo.resultWidth = 640;
+            }
             bitrate = MediaController.makeVideoBitrate(
                     videoEditedInfo.originalHeight, videoEditedInfo.originalWidth,
                     originalBitrate,
                     videoEditedInfo.resultHeight, videoEditedInfo.resultWidth
             );
+
+
         }
 
         if (!needCompress) {
@@ -8589,6 +8713,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (videoPath == null || videoPath.length() == 0) {
             return;
         }
+
+        if (RoundedVideoHelper.INSTANCE.getMakeVideoRounded() && info != null && info.roundVideo && info.cropState == null) RoundedVideoHelper.INSTANCE.setMakeVideoRounded(false); // ng
+
         new Thread(() -> {
             final VideoEditedInfo videoEditedInfo = info != null ? info : createCompressionSettings(videoPath);
 
@@ -8618,7 +8745,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 String parentObject = null;
                 if (!isEncrypted && ttl == 0 && (videoEditedInfo == null || videoEditedInfo.filterState == null && videoEditedInfo.paintPath == null && videoEditedInfo.mediaEntities == null && videoEditedInfo.cropState == null)) {
                     Object[] sentData = accountInstance.getMessagesStorage().getSentFile(originalPath, !isEncrypted ? 2 : 5);
-                    if (sentData != null && sentData[0] instanceof TLRPC.TL_document) {
+                    if (!RoundedVideoHelper.INSTANCE.getMakeVideoRounded() && sentData != null && sentData[0] instanceof TLRPC.TL_document) {
                         document = (TLRPC.TL_document) sentData[0];
                         parentObject = (String) sentData[1];
                         ensureMediaThumbExists(accountInstance, isEncrypted, document, videoPath, null, startTime);

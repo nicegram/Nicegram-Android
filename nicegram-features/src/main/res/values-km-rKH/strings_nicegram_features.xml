@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="NicegramForwardToSave">រក្សាទុកទៅពពក</string>
-    <string name="NicegramOpenLinksInBrowser">បើកបញ្ជាប់ក្នុងច្បោល</string>
-    <string name="NicegramStartWithRearCamera">ចាប់ផ្ដើមជាមួយកាមេរ៉ាក្រោយ</string>
-    <string name="NicegramHidePhoneNumber">លាក់លេខទូរសព្ទក្នុងការកំណត់</string>
-</resources>

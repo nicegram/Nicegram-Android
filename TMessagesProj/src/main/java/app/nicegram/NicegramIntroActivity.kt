@@ -8,7 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.FrameLayout
-import com.appvillis.nicegram.presentation.NicegramOnboardingActivity
+import com.appvillis.feature_nicegram_client.presentation.onboarding.NicegramOnboardingActivity
 import org.telegram.messenger.AndroidUtilities
 import org.telegram.ui.ActionBar.BaseFragment
 import org.telegram.ui.LoginActivity

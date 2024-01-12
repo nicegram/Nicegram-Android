@@ -23,6 +23,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
@@ -60,6 +61,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.nicegram.RoundedVideoHelper;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ApplicationLoader;
@@ -73,6 +76,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
@@ -98,6 +102,8 @@ import org.telegram.ui.ChatActivity;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.Stories.recorder.AlbumButton;
+import org.telegram.ui.Stories.recorder.HintView2;
+import org.telegram.ui.Stories.recorder.StoryRecorder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -223,9 +229,11 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
     public final static int open_in = 3;
     public final static int preview_gap = 4;
     public final static int preview = 5;
+    public final static int ngRounded = 6;
 
     private ActionBarMenuSubItem spoilerItem;
     private ActionBarMenuSubItem compressItem;
+    private ActionBarMenuSubItem ngRoundedItem;
     protected ActionBarMenuSubItem previewItem;
 
     boolean forceDarkTheme;
@@ -618,6 +626,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         checkCamera(false);
 
         compressItem = parentAlert.selectedMenuItem.addSubItem(compress, R.drawable.msg_filehq, LocaleController.getString("SendWithoutCompression", R.string.SendWithoutCompression));
+        ngRoundedItem = parentAlert.selectedMenuItem.addSubItem(ngRounded, R.drawable.input_video, LocaleController.getString("NicegarmSendAsRounded", R.string.NicegarmSendAsRounded));
         parentAlert.selectedMenuItem.addSubItem(group, R.drawable.msg_ungroup, LocaleController.getString("SendWithoutGrouping", R.string.SendWithoutGrouping));
         spoilerItem = parentAlert.selectedMenuItem.addSubItem(spoiler, R.drawable.msg_spoiler, LocaleController.getString("EnablePhotoSpoiler", R.string.EnablePhotoSpoiler));
         parentAlert.selectedMenuItem.addSubItem(open_in, R.drawable.msg_openin, LocaleController.getString("OpenInExternalApp", R.string.OpenInExternalApp));
@@ -1520,10 +1529,23 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         }
     }
 
+    static boolean canShowSendAsRounded() {
+        return false;
+        /*boolean onlyVideos = true;
+        for (Object selectedPhoto: selectedPhotos.values()) {
+            if (selectedPhoto instanceof MediaController.PhotoEntry) {
+                if (!((MediaController.PhotoEntry) selectedPhoto).isVideo) onlyVideos = false;
+            } else {
+                onlyVideos = false;
+            }
+        }
+        return onlyVideos;*/
+    }
     private void clearSelectedPhotos() {
         spoilerItem.setText(LocaleController.getString(R.string.EnablePhotoSpoiler));
         spoilerItem.setAnimatedIcon(R.raw.photo_spoiler);
         parentAlert.selectedMenuItem.showSubItem(compress);
+        if (canShowSendAsRounded()) parentAlert.selectedMenuItem.showSubItem(ngRounded);
         if (!selectedPhotos.isEmpty()) {
             for (HashMap.Entry<Object, Object> entry : selectedPhotos.entrySet()) {
                 MediaController.PhotoEntry photoEntry = (MediaController.PhotoEntry) entry.getValue();
@@ -3001,6 +3023,8 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
 
     @Override
     void onMenuItemClick(int id) {
+        RoundedVideoHelper.INSTANCE.setMakeVideoRounded(false);
+
         if (id == group || id == compress) {
             if (parentAlert.maxSelectedPhotos > 0 && selectedPhotosOrder.size() > 1 && parentAlert.baseFragment instanceof ChatActivity) {
                 ChatActivity chatActivity = (ChatActivity) parentAlert.baseFragment;
@@ -3127,6 +3151,18 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
             adapter.notifyDataSetChanged();
             cameraAttachAdapter.notifyDataSetChanged();
             layoutManager.scrollToPositionWithOffset(0, -gridView.getPaddingTop() + AndroidUtilities.dp(7));
+        } else if (id == ngRounded) {
+            RoundedVideoHelper.INSTANCE.setMakeVideoRounded(true);
+
+            if (parentAlert.editingMessageObject == null && parentAlert.baseFragment instanceof ChatActivity && ((ChatActivity) parentAlert.baseFragment).isInScheduleMode()) {
+                AlertsCreator.createScheduleDatePickerDialog(getContext(), ((ChatActivity) parentAlert.baseFragment).getDialogId(), (notify, scheduleDate) -> {
+                    parentAlert.applyCaption();
+                    parentAlert.delegate.didPressedButton(4, true, notify, scheduleDate, false);
+                }, resourcesProvider);
+            } else {
+                parentAlert.applyCaption();
+                parentAlert.delegate.didPressedButton(4, true, true, 0, false);
+            }
         }
     }
 
@@ -3137,6 +3173,29 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
 
     @Override
     void onSelectedItemsCountChanged(int count) {
+        if (canShowSendAsRounded() && count >= 1) {
+            parentAlert.selectedMenuItem.showSubItem(ngRounded);
+            /*HintView2 roundedVideoHint = new HintView2(getContext(), HintView2.DIRECTION_TOP)
+                    .setRounding(8)
+                    .setDuration(8_000)
+                    .setCloseButton(true)
+                    .setMaxWidth(165)
+                    .setMultilineText(true)
+                    .setText("Rounded video text")
+                    //.setJoint(1, -40)
+                    .setBgColor(getThemedColor(Theme.key_undo_background))
+                    .setOnHiddenListener(() -> {});
+
+            parentAlert.headerView.setBackgroundColor(Color.RED);
+            parentAlert.selectedMenuItem.setBackgroundColor(Color.GREEN);
+            parentAlert.actionBar.setBackgroundColor(Color.YELLOW);
+            parentAlert.getContainerView().setBackgroundColor(Color.YELLOW);
+            parentAlert.getPhotoLayout().setBackgroundColor(Color.MAGENTA);
+            parentAlert.headerView.addView(roundedVideoHint, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 160, Gravity.TOP, 0, AndroidUtilities.dp(24f), 0, 0));
+            roundedVideoHint.show();*/
+        }
+        else parentAlert.selectedMenuItem.hideSubItem(ngRounded);
+
         if (count <= 1 || parentAlert.editingMessageObject != null) {
             parentAlert.selectedMenuItem.hideSubItem(group);
             if (count == 0) {

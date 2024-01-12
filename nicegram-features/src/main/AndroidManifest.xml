@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
-        <activity android:name=".presentation.NicegramPremiumActivity"
+        <activity android:name="com.appvillis.feature_nicegram_client.presentation.premium.NicegramPremiumActivity"
             android:exported="false"
             android:theme="@style/Theme.eSIM"
             android:screenOrientation="portrait"/>
 
-        <activity android:name=".presentation.NicegramOnboardingActivity"
+        <activity android:name="com.appvillis.feature_nicegram_client.presentation.onboarding.NicegramOnboardingActivity"
             android:exported="false"
             android:launchMode="singleTop"
             android:theme="@style/Theme.eSIM"

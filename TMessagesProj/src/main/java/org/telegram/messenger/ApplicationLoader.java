@@ -17,6 +17,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -32,6 +34,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.appvillis.assistant_core.app.AppInit;
+import com.appvillis.core_network.ApiService;
 import com.appvillis.core_resources.domain.TgResourceProvider;
 import com.appvillis.feature_ai_chat.domain.AiChatCommandsRepository;
 import com.appvillis.feature_ai_chat.domain.ClearDataUseCase;
@@ -46,28 +49,31 @@ import com.appvillis.feature_nicegram_assistant.domain.SetGrumStatusUseCase;
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
 import com.appvillis.feature_nicegram_billing.domain.BillingManager;
 import com.appvillis.feature_nicegram_billing.domain.RequestInAppsUseCase;
+import com.appvillis.feature_nicegram_client.NicegramClientHelper;
+import com.appvillis.feature_nicegram_client.domain.CommonRemoteConfigRepo;
+import com.appvillis.feature_nicegram_client.domain.GetReferralDrawDataUseCase;
+import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter;
 import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.nicegram.AnalyticsHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
 import androidx.annotation.NonNull;
 import androidx.multidex.MultiDex;
 
-import com.appvillis.nicegram.NicegramFeaturesHelper;
-
 import app.nicegram.DailyRewardsHelper;
 import app.nicegram.NicegramAnalyticsHelper;
 import app.nicegram.NicegramGroupCollectHelper;
 
 import com.appvillis.nicegram.NicegramPrefs;
+import app.nicegram.NicegramSpeechToTextHelper;
 import com.appvillis.nicegram.ReviewHelper;
 import com.appvillis.nicegram.domain.CollectGroupInfoUseCase;
-import com.appvillis.nicegram.domain.NicegramFeaturesOnboardingUseCase;
-import com.appvillis.nicegram.domain.NicegramSessionCounter;
-import com.appvillis.nicegram.domain.RemoteConfigRepo;
+import com.appvillis.feature_nicegram_client.domain.GetDialogsBannerUseCase;
+import com.appvillis.feature_nicegram_client.domain.NicegramClientOnboardingUseCase;
 import com.appvillis.nicegram.network.NicegramNetwork;
 import com.appvillis.rep_user.domain.AppSessionControlUseCase;
 import com.appvillis.rep_user.domain.ClaimDailyRewardUseCase;
 import com.appvillis.rep_user.domain.GetUserStatusUseCase;
+import com.appvillis.rep_user.domain.UserRepository;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.zxing.BarcodeFormat;
@@ -78,7 +84,6 @@ import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.Components.ForegroundDetector;
-import org.telegram.ui.Components.Premium.boosts.BoostRepository;
 import org.telegram.ui.IUpdateLayout;
 import org.telegram.ui.LauncherIconController;
 import android.view.ViewGroup;
@@ -135,7 +140,11 @@ public class ApplicationLoader extends Application {
     @Inject
     public RequestInAppsUseCase requestInAppsUseCase;
     @Inject
-    public NicegramFeaturesOnboardingUseCase nicegramFeaturesOnboardingUseCase;
+    public NicegramClientOnboardingUseCase nicegramClientOnboardingUseCase;
+    @Inject
+    public GetDialogsBannerUseCase getDialogsBannerUseCase;
+    @Inject
+    public GetReferralDrawDataUseCase getReferralDrawDataUseCase;
     @Inject
     public GetNicegramOnboardingStatusUseCase getNicegramOnboardingStatusUseCase;
     @Inject
@@ -149,7 +158,9 @@ public class ApplicationLoader extends Application {
     @Inject
     public BillingManager billingManager;
     @Inject
-    public RemoteConfigRepo remoteConfigRepo;
+    public UserRepository userRepository;
+    @Inject
+    public CommonRemoteConfigRepo remoteConfigRepo;
 
     @Inject
     public com.appvillis.feature_ai_chat.domain.RemoteConfigRepo remoteConfigRepoAi;
@@ -165,6 +176,8 @@ public class ApplicationLoader extends Application {
     public TgResourceProvider tgResourceProvider;
     @Inject
     public AnalyticsManager analyticsManager;
+    @Inject
+    public ApiService apiService;
 
     private static ApplicationLoader appInstance = null;
     public static ApplicationLoader getInstance() {
@@ -361,7 +374,11 @@ public class ApplicationLoader extends Application {
 
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("app start time = " + (startTime = SystemClock.elapsedRealtime()));
-            FileLog.d("buildVersion = " + BuildVars.BUILD_VERSION);
+            try {
+                FileLog.d("buildVersion = " + ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0).versionCode);
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
         }
         if (applicationContext == null) {
             applicationContext = getApplicationContext();
@@ -451,6 +468,13 @@ public class ApplicationLoader extends Application {
         return true;
     }
 
+    private static long lastNetworkCheck = -1;
+    private static void ensureCurrentNetworkGet() {
+        final long now = System.currentTimeMillis();
+        ensureCurrentNetworkGet(now - lastNetworkCheck > 5000);
+        lastNetworkCheck = now;
+    }
+
     private static void ensureCurrentNetworkGet(boolean force) {
         if (force || currentNetworkInfo == null) {
             try {
@@ -515,6 +539,11 @@ public class ApplicationLoader extends Application {
             FileLog.e(e);
         }
         return false;
+    }
+
+    public static boolean useLessData() {
+        ensureCurrentNetworkGet();
+        return BuildVars.DEBUG_PRIVATE_VERSION && (SharedConfig.forceLessData || isConnectionSlow());
     }
 
     public static boolean isConnectionSlow() {
@@ -661,14 +690,17 @@ public class ApplicationLoader extends Application {
 
         NicegramAssistantHelper.INSTANCE.setSetGrumStatusUseCase(setGrumStatusUseCase);
         NicegramAssistantHelper.INSTANCE.setGetNicegramOnboardingStatusUseCase(getNicegramOnboardingStatusUseCase);
-        NicegramFeaturesHelper.INSTANCE.setNicegramFeaturesOnboardingUseCase(nicegramFeaturesOnboardingUseCase);
+        NicegramClientHelper.INSTANCE.setDialogsBannerUseCase(getDialogsBannerUseCase);
+        NicegramClientHelper.INSTANCE.setReferralDrawDataUseCase(getReferralDrawDataUseCase);
         NicegramAssistantHelper.INSTANCE.setGetSpecialOfferUseCase(getSpecialOfferUseCase);
         NicegramAssistantHelper.INSTANCE.setAppSessionControlUseCase(appSessionControlUseCase);
         NicegramAssistantHelper.INSTANCE.setRemoteConfigRepo(remoteConfigRepoAi);
         NicegramGroupCollectHelper.INSTANCE.setCollectGroupInfoUseCase(collectGroupInfoUseCase);
         NicegramAnalyticsHelper.INSTANCE.setAnalyticsManager(analyticsManager);
         NicegramBillingHelper.INSTANCE.setBillingManager(billingManager);
+        NicegramBillingHelper.INSTANCE.setUserRepository(userRepository);
         PrefsHelper.INSTANCE.setRemoteConfigRepo(remoteConfigRepo);
+        NicegramSpeechToTextHelper.INSTANCE.setApiService(apiService);
 
         AnalyticsHelper.INSTANCE.logEvent(getUserStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
         new Handler().postDelayed(() -> NicegramNetwork.INSTANCE.getSettings(UserConfig.getInstance(UserConfig.selectedAccount).clientUserId), 3000);

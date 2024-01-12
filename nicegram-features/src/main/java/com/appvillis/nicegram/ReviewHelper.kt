@@ -2,7 +2,7 @@ package com.appvillis.nicegram
 
 import android.app.Activity
 import android.util.Log
-import com.appvillis.nicegram.domain.NicegramSessionCounter
+import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter
 import com.google.android.play.core.review.ReviewManagerFactory
 
 object ReviewHelper {

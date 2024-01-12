@@ -2,6 +2,7 @@ package com.appvillis.nicegram.domain
 
 import android.os.Build
 import android.util.Base64
+import com.appvillis.feature_nicegram_client.domain.CommonRemoteConfigRepo
 import com.appvillis.nicegram.BuildConfig
 import com.appvillis.nicegram.NicegramNetworkConsts
 import com.appvillis.nicegram.NicegramScopes.ioScope
@@ -14,7 +15,7 @@ import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
 class CollectGroupInfoUseCase(
-    private val remoteConfigRepo: RemoteConfigRepo,
+    private val remoteConfigRepo: CommonRemoteConfigRepo,
     private val groupCollectRepo: GroupCollectRepo
 ) {
     fun collectInfo(
