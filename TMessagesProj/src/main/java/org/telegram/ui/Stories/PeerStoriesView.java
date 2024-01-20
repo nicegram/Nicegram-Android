@@ -185,8 +185,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 
-import app.nicegram.NicegramStealthModeHelper;
-
 public class PeerStoriesView extends SizeNotifierFrameLayout implements NotificationCenter.NotificationCenterDelegate {
 
     public static boolean DISABLE_STORY_REPOSTING = false;
@@ -5179,7 +5177,6 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
                 }
             }
             if (isActive && this.storyItem != null && userStories != null && ((!StoriesUtilities.hasExpiredViews(storyItem) && (this.storyItem.id > userStories.max_read_id || this.storyItem.id > storiesController.dialogIdToMaxReadId.get(dialogId, 0))) || isSelf)) {
-                if (NicegramStealthModeHelper.INSTANCE.stealthModeEnabled(currentAccount)) return; // ng ignore markStoryAsRead
                 if (storyViewer.overrideUserStories != null) {
                     if (storiesController.markStoryAsRead(storyViewer.overrideUserStories, storyItem, true)) {
                         storyViewer.unreadStateChanged = true;

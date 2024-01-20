@@ -266,7 +266,6 @@ import java.util.regex.Pattern;
 
 import app.nicegram.MentionAllHelper;
 import app.nicegram.NicegramPremiumSettingsActivity;
-import app.nicegram.NicegramStealthModeHelper;
 import app.nicegram.PrefsHelper;
 
 @SuppressWarnings("unchecked")
@@ -13033,9 +13032,9 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                 } else {
                     inlineUpdate1();
                 }
-                if (!NicegramStealthModeHelper.INSTANCE.stealthModeEnabled(currentAccount)) { // ng stealth mode
-                    getMessagesController().markDialogAsRead(dialog_id, maxPositiveUnreadId, maxNegativeUnreadId, maxUnreadDate, false, threadId, counterDecrement, maxPositiveUnreadId == minMessageId[0] || maxNegativeUnreadId == minMessageId[0], scheduledRead);
-                }
+
+                getMessagesController().markDialogAsRead(dialog_id, maxPositiveUnreadId, maxNegativeUnreadId, maxUnreadDate, false, threadId, counterDecrement, maxPositiveUnreadId == minMessageId[0] || maxNegativeUnreadId == minMessageId[0], scheduledRead);
+
                 if (isTopic && replyOriginalChat != null) {
                     getMessagesStorage().updateRepliesMaxReadId(replyOriginalChat.id, replyOriginalMessageId, Math.max(maxPositiveUnreadId, replyMaxReadId), 0, true);
                 }
@@ -13048,9 +13047,9 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                     } else {
                         inlineUpdate2();
                     }
-                    if (!NicegramStealthModeHelper.INSTANCE.stealthModeEnabled(currentAccount)) { // ng stealth mode
-                        getMessagesController().markDialogAsRead(dialog_id, minMessageId[0], minMessageId[0], maxDate[0], false, threadId, 0, true, scheduledRead);
-                    }
+
+                    getMessagesController().markDialogAsRead(dialog_id, minMessageId[0], minMessageId[0], maxDate[0], false, threadId, 0, true, scheduledRead);
+
                     firstUnreadSent = true;
                 }
             }
