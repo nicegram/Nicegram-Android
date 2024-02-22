@@ -130,6 +130,8 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
     public static final int TYPE_BOOSTS_FOR_REPLY_ICON = 26;
     public static final int TYPE_BOOSTS_FOR_PROFILE_ICON = 27;
 
+    public static final int TYPE_PIN_SAVED_DIALOGS = 28;
+
     private boolean canSendLink;
     private int linkRow = -1;
     private long dialogId;
@@ -280,7 +282,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
     private int requiredLvl = 0;
 
     public LimitReachedBottomSheet(BaseFragment fragment, Context context, int type, int currentAccount, Theme.ResourcesProvider resourcesProvider) {
-        super(fragment, false, hasFixedSize(type), false, resourcesProvider);
+        super(context, fragment, false, hasFixedSize(type), false, resourcesProvider);
         fixNavigationBar(Theme.getColor(Theme.key_dialogBackground, this.resourcesProvider));
         this.parentFragment = fragment;
         this.currentAccount = currentAccount;
@@ -646,6 +648,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
         fireworksOverlay.start();
         fireworksOverlay.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         headerView.boostCounterView.setCount(canApplyBoost.boostCount, true);
+        recyclerListView.smoothScrollToPosition(0);
     }
 
     private void sendInviteMessages() {
@@ -826,6 +829,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
     private static boolean hasFixedSize(int type) {
         return (
             type == TYPE_PIN_DIALOGS ||
+            type == TYPE_PIN_SAVED_DIALOGS ||
             type == TYPE_FOLDERS ||
             type == TYPE_CHATS_IN_FOLDER ||
             type == TYPE_LARGE_FILE ||
@@ -1089,7 +1093,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
                         view.setPadding(0, 0, 0, AndroidUtilities.dp(8));
                         break;
                     case VIEW_TYPE_USER:
-                        view = new GroupCreateUserCell(context, 1, 8, false);
+                        view = new GroupCreateUserCell(context, 1, 0, false);
                         break;
                     case VIEW_TYPE_PROGRESS:
                         FlickerLoadingView flickerLoadingView = new FlickerLoadingView(context, null);
@@ -1358,8 +1362,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
                 currentValue = MessagesController.getInstance(currentAccount).dialogFilters.size() - 1;
             } else if (type == TYPE_ACCOUNTS) {
                 currentValue = UserConfig.getActivatedAccountsCount();
-            }
-            if (type == TYPE_PIN_DIALOGS) {
+            } else if (type == TYPE_PIN_DIALOGS) {
                 int pinnedCount = 0;
                 ArrayList<TLRPC.Dialog> dialogs = MessagesController.getInstance(currentAccount).getDialogs(0);
                 for (int a = 0, N = dialogs.size(); a < N; a++) {
@@ -1555,7 +1558,8 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
             } else {
                 addView(description, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 24, 0, 24, 24));
             }
-            TextView reloginView = new TextView(context);
+
+            /*TextView reloginView = new TextView(context);
             reloginView.setText(AndroidUtilities.replaceTags(context.getString(R.string.NicegramTryRelogin)));
             reloginView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
             reloginView.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -1563,7 +1567,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
             reloginView.setBackgroundResource(R.drawable.bg_relogin);
             int padding = AndroidUtilities.dp(8);
             reloginView.setPadding(padding, padding, padding, padding);
-            addView(reloginView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, 0, 24, 0, 24, 24));
+            addView(reloginView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, 0, 24, 0, 24, 24));*/
 
             updatePremiumButtonText();
         }
@@ -1695,6 +1699,13 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
             limitParams.descriptionStr = LocaleController.formatString("LimitReachedPinDialogs", R.string.LimitReachedPinDialogs, limitParams.defaultLimit, limitParams.premiumLimit);
             limitParams.descriptionStrPremium = LocaleController.formatString("LimitReachedPinDialogsPremium", R.string.LimitReachedPinDialogsPremium, limitParams.premiumLimit);
             limitParams.descriptionStrLocked = LocaleController.formatString("LimitReachedPinDialogsLocked", R.string.LimitReachedPinDialogsLocked, limitParams.defaultLimit);
+        } else if (type == TYPE_PIN_SAVED_DIALOGS) {
+            limitParams.defaultLimit = MessagesController.getInstance(currentAccount).savedDialogsPinnedLimitDefault;
+            limitParams.premiumLimit = MessagesController.getInstance(currentAccount).savedDialogsPinnedLimitPremium;
+            limitParams.icon = R.drawable.msg_limit_pin;
+            limitParams.descriptionStr = LocaleController.formatString(R.string.LimitReachedPinSavedDialogs, limitParams.defaultLimit, limitParams.premiumLimit);
+            limitParams.descriptionStrPremium = LocaleController.formatString(R.string.LimitReachedPinSavedDialogsPremium, limitParams.premiumLimit);
+            limitParams.descriptionStrLocked = LocaleController.formatString(R.string.LimitReachedPinSavedDialogsLocked, limitParams.defaultLimit);
         } else if (type == TYPE_PUBLIC_LINKS) {
             limitParams.defaultLimit = MessagesController.getInstance(currentAccount).publicLinksLimitDefault;
             limitParams.premiumLimit = MessagesController.getInstance(currentAccount).publicLinksLimitPremium;

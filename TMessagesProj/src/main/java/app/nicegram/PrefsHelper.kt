@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.appvillis.feature_nicegram_client.domain.CommonRemoteConfigRepo
 import com.appvillis.nicegram.NicegramPrefs
+import com.appvillis.nicegram.NicegramPrefs.PREF_FOREVER_COOL_DOWN
 import org.telegram.messenger.MessagesController
 import java.util.concurrent.TimeUnit
 
@@ -18,11 +19,6 @@ object PrefsHelper {
     fun showRegDate(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT)
-    }
-
-    fun shareChannelInfo(currentAccount: Int): Boolean {
-        return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(NicegramPrefs.PREF_SHARE_CHANNEL_INFO, NicegramPrefs.PREF_SHARE_CHANNEL_INFO_DEFAULT)
     }
 
     fun openLinksInBrowser(currentAccount: Int): Boolean {
@@ -104,57 +100,6 @@ object PrefsHelper {
             .getInt(NicegramPrefs.PREF_SAVED_FOLDER, NicegramPrefs.PREF_SAVED_FOLDER_DEFAULT)
     }
 
-    fun setShowAiChatBotDialogs(currentAccount: Int, show: Boolean) {
-        MessagesController.getNicegramSettings(currentAccount)
-            .edit()
-            .putBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, show)
-            .apply()
-    }
-
-    fun getShowAiChatBotDialogs(currentAccount: Int): Boolean {
-        return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(
-                NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS,
-                NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT
-            )
-    }
-
-    fun setShowPstDialogs(currentAccount: Int, show: Boolean) {
-        MessagesController.getNicegramSettings(currentAccount)
-            .edit()
-            .putBoolean(NicegramPrefs.PREF_SHOW_PST_DIALOGS, show)
-            .apply()
-    }
-
-    fun getShowPstDialogs(currentAccount: Int): Boolean {
-        return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(NicegramPrefs.PREF_SHOW_PST_DIALOGS, NicegramPrefs.PREF_SHOW_PST_DIALOGS_DEFAULT)
-    }
-
-    fun setShowNuHubDialogs(currentAccount: Int, show: Boolean) {
-        MessagesController.getNicegramSettings(currentAccount)
-            .edit()
-            .putBoolean(NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS, show)
-            .apply()
-    }
-
-    fun getShowNuHubDialogs(currentAccount: Int): Boolean {
-        return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS, NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS_DEFAULT)
-    }
-
-    fun setShowAmbassadorDialogs(currentAccount: Int, show: Boolean) {
-        MessagesController.getNicegramSettings(currentAccount)
-            .edit()
-            .putBoolean(NicegramPrefs.PREF_SHOW_AMBASSADOR_DIALOGS, show)
-            .apply()
-    }
-
-    fun getShowAmbassadorDialogs(currentAccount: Int): Boolean {
-        return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(NicegramPrefs.PREF_SHOW_AMBASSADOR_DIALOGS, NicegramPrefs.PREF_SHOW_AMBASSADOR_DIALOGS_DEFAULT)
-    }
-
     fun setShowAiChatBotChat(currentAccount: Int, show: Boolean) {
         MessagesController.getNicegramSettings(currentAccount)
             .edit()
@@ -191,31 +136,40 @@ object PrefsHelper {
             .apply()
     }
 
-    fun canShowAmbassadorBanner(context: Context): Boolean {
-        return System.currentTimeMillis() - getNgGlobalPrefs(context).getLong(
-            NicegramPrefs.PREF_AMBASSADOR_BANNER_TS,
-            0L
-        ) > TimeUnit.DAYS.toMillis(30)
+    fun canShowChatBannerWithId(context: Context, bannerId: String): Boolean {
+        val showTime = getNgGlobalPrefs(context).getLong("${NicegramPrefs.PREF_CHAT_BANNER_TS_WITH_ID_}$bannerId", 0)
+        // Check for the "forever coolDown" special value
+        if (showTime == PREF_FOREVER_COOL_DOWN) {
+            return false // If "forever coolDown" is set, the banner should not be shown again
+        }
+        return System.currentTimeMillis() >= showTime
     }
 
-    fun canShowNuHubBanner(context: Context): Boolean {
-        return System.currentTimeMillis() - getNgGlobalPrefs(context).getLong(
-            NicegramPrefs.PREF_NU_HUB_BANNER_TS,
-            0L
-        ) > TimeUnit.DAYS.toMillis(30)
-    }
-
-    fun setAmbassadorBannerTs(context: Context, ts: Long) {
-        getNgGlobalPrefs(context)
+    fun setShowPinChatsPlacementWithId(currentAccount: Int, show: Boolean, id: String) {
+        MessagesController.getNicegramSettings(currentAccount)
             .edit()
-            .putLong(NicegramPrefs.PREF_AMBASSADOR_BANNER_TS, ts)
+            .putBoolean(getShowPinChatsPlacementKeyForId(id), show)
             .apply()
     }
 
-    fun setNuHubBannerTs(context: Context, ts: Long) {
+    fun getShowPinChatsPlacementWithId(currentAccount: Int, id: String): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(getShowPinChatsPlacementKeyForId(id), NicegramPrefs.PREF_SHOW_PIN_CHATS_PLACEMENT_DEFAULT)
+    }
+
+    private fun getShowPinChatsPlacementKeyForId(id: String) =
+        "${NicegramPrefs.PREF_SHOW_PIN_CHATS_PLACEMENT_WITH_ID_}$id"
+
+    fun setCdForChatBannerWithId(context: Context, coolDownSec: Int, bannerId: String) {
+        val targetTime = if (coolDownSec == -1) {
+            PREF_FOREVER_COOL_DOWN // Special value "forever coolDown"
+        } else {
+            System.currentTimeMillis().plus(TimeUnit.SECONDS.toMillis(coolDownSec.toLong()))
+        }
+
         getNgGlobalPrefs(context)
             .edit()
-            .putLong(NicegramPrefs.PREF_NU_HUB_BANNER_TS, ts)
+            .putLong("${NicegramPrefs.PREF_CHAT_BANNER_TS_WITH_ID_}$bannerId", targetTime)
             .apply()
     }
 

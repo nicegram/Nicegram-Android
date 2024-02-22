@@ -8,6 +8,8 @@
 
 package org.telegram.ui;
 
+import static com.appvillis.nicegram.NicegramPinChatsPlacementHelper.AI_ID;
+
 import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -89,14 +91,19 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.appvillis.assistant_core.MainActivity;
 import com.appvillis.core_network.data.HeaderInterceptor;
+import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo;
 import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository;
+import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
 import com.appvillis.feature_nicegram_client.NicegramClientHelper;
+import com.appvillis.feature_nicegram_client.NicegramSessionPrefs;
 import com.appvillis.lib_android_base.Intents;
 import com.appvillis.nicegram.AnalyticsHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
+import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
 import com.appvillis.nicegram.ReviewHelper;
 import com.appvillis.nicegram.AiChatBotHelper;
+import com.appvillis.rep_placements.domain.entity.PinnedChatsPlacement;
 import com.appvillis.rep_user.domain.UserRepository;
 
 import org.telegram.messenger.AccountInstance;
@@ -115,6 +122,7 @@ import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
@@ -420,6 +428,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private boolean askingForPermissions;
     private RLottieDrawable passcodeDrawable;
     private SearchViewPager searchViewPager;
+    private SharedMediaLayout.SharedMediaPreloader sharedMediaPreloader;
     public DialogStoriesCell dialogStoriesCell;
     public boolean dialogStoriesCellVisible;
     public float progressToDialogStoriesCell;
@@ -470,6 +479,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private ActionBarMenuSubItem clearItem;
     private ActionBarMenuSubItem readItem;
     private ActionBarMenuSubItem blockItem;
+
+    private ActionBarMenuSubItem hideItem;
 
     private float additionalFloatingTranslation;
     private float additionalFloatingTranslation2;
@@ -573,6 +584,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private int canReportSpamCount;
     private int canUnarchiveCount;
     private int forumCount;
+
+    private int hiddenChatsCount;
     private boolean canDeletePsaSelected;
 
     private int topPadding;
@@ -591,6 +604,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private final static int pin2 = 1108;
     private final static int add_to_folder = 1109;
     private final static int remove_from_folder = 1110;
+
+    private final static int hide_chat = 2000;
 
     private final static int ARCHIVE_ITEM_STATE_PINNED = 0;
     private final static int ARCHIVE_ITEM_STATE_SHOWED = 1;
@@ -2098,7 +2113,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     }
                 }
                 undoView.showWithAction(0, UndoView.ACTION_ARCHIVE_HIDDEN, null, null);
-                if (PrefsHelper.INSTANCE.getShowAiChatBotDialogs(currentAccount)) switchToCurrentSelectedMode(false); // ng chatbot
+                if (PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, AI_ID)) switchToCurrentSelectedMode(false); // ng chatbot
             } else {
                 undoView.showWithAction(0, UndoView.ACTION_ARCHIVE_PINNED, null, null);
                 updatePullState();
@@ -2168,14 +2183,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                             selectedDialogs.add(dialogId);
                                             performSelectedDialogsAction(selectedDialogs, delete, true, false);
                                         }
-                                    } else if (viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_AI_CHAT_BOT) {
-                                        hideAiChatBot(getAdapter());
-                                    } else if (viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_PST) {
-                                        hidePstBot(getAdapter());
-                                    } else if (viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_NU_HUB) {
-                                        hideNuhubPin(getAdapter());
-                                    } else if (viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_AMBASSADOR) {
-                                        hideAmbassadorPin(getAdapter());
+                                    } else if (viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_NG_PIN) {
+                                        DialogsAdapter adapter = (DialogsAdapter) getAdapter();
+                                        if (adapter != null) {
+                                            PinnedChatsPlacement placement = adapter.getNgPinChatPlacementByPosition(viewHolder.getAdapterPosition());
+                                            hideNgPinPlacement(getAdapter(), placement.getId());
+                                        }
                                     }
                                 }
                             }
@@ -2445,20 +2458,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         @Override
         public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
-            if (viewHolder != null && viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_AI_CHAT_BOT) {
-                hideAiChatBot(parentPage.dialogsAdapter);
-                return;
-            }
-            if (viewHolder != null && viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_PST) {
-                hidePstBot(parentPage.dialogsAdapter);
-                return;
-            }
-            if (viewHolder != null && viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_NU_HUB) {
-                hideNuhubPin(parentPage.dialogsAdapter);
-                return;
-            }
-            if (viewHolder != null && viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_AMBASSADOR) {
-                hideAmbassadorPin(parentPage.dialogsAdapter);
+            if (viewHolder != null && (viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_NG_PIN)) {
+                PinnedChatsPlacement placement = parentPage.dialogsAdapter.getNgPinChatPlacementByPosition(viewHolder.getAdapterPosition());
+                if (placement != null) hideNgPinPlacement(parentPage.dialogsAdapter, placement.getId());
                 return;
             }
             if (viewHolder != null) {
@@ -2773,6 +2775,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         getContactsController().loadGlobalPrivacySetting();
 
+        if (getMessagesController().savedViewAsChats) {
+            getMessagesController().getSavedMessagesController().preloadDialogs(true);
+        }
+
         return true;
     }
 
@@ -2987,6 +2993,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         searchWas = false;
         wasDrawn = false;
         pacmanAnimation = null;
+        filterTabsView = null;
         selectedDialogs.clear();
 
         maximumVelocity = ViewConfiguration.get(context).getScaledMaximumFlingVelocity();
@@ -3747,10 +3754,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     if (hasStories && !rightSlidingDialogContainer.hasFragment() && !fixScrollYAfterArchiveOpened) {
                         pTop -= AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP);
                     }
-                    if (PrefsHelper.INSTANCE.getShowAiChatBotDialogs(currentAccount)) pTop += AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP);
-                    if (PrefsHelper.INSTANCE.getShowAmbassadorDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPin()) pTop += AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP);
-                    if (PrefsHelper.INSTANCE.getShowPstDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getPstConfig().getShow()) pTop += AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP);
-                    if (PrefsHelper.INSTANCE.getShowNuHubDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getNuConfig().getShowPin()) pTop += AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP);
+                    for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements()) {
+                        if (PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, placement.getId())) pTop += AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP);
+                    }
                     //pTop += AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP); // ng fixing
                     //pTop += AndroidUtilities.dp(DialogCell.HEIGHT_IN_DP); // ng fixing
                     boolean hasHidenArchive = !fixScrollYAfterArchiveOpened && viewPage.dialogsType == DIALOGS_TYPE_DEFAULT && !onlySelect && folderId == 0 && getMessagesController().hasHiddenArchive() && viewPage.archivePullViewState == ARCHIVE_ITEM_STATE_HIDDEN;
@@ -3922,6 +3928,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             viewPage.listView.setVerticalScrollbarPosition(LocaleController.isRTL ? RecyclerListView.SCROLLBAR_POSITION_LEFT : RecyclerListView.SCROLLBAR_POSITION_RIGHT);
             viewPage.addView(viewPage.listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
             viewPage.listView.setOnItemClickListener((view, position, x, y) -> {
+                if (view instanceof DialogCell && ((DialogCell) view).isBlocked()) {
+                    showPremiumBlockedToast(view, ((DialogCell) view).getDialogId());
+                    return;
+                }
                 if (initialDialogsType == DIALOGS_TYPE_BOT_REQUEST_PEER && view instanceof TextCell) {
                     viewPage.dialogsAdapter.onCreateGroupForThisClick();
                     return;
@@ -3984,6 +3994,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             viewPage.listView.setOnItemLongClickListener(new RecyclerListView.OnItemLongClickListenerExtended() {
                 @Override
                 public boolean onItemClick(View view, int position, float x, float y) {
+                    if (view instanceof DialogCell && ((DialogCell) view).isBlocked()) {
+                        showPremiumBlockedToast(view, ((DialogCell) view).getDialogId());
+                        return true;
+                    }
                     if (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE && filterTabsView.isEditing()) {
                         return false;
                     }
@@ -4174,7 +4188,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 @Override
                 public void onButtonClicked(DialogCell dialogCell) {
                     if (dialogCell.getMessage() != null) {
-                        TLRPC.TL_forumTopic topic = getMessagesController().getTopicsController().findTopic(-dialogCell.getDialogId(), MessageObject.getTopicId(dialogCell.getMessage().messageOwner, true));
+                        TLRPC.TL_forumTopic topic = getMessagesController().getTopicsController().findTopic(-dialogCell.getDialogId(), MessageObject.getTopicId(currentAccount, dialogCell.getMessage().messageOwner, true));
                         if (topic != null) {
                             if (onlySelect) {
                                 didSelectResult(dialogCell.getDialogId(), topic.id, false, false);
@@ -4307,6 +4321,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
 
             @Override
+            public void didPressedBlockedDialog(View view, long did) {
+                showPremiumBlockedToast(view, did);
+            }
+
+            @Override
             public void didPressedOnSubDialog(long did) {
                 if (onlySelect) {
                     if (!validateSlowModeDialog(did)) {
@@ -4420,6 +4439,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         });
 
         searchViewPager.searchListView.setOnItemClickListener((view, position, x, y) -> {
+            if (view instanceof ProfileSearchCell && ((ProfileSearchCell) view).isBlocked()) {
+                showPremiumBlockedToast(view, ((ProfileSearchCell) view).getDialogId());
+                return;
+            }
             if (initialDialogsType == DIALOGS_TYPE_WIDGET) {
                 onItemLongClick(searchViewPager.searchListView, view, position, x, y, -1, searchViewPager.dialogsSearchAdapter);
                 return;
@@ -4429,6 +4452,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         searchViewPager.searchListView.setOnItemLongClickListener(new RecyclerListView.OnItemLongClickListenerExtended() {
             @Override
             public boolean onItemClick(View view, int position, float x, float y) {
+                if (view instanceof ProfileSearchCell && ((ProfileSearchCell) view).isBlocked()) {
+                    showPremiumBlockedToast(view, ((ProfileSearchCell) view).getDialogId());
+                    return true;
+                }
                 return onItemLongClick(searchViewPager.searchListView, view, position, x, y, -1, searchViewPager.dialogsSearchAdapter);
             }
 
@@ -4787,6 +4814,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
 
                 @Override
+                public void toggleVideoRecordingPause() {
+
+                }
+
+                @Override
                 public void needChangeVideoPreviewState(int state, float seekProgress) {
 
                 }
@@ -5017,6 +5049,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         animateToHasStories = false;
         hasOnlySlefStories = false;
         hasStories = false;
+
+        if (onlySelect && initialDialogsType == DIALOGS_TYPE_FORWARD) {
+            MessagesController.getInstance(currentAccount).getSavedReactionTags(0);
+        }
+
         if (!onlySelect || initialDialogsType == DIALOGS_TYPE_FORWARD) {
             final FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT);
             if (inPreviewMode && Build.VERSION.SDK_INT >= 21) {
@@ -5167,7 +5204,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             showSearch(true, false, false);
             actionBar.openSearchField(searchString, false);
         } else if (initialSearchString != null) {
-            showSearch(true, false, false);
+            showSearch(true, false, false, true);
             actionBar.openSearchField(initialSearchString, false);
             initialSearchString = null;
             if (filterTabsView != null) {
@@ -5598,6 +5635,29 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         };
         popup[0].showAsDropDown(actionBar, AndroidUtilities.dp(16), yoff, Gravity.TOP);
         popup[0].dimBehind();
+    }
+
+    private int shiftDp = -4;
+    private void showPremiumBlockedToast(View view, long dialogId) {
+        AndroidUtilities.shakeViewSpring(view, shiftDp = -shiftDp);
+        BotWebViewVibrationEffect.APP_ERROR.vibrate();
+        String username = "";
+        if (dialogId >= 0) {
+            username = UserObject.getUserName(MessagesController.getInstance(currentAccount).getUser(dialogId));
+        }
+        Bulletin bulletin;
+        if (getMessagesController().premiumFeaturesBlocked()) {
+            bulletin = BulletinFactory.of(this).createSimpleBulletin(R.raw.star_premium_2, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.UserBlockedNonPremium, username)));
+        } else {
+            bulletin = BulletinFactory.of(this)
+                .createSimpleBulletin(R.raw.star_premium_2, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.UserBlockedNonPremium, username)), LocaleController.getString(R.string.UserBlockedNonPremiumButton), () -> {
+                    BaseFragment lastFragment = LaunchActivity.getLastFragment();
+                    if (lastFragment != null) {
+                        presentFragment(new PremiumPreviewFragment("noncontacts"));
+                    }
+                });
+        }
+        bulletin.show();
     }
 
     private int commentViewPreviousTop = -1;
@@ -6079,7 +6139,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 totalOffset -= dialogsHintCell.getMeasuredHeight() * rightSlidingDialogContainer.openedProgress;
             }
             dialogsHintCell.setTranslationY(totalOffset);
-            totalOffset += dialogsHintCell.getMeasuredHeight();
+            totalOffset += dialogsHintCell.getMeasuredHeight() * (1f - searchAnimationProgress);
         }
         if (authHintCell != null && authHintCell.getVisibility() == View.VISIBLE) {
             if (rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment()) {
@@ -6278,6 +6338,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         readItem = otherItem.addSubItem(read, R.drawable.msg_markread, LocaleController.getString("MarkAsRead", R.string.MarkAsRead));
         clearItem = otherItem.addSubItem(clear, R.drawable.msg_clear, LocaleController.getString("ClearHistory", R.string.ClearHistory));
         blockItem = otherItem.addSubItem(block, R.drawable.msg_block, LocaleController.getString("BlockUser", R.string.BlockUser));
+        hideItem = otherItem.addSubItem(hide_chat, R.drawable.msg_archive_hide, getContext().getString(R.string.NicegramHideChat));
 
         muteItem.setOnLongClickListener(e -> {
             performSelectedDialogsAction(selectedDialogs, mute, true, true);
@@ -6438,6 +6499,32 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         hideActionMode(false);
                     } else if (id == pin || id == read || id == delete || id == clear || id == mute || id == archive || id == block || id == archive2 || id == pin2) {
                         performSelectedDialogsAction(selectedDialogs, id, true, false);
+                    } else if (id == hide_chat) {
+                        List<Long> hiddenChats = HiddenChatsHelper.INSTANCE.getHiddenChats();
+                        ArrayList<Long> chatsToHide = new ArrayList<>();
+                        ArrayList<Long> chatsToStopHiding = new ArrayList<>();
+                        for (int i = 0; i < selectedDialogs.size(); i++) {
+                            Long dialogId = selectedDialogs.get(i);
+                            if (hiddenChats.contains(dialogId)) {
+                                chatsToStopHiding.add(dialogId);
+                            } else {
+                                chatsToHide.add(dialogId);
+                            }
+                        }
+                        if (!chatsToHide.isEmpty()) {
+                            HiddenChatsHelper.INSTANCE.addHiddenChats(chatsToHide);
+                            HiddenChatsHelper.INSTANCE.setShowHiddenChats(false);
+                        } else if (!chatsToStopHiding.isEmpty()) {
+                            HiddenChatsHelper.INSTANCE.removeHiddenChats(chatsToStopHiding);
+                        }
+                        hideActionMode(false);
+                        viewPages[0].updateList(true);
+
+                        if (!chatsToHide.isEmpty() && !NicegramSessionPrefs.INSTANCE.getHasSeenHiddenChatsTooltip()) {
+                            NicegramSessionPrefs.INSTANCE.setHasSeenHiddenChatsTooltip(true);
+
+                            AlertsCreator.showSimpleAlert(DialogsActivity.this, getContext().getString(R.string.NicegramUnhideTooltip));
+                        }
                     }
                 }
             });
@@ -6712,11 +6799,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 showPopupIfNeeded();
             }
         }, 3000);
-        /*boolean showNicegramOnboarding = showNicegramOnboardingIfNeeded();
-        if (!showNicegramOnboarding) {
-            showAssistantOnboardingIfNeeded();
-            showSpecialOfferIfNeeded();
-        }*/
+
         selectSavedFolderIfNeeded();
         // endregion ng
 
@@ -7104,6 +7187,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     private void showSearch(boolean show, boolean startFromDownloads, boolean animated) {
+        showSearch(show, startFromDownloads, animated, false);
+    }
+
+    private void showSearch(boolean show, boolean startFromDownloads, boolean animated, boolean forceNotOnlyDialogs) {
         if (!show) {
             updateSpeedItem(false);
         }
@@ -7122,7 +7209,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         ((SizeNotifierFrameLayout) fragmentView).invalidateBlur();
         if (show) {
             boolean onlyDialogsAdapter;
-            if (searchFiltersWasShowed) {
+            if (searchFiltersWasShowed || forceNotOnlyDialogs) {
                 onlyDialogsAdapter = false;
             } else {
                 onlyDialogsAdapter = onlyDialogsAdapter();
@@ -7284,9 +7371,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     }
                 }
             }
+            if (fragmentContextView != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                fragmentContextView.setTranslationZ(1f);
+            }
             searchAnimator.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
+                    if (fragmentContextView != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        fragmentContextView.setTranslationZ(0f);
+                    }
                     notificationsLocker.unlock();
                     if (searchAnimator != animation) {
                         return;
@@ -7660,7 +7753,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             return;
         }
         long dialogId = 0;
-        int topicId = 0;
+        long topicId = 0;
         int message_id = 0;
         boolean isGlobalSearch = false;
         int folderId = 0;
@@ -7725,24 +7818,17 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             } else if (object instanceof TLRPC.TL_recentMeUrlUnknown) {
                 return;
             } else {
-                if (dialogsAdapter.getItemViewType(position) == DialogsAdapter.VIEW_TYPE_AI_CHAT_BOT) {
-                    AnalyticsHelper.INSTANCE.logEvent("chatbot_open_from_home", null);
-                    getParentActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                    AiChatBotHelper.INSTANCE.launchAiBot(getParentActivity(), UserConfig.getInstance(UserConfig.selectedAccount).clientUserId, false);
-                }
-                if (dialogsAdapter.getItemViewType(position) == DialogsAdapter.VIEW_TYPE_PST) {
-                    AnalyticsHelper.INSTANCE.logEvent("pst_pin_click", null);
-                    getParentActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                    MainActivity.Companion.launchPst(getParentActivity(), UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
-                }
-                if (dialogsAdapter.getItemViewType(position) == DialogsAdapter.VIEW_TYPE_NU_HUB) {
-                    //AnalyticsHelper.INSTANCE.logEvent("pst_pin_click", null);
-                    getParentActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                    MainActivity.Companion.launchNuHub(getParentActivity(), UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
-                }
-                if (dialogsAdapter.getItemViewType(position) == DialogsAdapter.VIEW_TYPE_AMBASSADOR) {
-                    //AnalyticsHelper.INSTANCE.logEvent("pst_pin_click", null);
-                    Intents.INSTANCE.openUrlThisAppIfPossible(getParentActivity(), NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPinData().getUrl());
+                int viewType = dialogsAdapter.getItemViewType(position);
+                if (viewType == DialogsAdapter.VIEW_TYPE_NG_PIN) {
+                    PinnedChatsPlacement placement = dialogsAdapter.getNgPinChatPlacementByPosition(position);
+
+                    if (placement != null) {
+                        String ngPlacementId = placement.getId();
+                        AnalyticsHelper.INSTANCE.logEvent("pin_click_" + ngPlacementId, null);
+                        getParentActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+                        Intents.INSTANCE.openUrlThisAppIfPossible(getParentActivity(), placement.getUrlAndroid());
+                    }
                 }
                 return;
             }
@@ -7773,7 +7859,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 message_id = messageObject.getId();
                 TLRPC.Chat chat = getMessagesController().getChat(-dialogId);
                 if (ChatObject.isForum(chat)) {
-                    topicId = MessageObject.getTopicId(messageObject.messageOwner, true);
+                    topicId = MessageObject.getTopicId(messageObject.currentAccount, messageObject.messageOwner, true);
                 }
                 searchViewPager.dialogsSearchAdapter.addHashtagsFromMessage(searchViewPager.dialogsSearchAdapter.getLastSearchString());
             } else if (obj instanceof String) {
@@ -7889,7 +7975,17 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (searchViewPager.actionModeShowing()) {
                 searchViewPager.hideActionMode();
             }
-            if (searchString != null) {
+            if (dialogId == getUserConfig().getClientUserId() && getMessagesController().savedViewAsChats) {
+                args = new Bundle();
+                args.putLong("dialog_id", UserConfig.getInstance(currentAccount).getClientUserId());
+                args.putInt("type", MediaActivity.TYPE_MEDIA);
+                args.putInt("start_from", SharedMediaLayout.TAB_SAVED_DIALOGS);
+                if (sharedMediaPreloader == null) {
+                    sharedMediaPreloader = new SharedMediaLayout.SharedMediaPreloader(this);
+                }
+                MediaActivity mediaActivity = new MediaActivity(args, sharedMediaPreloader);
+                presentFragment(mediaActivity);
+            } else if (searchString != null) {
                 if (getMessagesController().checkCanOpenChat(args, DialogsActivity.this)) {
                     getNotificationCenter().postNotificationName(NotificationCenter.closeChats);
                     presentFragment(new ChatActivity(args));
@@ -7953,7 +8049,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
-    public void setOpenedDialogId(long dialogId, int topicId) {
+    public void setOpenedDialogId(long dialogId, long topicId) {
         openedDialogId.dialogId = dialogId;
         openedDialogId.topicId = topicId;
 
@@ -7975,7 +8071,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         DialogsAdapter dialogsAdapter = (adapter instanceof DialogsAdapter) ? (DialogsAdapter) adapter : null;
         if (!actionBar.isActionModeShowed() && !AndroidUtilities.isTablet() && !onlySelect && view instanceof DialogCell && !getMessagesController().isForum(((DialogCell) view).getDialogId()) && !rightSlidingDialogContainer.hasFragment()) {
             DialogCell cell = (DialogCell) view;
-            if (cell.isPointInsideAvatar(x, y) && (dialogsAdapter == null || (!Arrays.asList(DialogsAdapter.ngViewTypes).contains(dialogsAdapter.getItemViewType(position))))) { // ng chatbot
+            if (cell.isPointInsideAvatar(x, y) && (dialogsAdapter == null || adapter.getItemViewType(position) != DialogsAdapter.VIEW_TYPE_NG_PIN)) { // ng chatbot
                 return showChatPreview(cell);
             }
         }
@@ -8035,60 +8131,53 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             return false;
         } else {
-            if (dialogsAdapter != null && dialogsAdapter.getItemViewType(position) == DialogsAdapter.VIEW_TYPE_AI_CHAT_BOT) {
+            if (dialogsAdapter != null && (dialogsAdapter.getItemViewType(position) == DialogsAdapter.VIEW_TYPE_NG_PIN)) {
+                PinnedChatsPlacement placement = dialogsAdapter.getNgPinChatPlacementByPosition(position);
+                if (placement == null) return false;
+
                 AlertsCreator.createSimpleAlert(
                         getParentActivity(),
-                        getContext().getString(R.string.Chatbot_ConfirmUnpinTitle), getContext().getString(R.string.Chatbot_ConfirmUnpinDesc),
-                        getContext().getString(R.string.Common_Ok),
-                        () -> { hideAiChatBot(adapter); },
+                        getContext().getString(R.string.Nicegram_PinChatDialogTitle_Pattern, placement.getName()),
+                        getContext().getString(R.string.Nicegram_PinChatDialogDesc_Pattern, placement.getName(), placement.getName()),
+                        LocaleController.getString("Hide", R.string.Hide),
+                        () -> { hideNgPinPlacement(adapter, placement.getId()); },
                         getResourceProvider()
                 ).create().show();
-                return false;
-            } else if (dialogsAdapter != null && dialogsAdapter.getItemViewType(position) == DialogsAdapter.VIEW_TYPE_PST) {
-                AlertsCreator.createSimpleAlert(
-                        getParentActivity(),
-                        getContext().getString(R.string.Pst_UnpinTitle), getContext().getString(R.string.Pst_UnpinDesc),
-                        getContext().getString(R.string.Common_Ok),
-                        () -> { hidePstBot(adapter); },
-                        getResourceProvider()
-                ).create().show();
-                return false;
-            } else if (dialogsAdapter != null && dialogsAdapter.getItemViewType(position) == DialogsAdapter.VIEW_TYPE_NU_HUB) {
-                AlertsCreator.createSimpleAlert(
-                        getParentActivity(),
-                        getContext().getString(R.string.NuHub_UnpinTitle), getContext().getString(R.string.NuHub_UnpinDesc),
-                        getContext().getString(R.string.Common_Ok),
-                        () -> { hideNuhubPin(adapter); },
-                        getResourceProvider()
-                ).create().show();
-                return false;
-            } else if (dialogsAdapter != null && dialogsAdapter.getItemViewType(position) == DialogsAdapter.VIEW_TYPE_AMBASSADOR) {
-                hideAmbassadorPin(adapter);
                 return false;
             }
             ArrayList<TLRPC.Dialog> dialogs = getDialogsArray(currentAccount, dialogsType, folderId, dialogsListFrozen);
+
+            // region ng hidden chats
+            if (!HiddenChatsHelper.INSTANCE.getShowHiddenChats()) {
+                ArrayList<TLRPC.Dialog> noHiddenItems = new ArrayList<>();
+
+                for (TLRPC.Dialog item: dialogs) {
+                    if (!HiddenChatsHelper.INSTANCE.getHiddenChats().contains(item.id)) {
+                        noHiddenItems.add(item);
+                    }
+                }
+                dialogs.clear();
+                dialogs.addAll(noHiddenItems);
+            }
+            // endregion
+
             position = (dialogsAdapter == null) ? -1 : dialogsAdapter.fixPosition(position);
             long dialogsSize = dialogs.size();
-            if (PrefsHelper.INSTANCE.getShowAmbassadorDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPin()) dialogsSize++;
-            if (PrefsHelper.INSTANCE.getShowPstDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getPstConfig().getShow()) dialogsSize++;
-            if (PrefsHelper.INSTANCE.getShowAiChatBotDialogs(currentAccount)) dialogsSize++;
-            if (PrefsHelper.INSTANCE.getShowNuHubDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getNuConfig().getShowPin()) dialogsSize++;
+            boolean hasAnyNgPin = false;
+            for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements()) {
+                if (PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, placement.getId())) {
+                    dialogsSize++;
+                    hasAnyNgPin = true;
+                }
+            }
             if (dialogsSize != dialogs.size()) dialogsSize++; // divider
             if (position < 0 || position >= dialogsSize) {
                 return false;
             }
 
             // region ng chatbot
-            if (PrefsHelper.INSTANCE.getShowAiChatBotDialogs(currentAccount) ||
-                    (PrefsHelper.INSTANCE.getShowPstDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getPstConfig().getShow()) ||
-                    (PrefsHelper.INSTANCE.getShowNuHubDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getNuConfig().getShowPin()) ||
-                    (PrefsHelper.INSTANCE.getShowAmbassadorDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPin())
-            ) {
-                int topCellViewType = -1;
-                if (PrefsHelper.INSTANCE.getShowAmbassadorDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPin()) topCellViewType = DialogsAdapter.VIEW_TYPE_AMBASSADOR;
-                if (topCellViewType == -1 && PrefsHelper.INSTANCE.getShowNuHubDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getNuConfig().getShowPin()) topCellViewType = DialogsAdapter.VIEW_TYPE_NU_HUB;
-                if (topCellViewType == -1 && PrefsHelper.INSTANCE.getShowPstDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getPstConfig().getShow()) topCellViewType = DialogsAdapter.VIEW_TYPE_PST;
-                if (topCellViewType == -1 && PrefsHelper.INSTANCE.getShowAiChatBotDialogs(currentAccount)) topCellViewType = DialogsAdapter.VIEW_TYPE_AI_CHAT_BOT;
+            if (hasAnyNgPin) {
+                int topCellViewType = DialogsAdapter.VIEW_TYPE_NG_PIN;
 
                 int indexMax = Math.min(20, dialogsAdapter.getItemCount());
                 int chatBotIndex = -1;
@@ -8100,10 +8189,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
                 if (chatBotIndex >= 0 && position > chatBotIndex) {
                     int positionMinus = 1; // divider
-                    if (PrefsHelper.INSTANCE.getShowAmbassadorDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPin()) positionMinus++;
-                    if (PrefsHelper.INSTANCE.getShowAiChatBotDialogs(currentAccount)) positionMinus++;
-                    if (PrefsHelper.INSTANCE.getShowPstDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getPstConfig().getShow()) positionMinus++;
-                    if (PrefsHelper.INSTANCE.getShowNuHubDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getNuConfig().getShowPin()) positionMinus++;
+                    for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements()) {
+                        if (PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, placement.getId())) positionMinus++;
+                    }
                     position -= positionMinus;
                 }
                 position = Math.max(0, position);
@@ -9374,6 +9462,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         canClearCacheCount = 0;
         int cantBlockCount = 0;
         canReportSpamCount = 0;
+
+        hiddenChatsCount = 0; // ng
+        List<Long> hiddenChats = HiddenChatsHelper.INSTANCE.getHiddenChats(); // ng
+
         if (hide) {
             return;
         }
@@ -9384,6 +9476,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             TLRPC.Dialog dialog = getMessagesController().dialogs_dict.get(selectedDialogs.get(a));
             if (dialog == null) {
                 continue;
+            }
+
+            if (hiddenChats.contains(dialog.id)) {
+                hiddenChatsCount++;
             }
 
             long selectedDialog = dialog.id;
@@ -9609,6 +9705,13 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             pinItem.setIcon(R.drawable.msg_unpin);
             pinItem.setContentDescription(LocaleController.getString("UnpinFromTop", R.string.UnpinFromTop));
             pin2Item.setText(LocaleController.getString("DialogUnpin", R.string.DialogUnpin));
+        }
+
+        hideItem.setVisibility(View.VISIBLE);
+        if (hiddenChatsCount == count) {
+            hideItem.setText(getContext().getString(R.string.NicegramStopHideChat));
+        } else {
+            hideItem.setText(getContext().getString(R.string.NicegramHideChat));
         }
     }
 
@@ -10337,7 +10440,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (viewPages[a].isDefaultDialogType() && AndroidUtilities.isTablet()) {
                     boolean close = (Boolean) args[2];
                     long dialog_id = (Long) args[0];
-                    int topicId = (int) args[1];
+                    long topicId = (Long) args[1];
                     if (close) {
                         if (dialog_id == openedDialogId.dialogId && topicId == openedDialogId.topicId) {
                             openedDialogId.dialogId = 0;
@@ -12313,8 +12416,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         MainActivity.Companion.launchAssistant(getParentActivity(), UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
     }
 
+    private boolean hasSeenNgPopupThisSession;
     private void showPopupIfNeeded() {
         SpecialOffersRepository.SpecialOffer offer = NicegramAssistantHelper.INSTANCE.getSpecialOffer();
+
+        if (hasSeenNgPopupThisSession) {
+            getParentActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+            return;
+        }
+        hasSeenNgPopupThisSession = true;
 
         if (NicegramClientHelper.INSTANCE.getDialogsBannerUseCase() != null && NicegramClientHelper.INSTANCE.getDialogsBannerUseCase().invoke() != null) {
             if (!isPaused) {
@@ -12396,27 +12506,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return true;
     }
 
-    private void hideAiChatBot(RecyclerView.Adapter adapter) {
+    private void hideNgPinPlacement(RecyclerView.Adapter adapter, String ngPinId) {
         if (adapter == null) return;
-        PrefsHelper.INSTANCE.setShowAiChatBotDialogs(currentAccount, false);
-        fragmentView.postDelayed(() -> { adapter.notifyDataSetChanged(); }, 200);
-    }
-
-    private void hidePstBot(RecyclerView.Adapter adapter) {
-        if (adapter == null) return;
-        PrefsHelper.INSTANCE.setShowPstDialogs(currentAccount, false);
-        fragmentView.postDelayed(() -> { adapter.notifyDataSetChanged(); }, 200);
-    }
-
-    private void hideNuhubPin(RecyclerView.Adapter adapter) {
-        if (adapter == null) return;
-        PrefsHelper.INSTANCE.setShowNuHubDialogs(currentAccount, false);
-        fragmentView.postDelayed(() -> { adapter.notifyDataSetChanged(); }, 200);
-    }
-
-    private void hideAmbassadorPin(RecyclerView.Adapter adapter) {
-        if (adapter == null) return;
-        PrefsHelper.INSTANCE.setShowAmbassadorDialogs(currentAccount, false);
+        PrefsHelper.INSTANCE.setShowPinChatsPlacementWithId(currentAccount, false, ngPinId);
         fragmentView.postDelayed(() -> { adapter.notifyDataSetChanged(); }, 200);
     }
 

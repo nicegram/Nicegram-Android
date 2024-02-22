@@ -4,9 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Base64
-import app.nicegram.PrefsHelper.shareChannelInfo
-import com.appvillis.nicegram.domain.CollectGroupInfoUseCase
-import com.appvillis.nicegram.domain.CollectGroupInfoUseCase.*
+import com.appvillis.feature_nicegram_client.NicegramClientHelper
+import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase.*
+import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase
 import org.telegram.messenger.*
 import org.telegram.tgnet.ConnectionsManager
 import org.telegram.tgnet.TLObject
@@ -20,6 +20,7 @@ object NicegramGroupCollectHelper {
     fun tryToCollectChannelInfo(
         currentAccount: Int,
         currentChat: Chat?,
+        currentUser: User?,
         messages: List<MessageObject>,
         messagesController: MessagesController,
         connectionsManager: ConnectionsManager,
@@ -29,7 +30,12 @@ object NicegramGroupCollectHelper {
         getTranslationTextCallback: (MessageObject) -> String?
     ) {
         val collectGroupInfoUseCase = collectGroupInfoUseCase ?: return
-        if (currentChat == null) return
+        if (currentChat == null) {
+            if (currentUser != null) {
+                //tryCollectBotInfo(currentUser, avatarDrawable, currentAccount)
+            }
+            return
+        }
 
         if (!ChatObject.isChannel(currentChat)) {
             if (currentChat is TL_chat) {
@@ -39,10 +45,10 @@ object NicegramGroupCollectHelper {
             } else return
         }
 
-        if (!shareChannelInfo(currentAccount)) {
+        if (NicegramClientHelper.preferences?.canShareChannels != true) {
             return
         }
-        if (!collectGroupInfoUseCase.canCollect(currentChat.id)) {
+        if (!collectGroupInfoUseCase.canCollectGroup(currentChat.id)) {
             return
         }
         var msgForLangDetect: String? = null
@@ -164,5 +170,17 @@ object NicegramGroupCollectHelper {
             "",
             geo
         )
+    }
+
+    private fun tryCollectBotInfo(user: User, avatarDrawable: Drawable?, currentAccount: Int) {
+        val collectGroupInfoUseCase = collectGroupInfoUseCase ?: return
+        if (!user.bot) return
+
+        if (NicegramClientHelper.preferences?.canShareBots != true) {
+            return
+        }
+        if (!collectGroupInfoUseCase.canCollectBot(user.id)) {
+            return
+        }
     }
 }

@@ -37,6 +37,7 @@ import com.appvillis.assistant_core.app.AppInit;
 import com.appvillis.core_network.ApiService;
 import com.appvillis.core_resources.domain.TgResourceProvider;
 import com.appvillis.feature_ai_chat.domain.AiChatCommandsRepository;
+import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo;
 import com.appvillis.feature_ai_chat.domain.ClearDataUseCase;
 import com.appvillis.feature_ai_chat.domain.UseResultManager;
 import com.appvillis.feature_ai_chat.domain.usecases.GetBalanceTopUpRequestUseCase;
@@ -44,14 +45,13 @@ import com.appvillis.feature_ai_chat.domain.usecases.GetChatCommandsUseCase;
 import com.appvillis.feature_analytics.domain.AnalyticsManager;
 import com.appvillis.feature_nicegram_assistant.QrCodeHelper;
 import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase;
+import com.appvillis.feature_nicegram_assistant.domain.GetSetPstStartedStatusUseCase;
 import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase;
-import com.appvillis.feature_nicegram_assistant.domain.SetGrumStatusUseCase;
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
 import com.appvillis.feature_nicegram_billing.domain.BillingManager;
 import com.appvillis.feature_nicegram_billing.domain.RequestInAppsUseCase;
-import com.appvillis.feature_nicegram_client.NicegramClientHelper;
+import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase;
 import com.appvillis.feature_nicegram_client.domain.CommonRemoteConfigRepo;
-import com.appvillis.feature_nicegram_client.domain.GetReferralDrawDataUseCase;
 import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter;
 import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.nicegram.AnalyticsHelper;
@@ -61,15 +61,17 @@ import androidx.multidex.MultiDex;
 
 import app.nicegram.DailyRewardsHelper;
 import app.nicegram.NicegramAnalyticsHelper;
-import app.nicegram.NicegramGroupCollectHelper;
 
+import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
 import com.appvillis.nicegram.NicegramPrefs;
+
+import app.nicegram.NicegramGroupCollectHelper;
 import app.nicegram.NicegramSpeechToTextHelper;
 import com.appvillis.nicegram.ReviewHelper;
-import com.appvillis.nicegram.domain.CollectGroupInfoUseCase;
-import com.appvillis.feature_nicegram_client.domain.GetDialogsBannerUseCase;
 import com.appvillis.feature_nicegram_client.domain.NicegramClientOnboardingUseCase;
 import com.appvillis.nicegram.network.NicegramNetwork;
+import com.appvillis.rep_placements.domain.GetChatPlacementsUseCase;
+import com.appvillis.rep_placements.domain.GetPinChatsPlacementsUseCase;
 import com.appvillis.rep_user.domain.AppSessionControlUseCase;
 import com.appvillis.rep_user.domain.ClaimDailyRewardUseCase;
 import com.appvillis.rep_user.domain.GetUserStatusUseCase;
@@ -97,6 +99,7 @@ import javax.inject.Inject;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.PrefsHelper;
 import app.nicegram.TgThemeProxyImpl;
+import timber.log.Timber;
 
 public class ApplicationLoader extends Application {
 
@@ -142,19 +145,19 @@ public class ApplicationLoader extends Application {
     @Inject
     public NicegramClientOnboardingUseCase nicegramClientOnboardingUseCase;
     @Inject
-    public GetDialogsBannerUseCase getDialogsBannerUseCase;
-    @Inject
-    public GetReferralDrawDataUseCase getReferralDrawDataUseCase;
-    @Inject
     public GetNicegramOnboardingStatusUseCase getNicegramOnboardingStatusUseCase;
-    @Inject
-    public SetGrumStatusUseCase setGrumStatusUseCase;
     @Inject
     public CollectGroupInfoUseCase collectGroupInfoUseCase;
     @Inject
     public AppSessionControlUseCase appSessionControlUseCase;
     @Inject
+    public GetPinChatsPlacementsUseCase pinChatsPlacementsUseCase;
+    @Inject
+    public GetChatPlacementsUseCase chatPlacementsUseCase;
+    @Inject
     public GetSpecialOfferUseCase getSpecialOfferUseCase;
+    @Inject
+    public GetSetPstStartedStatusUseCase getSetPstStartedStatusUseCase;
     @Inject
     public BillingManager billingManager;
     @Inject
@@ -163,7 +166,7 @@ public class ApplicationLoader extends Application {
     public CommonRemoteConfigRepo remoteConfigRepo;
 
     @Inject
-    public com.appvillis.feature_ai_chat.domain.RemoteConfigRepo remoteConfigRepoAi;
+    public AiChatRemoteConfigRepo remoteConfigRepoAi;
     @Inject
     public NicegramSessionCounter nicegramSessionCounter;
     @Inject
@@ -369,6 +372,12 @@ public class ApplicationLoader extends Application {
 
         super.onCreate();
 
+        if (BuildConfig.DEBUG) {
+            Timber.plant((Timber.Tree) new AppInit.DebugTree());
+        } else {
+            Timber.plant(new AppInit.CrashReportingTree());
+        }
+
         setMaxAccountCount(); // ng
         initNicegram();
 
@@ -541,11 +550,6 @@ public class ApplicationLoader extends Application {
         return false;
     }
 
-    public static boolean useLessData() {
-        ensureCurrentNetworkGet();
-        return BuildVars.DEBUG_PRIVATE_VERSION && (SharedConfig.forceLessData || isConnectionSlow());
-    }
-
     public static boolean isConnectionSlow() {
         try {
             ensureCurrentNetworkGet(false);
@@ -672,7 +676,6 @@ public class ApplicationLoader extends Application {
 
         appInit.initialize();
 
-        remoteConfigRepo.initialize();
         appSessionControlUseCase.increaseSessionCount();
         tgResourceProvider.setThemeProxy(new TgThemeProxyImpl());
 
@@ -688,17 +691,17 @@ public class ApplicationLoader extends Application {
         AiChatBotHelper.INSTANCE.setUseResultManager(useResultManager);
         AiChatBotHelper.INSTANCE.setTgResourceProvider(tgResourceProvider);
 
-        NicegramAssistantHelper.INSTANCE.setSetGrumStatusUseCase(setGrumStatusUseCase);
         NicegramAssistantHelper.INSTANCE.setGetNicegramOnboardingStatusUseCase(getNicegramOnboardingStatusUseCase);
-        NicegramClientHelper.INSTANCE.setDialogsBannerUseCase(getDialogsBannerUseCase);
-        NicegramClientHelper.INSTANCE.setReferralDrawDataUseCase(getReferralDrawDataUseCase);
         NicegramAssistantHelper.INSTANCE.setGetSpecialOfferUseCase(getSpecialOfferUseCase);
         NicegramAssistantHelper.INSTANCE.setAppSessionControlUseCase(appSessionControlUseCase);
-        NicegramAssistantHelper.INSTANCE.setRemoteConfigRepo(remoteConfigRepoAi);
-        NicegramGroupCollectHelper.INSTANCE.setCollectGroupInfoUseCase(collectGroupInfoUseCase);
+        NicegramAssistantHelper.INSTANCE.setGetChatPlacementsUseCase(chatPlacementsUseCase);
+        NicegramAssistantHelper.INSTANCE.setAiChatConfigRepo(remoteConfigRepoAi);
+        NicegramAssistantHelper.INSTANCE.setGetSetPstStartedStatusUseCase(getSetPstStartedStatusUseCase);
+        NicegramPinChatsPlacementHelper.INSTANCE.setGetPinChatsPlacementsUseCase(pinChatsPlacementsUseCase);
         NicegramAnalyticsHelper.INSTANCE.setAnalyticsManager(analyticsManager);
         NicegramBillingHelper.INSTANCE.setBillingManager(billingManager);
         NicegramBillingHelper.INSTANCE.setUserRepository(userRepository);
+        NicegramGroupCollectHelper.INSTANCE.setCollectGroupInfoUseCase(collectGroupInfoUseCase);
         PrefsHelper.INSTANCE.setRemoteConfigRepo(remoteConfigRepo);
         NicegramSpeechToTextHelper.INSTANCE.setApiService(apiService);
 

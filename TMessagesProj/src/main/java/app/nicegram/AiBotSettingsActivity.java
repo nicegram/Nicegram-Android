@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.appvillis.core_resources.widgets.ToastView;
 import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.nicegram.NicegramPrefs;
-import com.mediapark.wcdbce.views.ToastViewHelper;
+import com.appvillis.core_resources.widgets.ToastViewHelper;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
@@ -36,14 +36,12 @@ public class AiBotSettingsActivity extends BaseFragment {
     private RecyclerListView listView;
     private ListAdapter adapter;
 
-    private int aiDialogsRow;
     private int aiChatRow;
     private int aiClearRow;
     private int rowCount = 0;
 
     @Override
     public boolean onFragmentCreate() {
-        aiDialogsRow = rowCount++;
         aiChatRow = rowCount++;
         aiClearRow = rowCount++;
 
@@ -90,12 +88,6 @@ public class AiBotSettingsActivity extends BaseFragment {
                 SharedPreferences.Editor editor = preferences.edit();
                 enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT_DEFAULT);
                 editor.putBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT, !enabled);
-                editor.apply();
-            } else if (position == aiDialogsRow) {
-                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, !enabled);
                 editor.apply();
             } else if (position == aiClearRow) {
                 AlertsCreator.createSimpleAlert(
@@ -173,9 +165,7 @@ public class AiBotSettingsActivity extends BaseFragment {
                 case 1: {
                     TextCheckCell checkCell = (TextCheckCell) holder.itemView;
                     SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                    if (position == aiDialogsRow) {
-                        checkCell.setTextAndCheck(getContext().getString(R.string.Chatbot_ShowInDialogs), preferences.getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT), false);
-                    } else if (position == aiChatRow) {
+                    if (position == aiChatRow) {
                         checkCell.setTextAndCheck(getContext().getString(R.string.Chatbot_ShowInChat), preferences.getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT_DEFAULT), false);
                     }
                     break;
@@ -194,7 +184,7 @@ public class AiBotSettingsActivity extends BaseFragment {
 
         @Override
         public int getItemViewType(int position) {
-            if (position == aiChatRow || position == aiDialogsRow) {
+            if (position == aiChatRow) {
                 return 1;
             } else if (position == aiClearRow) {
                 return 2;

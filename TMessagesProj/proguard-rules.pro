@@ -135,6 +135,10 @@
 -keep class com.appvillis.feature_nicegram_client.data.CommonRemoteConfigRepoImpl$DialogsListBannerJson$DialogsListBannerLocaleJson { *; }
 -keep class com.appvillis.feature_nicegram_client.data.CommonRemoteConfigRepoImpl$ReferralDrawJson { *; }
 -keep class com.appvillis.feature_nicegram_client.data.CommonRemoteConfigRepoImpl$ReferralDrawJson$ReferralDrawLocaleJson { *; }
+-keep class com.appvillis.feature_nicegram_client.data.CommonRemoteConfigRepoImpl$SharingConfigJson { *; }
+-keep class com.appvillis.feature_nicegram_client.data.CommonRemoteConfigRepoImpl$SharingPopupJson { *; }
+-keep class com.appvillis.rep_placements.data.PlacementsRepoImpl { *; }
+-keep class com.appvillis.rep_placements.data.PlacementsRepoImpl$* { *; }
 #-keep class com.appvillis.feature_ai_chat.data.FirebaseRemoteConfigRepo$.** { *; }
 #-keep class com.appvillis.feature_ai_chat.data.FirebaseRemoteConfigRepo.** { *; }
 #-keep class com.appvillis.feature_ai_chat.data.FirebaseRemoteConfigRepo

@@ -17,9 +17,11 @@ def modules = [
         'feature-rewards',
         'feature-nicegram-client',
         'rep-user',
+        'rep-remote-config',
+        'rep-placements',
         'lib-android-base',
         'core-ui',
-        'core-network'
+        'core-network',
 ]
 
 for (module in modules) {

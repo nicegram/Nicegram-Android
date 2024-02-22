@@ -52,7 +52,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.appvillis.core_resources.widgets.ToastView;
 import com.google.android.exoplayer2.util.Log;
-import com.mediapark.wcdbce.views.ToastViewHelper;
+import com.appvillis.core_resources.widgets.ToastViewHelper;
 
 import app.nicegram.NicegramDoubleBottom;
 

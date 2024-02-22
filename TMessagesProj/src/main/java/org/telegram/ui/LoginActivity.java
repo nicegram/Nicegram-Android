@@ -89,6 +89,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 
 import com.appvillis.core_network.data.HeaderInterceptor;
+import com.appvillis.core_resources.widgets.EsimBannerView;
 import com.appvillis.nicegram.presentation.NicegramTutorialSmsDialog;
 import com.appvillis.rep_user.domain.UserRepository;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -1867,7 +1868,14 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             subtitleView.setGravity(Gravity.CENTER);
             subtitleView.setLineSpacing(AndroidUtilities.dp(2), 1.0f);
             addView(subtitleView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 32, 8, 32, 0));
-
+            // region ng esim banner
+            FrameLayout esimBannerLayout = EsimBannerView.Companion.newInstance(context);
+            addView(esimBannerLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.START, 16, 14, 16, 8));
+            esimBannerLayout.setOnClickListener(view -> {
+                String url = "https://esimplus.onelink.me/WxwP/wxkmptvq";
+                getContext().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+            });
+            // endregion ng esim banner
             countryButton = new TextViewSwitcher(context);
             countryButton.setFactory(() -> {
                 TextView tv = new TextView(context);

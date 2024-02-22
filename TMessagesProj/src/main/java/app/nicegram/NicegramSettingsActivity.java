@@ -2,19 +2,25 @@ package app.nicegram;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.text.SpannableStringBuilder;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import androidx.collection.MutableIntObjectMap;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
+import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
+import com.appvillis.feature_nicegram_client.NicegramClientHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.feature_nicegram_client.NicegramConsts;
+import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
 import com.appvillis.nicegram.NicegramPrefs;
 import com.appvillis.nicegram.network.NicegramNetwork;
+import com.appvillis.rep_placements.domain.entity.PinnedChatsPlacement;
 
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -45,9 +51,7 @@ public class NicegramSettingsActivity extends BaseFragment {
 
 
     private int pinSectionHeaderRow;
-    private int lilyToggleRow;
-    private int pstToggleRow;
-    private int imageGenerationToggleRow;
+    private final MutableIntObjectMap<PinnedChatsPlacement> pinSectionRowsMap = new MutableIntObjectMap<>();
     private int unblockGuideRow;
 
     private int nicegramSectionRow;
@@ -64,14 +68,17 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int quickRepliesRow;
     private int hideReactionsRow;
     private int shareChannelsInfoRow;
+    private int shareBotsInfoRow;
+    private int shareStickersInfoRow;
+    private int showHiddenChatsRow;
     private int rowCount = 0;
 
     @Override
     public boolean onFragmentCreate() {
         pinSectionHeaderRow = rowCount++;
-        lilyToggleRow = rowCount++;
-        pstToggleRow = NicegramAssistantHelper.INSTANCE.getPstConfig().getShow() ? rowCount++ : -1;
-        imageGenerationToggleRow = NicegramAssistantHelper.INSTANCE.getNuConfig().getShowPin() ? rowCount++ : -1;
+        for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements()) {
+            pinSectionRowsMap.put(rowCount++, placement);
+        }
         nicegramSectionRow = rowCount++;
         unblockGuideRow = rowCount++;
         maxAccountsRow = rowCount++;
@@ -87,6 +94,9 @@ public class NicegramSettingsActivity extends BaseFragment {
         hideReactionsRow = rowCount++;
         openLinksRow = rowCount++;
         shareChannelsInfoRow = rowCount++;
+        //shareBotsInfoRow = rowCount++;
+        //shareStickersInfoRow = rowCount++;
+        showHiddenChatsRow = rowCount++;
 
         return super.onFragmentCreate();
     }
@@ -164,35 +174,24 @@ public class NicegramSettingsActivity extends BaseFragment {
                 editor.putBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, !enabled);
                 editor.apply();
             } else if (position == shareChannelsInfoRow) {
-                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHARE_CHANNEL_INFO, NicegramPrefs.PREF_SHARE_CHANNEL_INFO_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_SHARE_CHANNEL_INFO, !enabled);
-                editor.apply();
+                enabled = NicegramClientHelper.INSTANCE.getPreferences().getCanShareChannels();
+                NicegramClientHelper.INSTANCE.getPreferences().setCanShareChannels(!enabled);
+            } else if (position == shareBotsInfoRow) {
+                enabled = NicegramClientHelper.INSTANCE.getPreferences().getCanShareBots();
+                NicegramClientHelper.INSTANCE.getPreferences().setCanShareBots(!enabled);
+            } else if (position == shareStickersInfoRow) {
+                enabled = NicegramClientHelper.INSTANCE.getPreferences().getCanShareStickers();
+                NicegramClientHelper.INSTANCE.getPreferences().setCanShareStickers(!enabled);
             } else if (position == openLinksRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
                 enabled = preferences.getBoolean(NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER, NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER_DEFAULT);
                 editor.putBoolean(NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER, !enabled);
                 editor.apply();
-            } else if (position == lilyToggleRow) {
-                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, !enabled);
-                editor.apply();
-            } else if (position == pstToggleRow) {
-                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_PST_DIALOGS, NicegramPrefs.PREF_SHOW_PST_DIALOGS_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_SHOW_PST_DIALOGS, !enabled);
-                editor.apply();
-            } else if (position == imageGenerationToggleRow) {
-                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS, NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS, !enabled);
-                editor.apply();
+            } else if (pinSectionRowsMap.contains(position)) {
+                PinnedChatsPlacement placement = pinSectionRowsMap.get(position);
+                enabled = PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, placement.getId());
+                PrefsHelper.INSTANCE.setShowPinChatsPlacementWithId(currentAccount, !enabled, placement.getId());
             } else if (position == unblockGuideRow) {
                 Browser.openUrl(getParentActivity(), NicegramConsts.UNBLOCK_URL);
             } else if (position == doubleBottomRow) {
@@ -244,6 +243,9 @@ public class NicegramSettingsActivity extends BaseFragment {
                             getResourceProvider()
                     ).create().show();
                 }
+            } else if (position == showHiddenChatsRow) {
+                enabled = HiddenChatsHelper.INSTANCE.getShowHiddenChats();
+                HiddenChatsHelper.INSTANCE.setShowHiddenChats(!enabled);
             }
             if (view instanceof TextCheckCell && position != doubleBottomRow && position != maxAccountsRow) {
                 ((TextCheckCell) view).setChecked(!enabled);
@@ -337,16 +339,19 @@ public class NicegramSettingsActivity extends BaseFragment {
                     } else if (position == hideReactionsRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramHideReactions"), preferences.getBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, NicegramPrefs.PREF_HIDE_REACTIONS_DEFAULT), false);
                     } else if (position == shareChannelsInfoRow) {
-                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramShareChannelInfo"), LocaleController.getString("NicegramShareChannelInfoDesc"), preferences.getBoolean(NicegramPrefs.PREF_SHARE_CHANNEL_INFO, NicegramPrefs.PREF_SHARE_CHANNEL_INFO_DEFAULT), true, false);
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramShareChannelInfo"), LocaleController.getString("NicegramShareChannelInfoDesc"), NicegramClientHelper.INSTANCE.getPreferences().getCanShareChannels(), true, false);
+                    } else if (position == shareBotsInfoRow) {
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramShareBotsInfo"), LocaleController.getString("NicegramShareChannelInfoDesc"), NicegramClientHelper.INSTANCE.getPreferences().getCanShareBots(), true, false);
+                    } else if (position == shareStickersInfoRow) {
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramShareStickersInfo"), LocaleController.getString("NicegramShareChannelInfoDesc"), NicegramClientHelper.INSTANCE.getPreferences().getCanShareStickers(), true, false);
                     } else if (position == maxAccountsRow) {
                         checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramMaxAccount_IncreaseTo"), LocaleController.getString("NicegramMaxAccount_Default"), PrefsHelper.INSTANCE.getMaxAccountCount(getContext()) == NicegramPrefs.PREF_MAX_ACCOUNTS_MAX, true, false);
                         checkCell.setEnabled(false);
-                    } else if (position == lilyToggleRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("Chatbot_AIChatbot"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_DIALOGS_DEFAULT), false);
-                    } else if (position == pstToggleRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("Pst_Title"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_PST_DIALOGS, NicegramPrefs.PREF_SHOW_PST_DIALOGS_DEFAULT), false);
-                    } else if (position == imageGenerationToggleRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("NuHub_Title"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS, NicegramPrefs.PREF_SHOW_NU_HUB_DIALOGS_DEFAULT), false);
+                    } else if (position == showHiddenChatsRow) {
+                        checkCell.setTextAndCheck(getContext().getString(R.string.NicegramShowHiddenChats), HiddenChatsHelper.INSTANCE.getShowHiddenChats(), false);
+                    } else if (pinSectionRowsMap.contains(position)) {
+                        PinnedChatsPlacement placement = pinSectionRowsMap.get(position);
+                        checkCell.setTextAndCheck(SpannableStringBuilder.valueOf(placement.getName()), PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, placement.getId()), false);
                     }
                     break;
                 }
@@ -376,8 +381,11 @@ public class NicegramSettingsActivity extends BaseFragment {
             } else if (position == openLinksRow ||
                     position == showRegDateRow || position == showProfileIdRow ||
                     position == startWithRearCameraRow || position == downloadVideosToGallery ||
-                    position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow || position == maxAccountsRow || position == shareChannelsInfoRow ||
-            position == lilyToggleRow || position == pstToggleRow || position == imageGenerationToggleRow) {
+                    position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow ||
+                    position == maxAccountsRow || position == shareChannelsInfoRow ||
+                    position == shareBotsInfoRow || position == shareStickersInfoRow ||
+                    pinSectionRowsMap.contains(position) ||
+            position == showHiddenChatsRow) {
                 return 1;
             } else if (position == unblockGuideRow || position == quickRepliesRow || position == restoreRow) {
                 return 2;

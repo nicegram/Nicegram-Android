@@ -3,11 +3,9 @@ package com.appvillis.nicegram.network
 import android.content.Context
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper
 import com.appvillis.nicegram.BuildConfig
-import com.appvillis.nicegram.NicegramNetworkConsts
 import com.appvillis.nicegram.NicegramNetworkConsts.API_KEY
 import com.appvillis.nicegram.NicegramNetworkConsts.BASE_URL
 import com.appvillis.nicegram.NicegramNetworkConsts.BASE_URL_NG_APP
-import com.appvillis.nicegram.NicegramNetworkConsts.NG_CLOUD_URL
 import com.appvillis.nicegram.NicegramScopes.ioScope
 import com.appvillis.nicegram.NicegramScopes.uiScope
 import com.appvillis.nicegram.R
@@ -42,16 +40,6 @@ object NicegramNetwork {
             .build()
 
         retrofit.create(NicegramAppApi::class.java)
-    }
-
-    val ngCloudApi by lazy {
-        val retrofit = Retrofit.Builder()
-            .baseUrl(NG_CLOUD_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-
-        retrofit.create(NicegramCloudApi::class.java)
     }
 
     private val okHttpClient by lazy {
@@ -90,12 +78,15 @@ object NicegramNetwork {
                             RegDateResponse.RegDateType.Approximately -> {
                                 context.getString(R.string.NicegramApproximately)
                             }
+
                             RegDateResponse.RegDateType.OlderThan -> {
                                 context.getString(R.string.NicegramOlderThan)
                             }
+
                             RegDateResponse.RegDateType.NewerThan -> {
                                 context.getString(R.string.NicegramNewerThan)
                             }
+
                             else -> ""
                         }
                         callback("$prefix ${result.data.date}")

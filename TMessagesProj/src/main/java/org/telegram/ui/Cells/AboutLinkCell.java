@@ -14,6 +14,7 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
@@ -37,8 +38,11 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.core.content.ContextCompat;
 import androidx.core.view.GestureDetectorCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -90,6 +94,8 @@ public class AboutLinkCell extends FrameLayout {
 
     private FrameLayout container;
     private Drawable rippleBackground;
+
+    private ImageView imageView; // ng translate bio
 
     private StaticLayout firstThreeLinesLayout;
     private StaticLayout[] nextLinesLayouts = null;
@@ -184,7 +190,22 @@ public class AboutLinkCell extends FrameLayout {
         addView(showMoreTextBackgroundView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.RIGHT | Gravity.BOTTOM, 22 - showMoreTextBackgroundView.getPaddingLeft() / AndroidUtilities.density, 0, 22 - showMoreTextBackgroundView.getPaddingRight() / AndroidUtilities.density, 6));
         backgroundPaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider));
 
+        // ng translate bio
+        imageView = new ImageView(context);
+        imageView.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+        imageView.setScaleType(ImageView.ScaleType.CENTER);
+        imageView.setVisibility(View.GONE);
+        container.addView(imageView, LayoutHelper.createFrameRelatively(48, 48, Gravity.END | Gravity.CENTER_VERTICAL, 0, 0, 12, 0));
+
         setWillNotDraw(false);
+    }
+
+    protected int processColor(int color) {
+        return color;
+    }
+
+    public void updateColors() {
+        Theme.profile_aboutTextPaint.linkColor = processColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
     }
 
     @Override
@@ -198,6 +219,14 @@ public class AboutLinkCell extends FrameLayout {
         ) {
 //            event.offsetLocation(showMoreTextBackgroundView.getLeft(), showMoreTextBackgroundView.getTop());
             return false;
+        }
+
+        // ng translate bio
+        if (imageView.getVisibility() == View.VISIBLE &&
+                x >= imageView.getLeft() && x <= imageView.getRight() &&
+                y >= imageView.getTop() && y <= imageView.getBottom()
+        ) {
+            return true;
         }
 
         boolean result = false;
@@ -283,7 +312,7 @@ public class AboutLinkCell extends FrameLayout {
         canvas.translate(0, textY = AndroidUtilities.dp(8));
 
         try {
-            Theme.profile_aboutTextPaint.linkColor = Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider);
+            Theme.profile_aboutTextPaint.linkColor = processColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
             if (firstThreeLinesLayout == null || !shouldExpand) {
                 if (textLayout != null) {
                     textLayout.draw(canvas);
@@ -461,7 +490,8 @@ public class AboutLinkCell extends FrameLayout {
                 Spannable buffer = (Spannable) textLayout.getText();
                 ClickableSpan[] link = buffer.getSpans(off, off, ClickableSpan.class);
                 if (link.length != 0 && !AndroidUtilities.isAccessibilityScreenReaderEnabled()) {
-                    LinkSpanDrawable linkDrawable = new LinkSpanDrawable(link[0], parentFragment.getResourceProvider(), ex, ey);
+                    LinkSpanDrawable linkDrawable = new LinkSpanDrawable(link[0], resourcesProvider, ex, ey);
+                    linkDrawable.setColor(processColor(Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider)));
                     int start = buffer.getSpanStart(link[0]);
                     int end = buffer.getSpanEnd(link[0]);
                     LinkPath path = linkDrawable.obtainNewPath();
@@ -490,11 +520,12 @@ public class AboutLinkCell extends FrameLayout {
                     links.removeLoading(currentLoading, true);
                 }
                 currentLoading = thisLoading = LinkSpanDrawable.LinkCollector.makeLoading(layout, pressedLink, yOffset);
+                final int color = processColor(Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider));
                 thisLoading.setColors(
-                    Theme.multAlpha(Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider), .8f),
-                    Theme.multAlpha(Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider), 1.3f),
-                    Theme.multAlpha(Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider), 1f),
-                    Theme.multAlpha(Theme.getColor(Theme.key_chat_linkSelectBackground, resourcesProvider), 4f)
+                    Theme.multAlpha(color, .8f),
+                    Theme.multAlpha(color, 1.3f),
+                    Theme.multAlpha(color, 1f),
+                    Theme.multAlpha(color, 4f)
                 );
                 thisLoading.strokePaint.setStrokeWidth(AndroidUtilities.dpf2(1.25f));
                 links.addLoading(thisLoading);
@@ -683,6 +714,8 @@ public class AboutLinkCell extends FrameLayout {
     }
 
     private void checkTextLayout(int maxWidth, boolean force) {
+        if (imageView.getVisibility() == View.VISIBLE) maxWidth = maxWidth - AndroidUtilities.dp(60f); // ng translate bio
+
         if (moreButtonDisabled) {
             shouldExpand = false;
         }
@@ -788,5 +821,18 @@ public class AboutLinkCell extends FrameLayout {
 
     public void setMoreButtonDisabled(boolean moreButtonDisabled) {
         this.moreButtonDisabled = moreButtonDisabled;
+    }
+
+    // ng translate bio
+    public void setImage(Drawable img, String desc, OnClickListener listener) {
+        if (img == null) {
+            imageView.setVisibility(View.GONE);
+            imageView.setOnClickListener(null);
+            return;
+        }
+        imageView.setVisibility(View.VISIBLE);
+        imageView.setImageDrawable(img);
+        imageView.setContentDescription(desc);
+        imageView.setOnClickListener(listener);
     }
 }

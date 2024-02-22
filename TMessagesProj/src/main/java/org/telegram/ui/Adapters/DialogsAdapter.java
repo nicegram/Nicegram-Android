@@ -24,12 +24,16 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import androidx.collection.MutableIntObjectMap;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
+import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
 import com.appvillis.nicegram.AnalyticsHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
+import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
+import com.appvillis.rep_placements.domain.entity.PinnedChatsPlacement;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
@@ -84,6 +88,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
+import javax.annotation.Nullable;
+
 import app.nicegram.PrefsHelper;
 
 public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements DialogCell.DialogCellDelegate {
@@ -107,13 +113,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             VIEW_TYPE_FOLDER_UPDATE_HINT = 17,
             VIEW_TYPE_STORIES = 18,
             VIEW_TYPE_ARCHIVE_FULLSCREEN = 19,
-            VIEW_TYPE_AI_CHAT_BOT = 100000,
-            VIEW_TYPE_PST = 100001,
-            VIEW_TYPE_NU_HUB = 100002,
-            VIEW_TYPE_AMBASSADOR = 100003;
+            VIEW_TYPE_NG_PIN = 100000;
 
-    public static Integer[] ngViewTypes = {VIEW_TYPE_AI_CHAT_BOT, VIEW_TYPE_PST, VIEW_TYPE_NU_HUB, VIEW_TYPE_AMBASSADOR};
-
+    private final MutableIntObjectMap<PinnedChatsPlacement> ngPinnedPlacementMap = new MutableIntObjectMap<>();
     private Context mContext;
     private ArchiveHintCell archiveHintCell;
     private ArrayList<TLRPC.TL_contact> onlineContacts;
@@ -360,12 +362,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 return false;
             }
 
-            if (Arrays.asList(ngViewTypes).contains(viewType)) {
+            if (viewType == VIEW_TYPE_NG_PIN) {
                 return true;
             }
-            /*if (viewType == VIEW_TYPE_AI_CHAT_BOT || viewType == VIEW_TYPE_PST || viewType == VIEW_TYPE_NU_HUB) {
-                return true;
-            }*/
             if (viewType == VIEW_TYPE_DIALOG) {
                 return dialog != null && itemInternal.dialog != null && dialog.id == itemInternal.dialog.id
                         && isFolder == itemInternal.isFolder &&
@@ -584,41 +583,13 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         View view;
         switch (viewType) {
-            case VIEW_TYPE_AI_CHAT_BOT:
-                DialogCell aiBotCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
-                aiBotCell.setArchivedPullAnimation(pullForegroundDrawable);
-                aiBotCell.setPreloader(preloader);
-                aiBotCell.setDialogCellDelegate(this);
-                aiBotCell.setIsTransitionSupport(isTransitionSupport);
-                view = aiBotCell;
-                break;
-            case VIEW_TYPE_PST:
-                DialogCell pstCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
-                pstCell.setArchivedPullAnimation(pullForegroundDrawable);
-                pstCell.setPreloader(preloader);
-                pstCell.setDialogCellDelegate(this);
-                pstCell.setIsTransitionSupport(isTransitionSupport);
-                view = pstCell;
-
-                AnalyticsHelper.INSTANCE.logOneTimePerSessionEvent("pst_pin_show", null);
-                break;
-            case VIEW_TYPE_NU_HUB:
-                DialogCell nuCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
-                nuCell.setArchivedPullAnimation(pullForegroundDrawable);
-                nuCell.setPreloader(preloader);
-                nuCell.setDialogCellDelegate(this);
-                nuCell.setIsTransitionSupport(isTransitionSupport);
-                view = nuCell;
-
-                break;
-            case VIEW_TYPE_AMBASSADOR:
-                DialogCell ambassadorCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
-                ambassadorCell.setArchivedPullAnimation(pullForegroundDrawable);
-                ambassadorCell.setPreloader(preloader);
-                ambassadorCell.setDialogCellDelegate(this);
-                ambassadorCell.setIsTransitionSupport(isTransitionSupport);
-                view = ambassadorCell;
-
+            case VIEW_TYPE_NG_PIN:
+                DialogCell ngPinChatCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
+                ngPinChatCell.setArchivedPullAnimation(pullForegroundDrawable);
+                ngPinChatCell.setPreloader(preloader);
+                ngPinChatCell.setDialogCellDelegate(this);
+                ngPinChatCell.setIsTransitionSupport(isTransitionSupport);
+                view = ngPinChatCell;
                 break;
             case VIEW_TYPE_DIALOG:
                 if (dialogsType == DialogsActivity.DIALOGS_TYPE_ADD_USERS_TO ||
@@ -841,44 +812,18 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int i) {
         switch (holder.getItemViewType()) {
-            case VIEW_TYPE_AI_CHAT_BOT: {
+            case VIEW_TYPE_NG_PIN: {
                 DialogCell cell = (DialogCell) holder.itemView;
                 DialogCell.CustomDialog customDialog = new DialogCell.CustomDialog();
-                customDialog.id = DialogCell.AI_CHAT_BOT_DIALOG_ID;
-                customDialog.name = mContext.getString(R.string.Chatbot_AIChatbot);
-                customDialog.message = mContext.getString(R.string.Chatbot_PoweredByChatGpt);
+                PinnedChatsPlacement placement = ngPinnedPlacementMap.get(i);
+                if (placement == null) break;
+                customDialog.placement = placement;
+                customDialog.name = placement.getName();
+                customDialog.message = placement.getDesc();
                 customDialog.pinned = true;
                 cell.setDialog(customDialog);
-                break;
-            }
-            case VIEW_TYPE_PST: {
-                DialogCell cell = (DialogCell) holder.itemView;
-                DialogCell.CustomDialog customDialog = new DialogCell.CustomDialog();
-                customDialog.id = DialogCell.PST_DIALOG_ID;
-                customDialog.name = NicegramAssistantHelper.INSTANCE.getPstConfig().getPinTitle();
-                customDialog.message = NicegramAssistantHelper.INSTANCE.getPstConfig().getPinDesc();
-                customDialog.pinned = true;
-                cell.setDialog(customDialog);
-                break;
-            }
-            case VIEW_TYPE_NU_HUB: {
-                DialogCell cell = (DialogCell) holder.itemView;
-                DialogCell.CustomDialog customDialog = new DialogCell.CustomDialog();
-                customDialog.id = DialogCell.NU_HUB_DIALOG_ID;
-                customDialog.name = NicegramAssistantHelper.INSTANCE.getNuConfig().getPinTitle();
-                customDialog.message = NicegramAssistantHelper.INSTANCE.getNuConfig().getPinDesc();
-                customDialog.pinned = true;
-                cell.setDialog(customDialog);
-                break;
-            }
-            case VIEW_TYPE_AMBASSADOR: {
-                DialogCell cell = (DialogCell) holder.itemView;
-                DialogCell.CustomDialog customDialog = new DialogCell.CustomDialog();
-                customDialog.id = DialogCell.AMBASSADOR_DIALOG_ID;
-                customDialog.name = NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPinData().getTitle();
-                customDialog.message = NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPinData().getDesc();
-                customDialog.pinned = true;
-                cell.setDialog(customDialog);
+
+                AnalyticsHelper.INSTANCE.logOneTimePerSessionEvent("pin_show_" + placement.getId(), null);
                 break;
             }
             case VIEW_TYPE_DIALOG: {
@@ -1121,6 +1066,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     public int getItemViewType(int i) {
         return itemInternals.get(i).viewType;
     }
+
+    @Nullable
+    public PinnedChatsPlacement getNgPinChatPlacementByPosition(int position) { return ngPinnedPlacementMap.get(position); }
 
     public void moveDialogs(RecyclerListView recyclerView, int fromPosition, int toPosition) {
         ArrayList<TLRPC.Dialog> dialogs = parentFragment.getDialogsArray(currentAccount, dialogsType, folderId, false);
@@ -1612,10 +1560,15 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 itemInternals.add(new ItemInternal(VIEW_TYPE_LAST_EMPTY));
             }
         }
-        if (PrefsHelper.INSTANCE.getShowAiChatBotDialogs(currentAccount) ||
-                (PrefsHelper.INSTANCE.getShowPstDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getPstConfig().getShow()) ||
-                (PrefsHelper.INSTANCE.getShowNuHubDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getNuConfig().getShowPin()) ||
-                (PrefsHelper.INSTANCE.getShowAmbassadorDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPin())) {
+
+        boolean hasAnyShowingNgPin = false;
+        for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements()) {
+            if (PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, placement.getId())) {
+                hasAnyShowingNgPin = true;
+                break;
+            }
+        }
+        if (hasAnyShowingNgPin) {
             int positionToInsert = 0;
             if (SharedConfig.archiveHidden) {
                 for (int i = 0; i < itemInternals.size(); i++) {
@@ -1627,24 +1580,31 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 }
             }
 
-            if (PrefsHelper.INSTANCE.getShowAmbassadorDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getAmbassadorConfig().getPin()) {
-                itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_AMBASSADOR));
-                positionToInsert++;
-            }
-            if (PrefsHelper.INSTANCE.getShowNuHubDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getNuConfig().getShowPin()) {
-                itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_NU_HUB));
-                positionToInsert++;
-            }
-            if (PrefsHelper.INSTANCE.getShowPstDialogs(currentAccount) && NicegramAssistantHelper.INSTANCE.getPstConfig().getShow()) {
-                itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_PST));
-                positionToInsert++;
-            }
-            if (PrefsHelper.INSTANCE.getShowAiChatBotDialogs(currentAccount)) {
-                itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_AI_CHAT_BOT));
-                positionToInsert++;
+            for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements()) {
+                if (PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, placement.getId())) {
+                    ngPinnedPlacementMap.put(positionToInsert, placement);
+                    itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_NG_PIN));
+                    positionToInsert++;
+                }
             }
             itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_SHADOW));
         }
+
+        // region ng hidden chats
+        if (!HiddenChatsHelper.INSTANCE.getShowHiddenChats()) {
+            ArrayList<ItemInternal> noHiddenItems = new ArrayList<>();
+
+            for (ItemInternal item: itemInternals) {
+                if (item.dialog != null && !HiddenChatsHelper.INSTANCE.getHiddenChats().contains(item.dialog.id)) {
+                    noHiddenItems.add(item);
+                } else if (item.dialog == null) {
+                    noHiddenItems.add(item);
+                }
+            }
+            itemInternals.clear();
+            itemInternals.addAll(noHiddenItems);
+        }
+        // endregion
 
         if (!messagesController.hiddenUndoChats.isEmpty()) {
             for (int i = 0; i < itemInternals.size(); ++i) {

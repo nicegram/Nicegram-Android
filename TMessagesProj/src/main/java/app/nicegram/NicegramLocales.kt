@@ -1,6 +1,5 @@
 package app.nicegram
 
-import com.google.android.exoplayer2.util.Log
 import org.telegram.messenger.LocaleController.LocaleInfo
 
 object NicegramLocales {
@@ -53,7 +52,11 @@ object NicegramLocales {
         "StoriesPremiumHint",
         "TelegramFAQ",
         "TelegramFaq",
-        "ArticleByAuthor"
+        "ArticleByAuthor",
+        "SentAppCodeTitle",
+        "SentSmsCode",
+        "SentAppCode",
+        "SentAppCodeWithPhone"
         // endregion
     )
 
