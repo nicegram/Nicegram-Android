@@ -33,6 +33,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AndroidUtilities;
@@ -782,5 +783,18 @@ public class DrawerProfileCell extends FrameLayout implements NotificationCenter
 
     public View getEmojiStatusDrawableParent() {
         return nameTextView;
+    }
+
+    public void updateSunDrawable(boolean toDark) {
+        if (sunDrawable != null) {
+            if (toDark) {
+                sunDrawable.setCustomEndFrame(36);
+            } else {
+                sunDrawable.setCustomEndFrame(0);
+            }
+        }
+        if (darkThemeView != null) {
+            darkThemeView.playAnimation();
+        }
     }
 }

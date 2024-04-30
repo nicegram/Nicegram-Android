@@ -22,6 +22,8 @@ def modules = [
         'lib-android-base',
         'core-ui',
         'core-network',
+        'core-markets',
+        'feature-avatar-generator',
 ]
 
 for (module in modules) {

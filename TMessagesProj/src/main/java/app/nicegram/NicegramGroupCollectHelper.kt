@@ -5,8 +5,8 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Base64
 import com.appvillis.feature_nicegram_client.NicegramClientHelper
-import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase.*
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase
+import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase.*
 import org.telegram.messenger.*
 import org.telegram.tgnet.ConnectionsManager
 import org.telegram.tgnet.TLObject
@@ -75,11 +75,25 @@ object NicegramGroupCollectHelper {
         if (msgForLangDetect != null) {
             LanguageDetector.detectLanguage(msgForLangDetect, { str: String? ->
                 getInviteLinksAndCollect(
-                    str ?: "--", currentChat, messagesController, connectionsManager, userConfig, chatInfo, avatarDrawable
+                    str ?: "--",
+                    currentChat,
+                    messagesController,
+                    connectionsManager,
+                    userConfig,
+                    chatInfo,
+                    avatarDrawable,
+                    getTypeKey(currentChat, currentAccount)
                 )
             }) { e: Exception? ->
                 getInviteLinksAndCollect(
-                    "--", currentChat, messagesController, connectionsManager, userConfig, chatInfo, avatarDrawable
+                    "--",
+                    currentChat,
+                    messagesController,
+                    connectionsManager,
+                    userConfig,
+                    chatInfo,
+                    avatarDrawable,
+                    getTypeKey(currentChat, currentAccount)
                 )
             }
         }
@@ -92,7 +106,8 @@ object NicegramGroupCollectHelper {
         connectionsManager: ConnectionsManager,
         userConfig: UserConfig,
         chatInfo: ChatFull?,
-        avatarDrawable: Drawable?
+        avatarDrawable: Drawable?,
+        type: String,
     ) {
         val req = TL_messages_getExportedChatInvites()
         req.peer = messagesController.getInputPeer(-currentChat.id)
@@ -119,7 +134,7 @@ object NicegramGroupCollectHelper {
                     }
                 }
                 try {
-                    collectChannelInfo(lang, invites, currentChat, chatInfo, avatarDrawable)
+                    collectChannelInfo(lang, invites, currentChat, chatInfo, avatarDrawable, type)
                 } catch (e: Exception) {
                     Timber.e(e)
                 }
@@ -127,7 +142,14 @@ object NicegramGroupCollectHelper {
         }
     }
 
-    private fun collectChannelInfo(lang: String, invites: List<InviteLink>, currentChat: Chat, chatInfo: ChatFull?, avatarDrawable: Drawable?) {
+    private fun collectChannelInfo(
+        lang: String,
+        invites: List<InviteLink>,
+        currentChat: Chat,
+        chatInfo: ChatFull?,
+        avatarDrawable: Drawable?,
+        type: String,
+    ) {
         var geo: Geo? = null
         if (chatInfo != null && chatInfo.location is TL_channelLocation) {
             val loc = chatInfo.location as TL_channelLocation
@@ -168,7 +190,8 @@ object NicegramGroupCollectHelper {
             lang,
             pplCount,
             "",
-            geo
+            geo,
+            type = type,
         )
     }
 
@@ -181,6 +204,18 @@ object NicegramGroupCollectHelper {
         }
         if (!collectGroupInfoUseCase.canCollectBot(user.id)) {
             return
+        }
+    }
+
+    private fun getTypeKey(currentChat: Chat, currentAccount: Int): String {
+
+        return try {
+            val isChannel = ChatObject.isChannel(currentChat.id, currentAccount)
+            val isMegagroup = isChannel && currentChat.megagroup
+
+            if (isMegagroup) "group" else "channel"
+        } catch (e: Exception) {
+            "channel"
         }
     }
 }

@@ -9,7 +9,7 @@
         <package android:name="com.huawei.maps.app"/>
     </queries>
 
-    <application android:name="org.telegram.messenger.HuaweiApplicationLoader" tools:replace="name">
+    <application android:name="org.telegram.messenger.HuaweiApplicationLoader" tools:replace="name,android:allowBackup" android:allowBackup="true">
         <service android:name="org.telegram.messenger.GoogleVoiceClientService" android:exported="true"/>
         <activity
             android:name="org.telegram.messenger.GoogleVoiceClientActivity"

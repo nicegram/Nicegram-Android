@@ -10,8 +10,6 @@
 
 package org.webrtc;
 
-import static com.appvillis.assistant_core.MainActivity.BROADCAST_ACTION_ON_RESUME;
-
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;

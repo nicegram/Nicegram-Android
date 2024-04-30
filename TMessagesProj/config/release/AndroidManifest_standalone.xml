@@ -15,6 +15,10 @@
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!--<uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <uses-permission android:name="android.permission.SEND_SMS" /> 10.8.1 merge -->
     <application
         android:icon="@mipmap/ic_launcher_sa"
         android:roundIcon="@mipmap/ic_launcher_sa"
@@ -129,6 +133,12 @@
                 <action android:name="com.google.android.gms.measurement.UPLOAD" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name="org.telegram.messenger.SMSResultService"
+            android:exported="false">
+        </receiver>
+
 
         <service
             tools:replace="android:enabled"

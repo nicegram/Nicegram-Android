@@ -1,6 +1,8 @@
 package com.appvillis.nicegram
 
 import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo
+import com.appvillis.feature_avatar_generator.domain.usecases.AvatarsOnboardingUseCase
+import com.appvillis.feature_avatar_generator.domain.usecases.GetAvatarsUseCase
 import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase
 import com.appvillis.feature_nicegram_assistant.domain.GetSetPstStartedStatusUseCase
 import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase
@@ -13,6 +15,8 @@ object NicegramAssistantHelper {
     var getSpecialOfferUseCase: GetSpecialOfferUseCase? = null
     var appSessionControlUseCase: AppSessionControlUseCase? = null
     var getSetPstStartedStatusUseCase: GetSetPstStartedStatusUseCase? = null
+    var avatarsOnboardingUseCase: AvatarsOnboardingUseCase? = null
+    var getAvatarsUseCase: GetAvatarsUseCase? = null
     lateinit var getChatPlacementsUseCase: GetChatPlacementsUseCase
     lateinit var aiChatConfigRepo: AiChatRemoteConfigRepo
 
@@ -44,4 +48,7 @@ object NicegramAssistantHelper {
             }
 
     val esimSplashData get() = aiChatConfigRepo.esimSplashData
+
+    fun shouldShowAvatarsWelcome() = avatarsOnboardingUseCase?.hasSeenWelcome == false
+    fun hasGeneratedAvatar() = getAvatarsUseCase?.hasAnyAvatar == true
 }

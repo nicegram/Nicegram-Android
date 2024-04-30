@@ -40,6 +40,7 @@ import app.nicegram.PrefsHelper;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
+import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
@@ -907,10 +908,22 @@ public class TranscribeButton {
         }
         ConnectionsManager cc = ConnectionsManager.getInstance(messageObject.currentAccount);
         MessagesController mc = MessagesController.getInstance(messageObject.currentAccount);
+        if (isFreeTranscribeInChat(messageObject)) {
+            return true;
+        }
         if (mc.transcribeAudioTrialWeeklyNumber <= 0 || messageObject.getDuration() > mc.transcribeAudioTrialDurationMax) {
             return false;
         }
         return mc.transcribeAudioTrialCooldownUntil == 0 || cc.getCurrentTime() > mc.transcribeAudioTrialCooldownUntil || mc.transcribeAudioTrialCurrentNumber > 0;
+    }
+
+    public static boolean isFreeTranscribeInChat(MessageObject messageObject) {
+        if (messageObject == null || messageObject.messageOwner == null) {
+            return false;
+        }
+        MessagesController mc = MessagesController.getInstance(messageObject.currentAccount);
+        TLRPC.Chat chat = mc.getChat(messageObject.getChatId());
+        return ChatObject.isMegagroup(chat) && chat.level >= mc.groupTranscribeLevelMin;
     }
 
     public static int getTranscribeTrialCount(int currentAccount) {
@@ -926,6 +939,9 @@ public class TranscribeButton {
 
     public static boolean showTranscribeLock(MessageObject messageObject) {
         if (messageObject == null || messageObject.messageOwner == null) {
+            return false;
+        }
+        if (isFreeTranscribeInChat(messageObject)) {
             return false;
         }
         if (!TextUtils.isEmpty(messageObject.messageOwner.voiceTranscription)) {

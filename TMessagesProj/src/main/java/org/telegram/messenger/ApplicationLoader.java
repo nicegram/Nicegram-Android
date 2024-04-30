@@ -17,8 +17,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -43,6 +41,8 @@ import com.appvillis.feature_ai_chat.domain.UseResultManager;
 import com.appvillis.feature_ai_chat.domain.usecases.GetBalanceTopUpRequestUseCase;
 import com.appvillis.feature_ai_chat.domain.usecases.GetChatCommandsUseCase;
 import com.appvillis.feature_analytics.domain.AnalyticsManager;
+import com.appvillis.feature_avatar_generator.domain.usecases.AvatarsOnboardingUseCase;
+import com.appvillis.feature_avatar_generator.domain.usecases.GetAvatarsUseCase;
 import com.appvillis.feature_nicegram_assistant.QrCodeHelper;
 import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase;
 import com.appvillis.feature_nicegram_assistant.domain.GetSetPstStartedStatusUseCase;
@@ -82,15 +82,19 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
+import org.json.JSONObject;
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.Adapters.DrawerLayoutAdapter;
 import org.telegram.ui.Components.ForegroundDetector;
 import org.telegram.ui.IUpdateLayout;
 import org.telegram.ui.LauncherIconController;
 import android.view.ViewGroup;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -158,6 +162,10 @@ public class ApplicationLoader extends Application {
     public GetSpecialOfferUseCase getSpecialOfferUseCase;
     @Inject
     public GetSetPstStartedStatusUseCase getSetPstStartedStatusUseCase;
+    @Inject
+    public AvatarsOnboardingUseCase avatarsOnboardingUseCase;
+    @Inject
+    public GetAvatarsUseCase getAvatarsUseCase;
     @Inject
     public BillingManager billingManager;
     @Inject
@@ -697,6 +705,8 @@ public class ApplicationLoader extends Application {
         NicegramAssistantHelper.INSTANCE.setGetChatPlacementsUseCase(chatPlacementsUseCase);
         NicegramAssistantHelper.INSTANCE.setAiChatConfigRepo(remoteConfigRepoAi);
         NicegramAssistantHelper.INSTANCE.setGetSetPstStartedStatusUseCase(getSetPstStartedStatusUseCase);
+        NicegramAssistantHelper.INSTANCE.setAvatarsOnboardingUseCase(avatarsOnboardingUseCase);
+        NicegramAssistantHelper.INSTANCE.setGetAvatarsUseCase(getAvatarsUseCase);
         NicegramPinChatsPlacementHelper.INSTANCE.setGetPinChatsPlacementsUseCase(pinChatsPlacementsUseCase);
         NicegramAnalyticsHelper.INSTANCE.setAnalyticsManager(analyticsManager);
         NicegramBillingHelper.INSTANCE.setBillingManager(billingManager);
@@ -832,6 +842,46 @@ public class ApplicationLoader extends Application {
     }
 
     public IUpdateLayout takeUpdateLayout(Activity activity, ViewGroup sideMenu, ViewGroup sideMenuContainer) {
+        return null;
+    }
+
+    public TLRPC.Update parseTLUpdate(int constructor) {
+        return null;
+    }
+
+    public void processUpdate(int currentAccount, TLRPC.Update update) {
+
+    }
+
+    public boolean onSuggestionFill(String suggestion, CharSequence[] output, boolean[] closeable) {
+        return false;
+    }
+
+    public boolean onSuggestionClick(String suggestion) {
+        return false;
+    }
+
+    public boolean extendDrawer(ArrayList<DrawerLayoutAdapter.Item> items) {
+        return false;
+    }
+
+    public boolean checkRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
+        return false;
+    }
+
+    public boolean consumePush(int account, JSONObject json) {
+        return false;
+    }
+
+    public void onResume() {
+
+    }
+
+    public boolean onPause() {
+        return false;
+    }
+
+    public BaseFragment openSettings(int n) {
         return null;
     }
 
