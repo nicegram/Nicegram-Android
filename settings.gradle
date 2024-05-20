@@ -8,6 +8,7 @@ include ':nicegram-features'
 def modules = [
         'assistant-core',
         'feature-nicegram-assistant',
+        'feature disable sensitive settings
         'feature-ai-chat',
         'feature-nicegram-billing',
         'feature-auth',
