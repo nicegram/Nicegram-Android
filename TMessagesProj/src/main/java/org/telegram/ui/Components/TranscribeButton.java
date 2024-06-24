@@ -31,6 +31,7 @@ import androidx.core.graphics.ColorUtils;
 import androidx.core.math.MathUtils;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
+import com.appvillis.core_ui.BuildConfig;
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
 import com.appvillis.feature_nicegram_client.presentation.premium.NicegramPremiumActivity;
 
@@ -700,7 +701,7 @@ public class TranscribeButton {
                     return;
                 }
 
-                launchPremiumBulletin(context);
+                if (!BuildConfig.IS_LITE_CLIENT) launchPremiumBulletin(context);
 
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.d("sending Transcription request, msg_id=" + messageId + " dialog_id=" + dialogId);

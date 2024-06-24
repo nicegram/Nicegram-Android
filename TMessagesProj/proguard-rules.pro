@@ -202,3 +202,85 @@ public static final ** CREATOR;
 -keep class com.google.android.gms.ads.identifier.** { *; }
 -dontwarn com.tapjoy.**
 # Tapjoy end
+
+#web3j
+-dontwarn java8.util.**
+-dontwarn jnr.posix.**
+-dontwarn com.kenai.**
+-keep class org.bouncycastle.**
+-dontwarn org.bouncycastle.jce.provider.X509LDAPCertStoreSpi
+-dontwarn org.bouncycastle.x509.util.LDAPStoreHelper
+-keepclassmembers class org.web3j.protocol.** { *; }
+-keepclassmembers class org.web3j.crypto.* { *; }
+-keep class * extends org.web3j.abi.TypeReference
+-keep class * extends org.web3j.abi.datatypes.Type
+-dontwarn java.lang.SafeVarargs
+-dontwarn org.slf4j.**
+#web3j end
+
+#wallet
+-keep class com.appvillis.nicegram_wallet.wallet_walletconnect.data.WcWalletDelegate** { *;}
+-keep class com.appvillis.nicegram_wallet.wallet_web3auth.domain.JwtDecoder** { *;}
+-keep class com.appvillis.nicegram_wallet.wallet_storage.data.WalletRepositoryImpl$WalletJson { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_dapps.data.DAppsPermissionsStorageImpl$SavedPermission { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_web3auth.data.DeviceShareStorageImpl$Share { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_dapps_storage.data.FavoriteDAppsRepositoryImpl$FavoriteDApp { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl$WalletConfigJson { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl$WalletConfigJson$InfoButtonsJson { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl$WalletConfigJson$SupportButtonsJson { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TonDAppManifest { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcLink { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcLink$TcR { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcLink$TcR$Item { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_tonconnect.data.TonHelperImpl$SendTransactionPayloadJson { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_tonconnect.data.TonHelperImpl$SendTransactionPayloadJson$Message { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_tonconnect.data.TcSseManagerImpl$SseMessageJson { *; }
+-keep class com.sun.jna.** { *; }
+-keep class * implements com.sun.jna.** { *; }
+-dontwarn java.awt.Component
+-dontwarn java.awt.GraphicsEnvironment
+-dontwarn java.awt.HeadlessException
+-dontwarn java.awt.Window
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+-keepattributes JavascriptInterface
+#wallet end
+
+#web3auth
+-keep class com.web3auth.singlefactorauth.types.* { *; }
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+-keep class com.web3auth.singlefactorauth.* {*;}
+-keep class com.web3auth.singlefactorauth.** {*;}
+-keep class org.web3j.abi.datatypes.** {*;}
+
+-keepclassmembers class com.web3auth.singlefactorauth.**
+-keep class org.bouncycastle.jcajce.provider.** { *; }
+-keep class org.bouncycastle.jce.provider.** { *; }
+-dontwarn javax.annotation.**
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+-keep class com.google.gson.reflect.TypeToken
+-keep class * extends com.google.gson.reflect.TypeToken
+-keep public class * implements java.lang.reflect.Type
+
+-keep class org.web3j.abi.datatypes.Function { *; }
+-keep class org.web3j.abi.TypeReference { *; }
+-keepclassmembers class org.web3j.abi.datatypes.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
+
+-keep class org.torusresearch.* {*;}
+-keep class org.torusresearch.** {*;}
+-keep class com.web3auth.tkey.** {*;}
+-keep class com.web3auth.tkey.* {*;}
+-keep class com.web3auth.tkey.ThresholdKey.StorageLayer { *; }
+#web3auth end
+
+#trustwallet core
+-keep class wallet.core.jni.** {*;}
+-keep class wallet.core.jni.* {*;}

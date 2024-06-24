@@ -2,6 +2,7 @@ package app.nicegram
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.appvillis.core_ui.BuildConfig
 import com.appvillis.feature_nicegram_client.domain.CommonRemoteConfigRepo
 import com.appvillis.nicegram.NicegramPrefs
 import com.appvillis.nicegram.NicegramPrefs.PREF_FOREVER_COOL_DOWN
@@ -100,18 +101,6 @@ object PrefsHelper {
             .getInt(NicegramPrefs.PREF_SAVED_FOLDER, NicegramPrefs.PREF_SAVED_FOLDER_DEFAULT)
     }
 
-    fun setShowAiChatBotChat(currentAccount: Int, show: Boolean) {
-        MessagesController.getNicegramSettings(currentAccount)
-            .edit()
-            .putBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT, show)
-            .apply()
-    }
-
-    fun getShowAiChatBotChat(currentAccount: Int): Boolean {
-        return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT_DEFAULT)
-    }
-
     fun getMaxAccountCountWasSet(context: Context): Boolean {
         return getNgGlobalPrefs(context)
             .getBoolean(NicegramPrefs.PREF_MAX_ACCOUNTS_SET, NicegramPrefs.PREF_MAX_ACCOUNTS_SET_DEFAULT)
@@ -197,7 +186,19 @@ object PrefsHelper {
             .getBoolean(NicegramPrefs.PREF_S2TEXT_BULLET_SEEN, NicegramPrefs.PREF_S2TEXT_BULLET_SEEN_DEFAULT)
     }
 
-    fun alwaysShowSpeech2Text() = remoteConfigRepo?.alwaysShowSpeech2Text ?: false
+    fun alwaysShowSpeech2Text() = if (BuildConfig.IS_LITE_CLIENT) false else remoteConfigRepo?.alwaysShowSpeech2Text ?: false
+
+    fun setShowNgFloatingMenuInChat(currentAccount: Int, show: Boolean) {
+        MessagesController.getNicegramSettings(currentAccount)
+            .edit()
+            .putBoolean(NicegramPrefs.PREF_SHOW_FLOATING_NG_MENU_IN_CHAT, show)
+            .apply()
+    }
+
+    fun getShowNgFloatingMenuInChat(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(NicegramPrefs.PREF_SHOW_FLOATING_NG_MENU_IN_CHAT, NicegramPrefs.PREF_SHOW_FLOATING_NG_MENU_IN_CHAT_DEFAULT)
+    }
 
     private fun getNgGlobalPrefs(context: Context) =
         context.getSharedPreferences("NG_GLOBAL_PREFS", Context.MODE_PRIVATE)

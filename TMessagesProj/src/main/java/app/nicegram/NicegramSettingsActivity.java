@@ -75,7 +75,7 @@ public class NicegramSettingsActivity extends BaseFragment {
 
     @Override
     public boolean onFragmentCreate() {
-        pinSectionHeaderRow = rowCount++;
+        if (NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements().size() > 0) pinSectionHeaderRow = rowCount++;
         for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements()) {
             pinSectionRowsMap.put(rowCount++, placement);
         }
@@ -88,7 +88,7 @@ public class NicegramSettingsActivity extends BaseFragment {
         quickRepliesRow = rowCount++;
         if (!NicegramDoubleBottom.INSTANCE.getLoggedToDbot()) doubleBottomRow = rowCount++;
         else doubleBottomRow = -1;
-        restoreRow = rowCount++;
+        //restoreRow = rowCount++;
         showProfileIdRow = rowCount++;
         showRegDateRow = rowCount++;
         hideReactionsRow = rowCount++;

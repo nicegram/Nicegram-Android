@@ -4,6 +4,7 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.Spanned
+import com.appvillis.core_ui.BuildConfig
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper
 import com.appvillis.nicegram.NicegramPrefs
 import org.telegram.messenger.MessagesController
@@ -15,12 +16,14 @@ object MentionAllHelper {
     private const val MAX_USER_COUNT = 20
 
     fun shouldShowMentionAll(chatUserCount: Int, currentAccount: Int): Boolean {
-        return (!NicegramBillingHelper.userHasNgPremiumSub && chatUserCount <= MAX_USER_COUNT) // no premium -> for show buy screen
+        if (BuildConfig.IS_LITE_CLIENT) return !NicegramBillingHelper.userHasNgPremiumSub && chatUserCount <= MAX_USER_COUNT
+        else return (!NicegramBillingHelper.userHasNgPremiumSub && chatUserCount <= MAX_USER_COUNT) // no premium -> for show buy screen
         || canUseMentionAll(chatUserCount, currentAccount) // has premium -> use mention all functional
     }
 
     fun canUseMentionAll(chatUserCount: Int, currentAccount: Int): Boolean {
-        return NicegramBillingHelper.userHasNgPremiumSub && MessagesController.getNicegramSettings(currentAccount)
+        if (BuildConfig.IS_LITE_CLIENT) return true
+        else return NicegramBillingHelper.userHasNgPremiumSub && MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(NicegramPrefs.PREF_MENTION_ALL_ENABLED, NicegramPrefs.PREF_MENTION_ALL_ENABLED_DEFAULT) && chatUserCount <= MAX_USER_COUNT
     }
 

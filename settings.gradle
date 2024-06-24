@@ -24,6 +24,7 @@ def modules = [
         'core-network',
         'core-markets',
         'feature-avatar-generator',
+        'nicegram-wallet',
 ]
 
 for (module in modules) {

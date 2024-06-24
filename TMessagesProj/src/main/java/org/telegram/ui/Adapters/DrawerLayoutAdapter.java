@@ -8,6 +8,7 @@
 
 package org.telegram.ui.Adapters;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.view.View;
@@ -16,6 +17,7 @@ import android.view.ViewGroup;
 import androidx.recyclerview.widget.RecyclerView;
 
 import app.nicegram.NicegramDoubleBottom;
+import app.nicegram.NicegramWalletHelper;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
@@ -315,6 +317,7 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
         }
         UserConfig me = UserConfig.getInstance(UserConfig.selectedAccount);
         boolean showDivider = false;
+        items.add(new Item(16, LocaleController.getString(R.string.MyProfile), R.drawable.left_status_profile));
         if (me != null && me.isPremium()) {
             if (me.getEmojiStatus() != null) {
                 items.add(new Item(15, LocaleController.getString("ChangeEmojiStatus", R.string.ChangeEmojiStatus), R.drawable.msg_status_edit));
@@ -323,10 +326,11 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
             }
             showDivider = true;
         }
-        if (MessagesController.getInstance(UserConfig.selectedAccount).storiesEnabled()) {
-            items.add(new Item(16, LocaleController.getString("ProfileMyStories", R.string.ProfileMyStories), R.drawable.msg_menu_stories));
-            showDivider = true;
-        }
+//        if (MessagesController.getInstance(UserConfig.selectedAccount).storiesEnabled()) {
+//            items.add(new Item(17, LocaleController.getString(R.string.ProfileStories), R.drawable.msg_menu_stories));
+//            showDivider = true;
+//        }
+        showDivider = true;
         if (ApplicationLoader.applicationLoaderInstance != null) {
             if (ApplicationLoader.applicationLoaderInstance.extendDrawer(items)) {
                 showDivider = true;
@@ -337,11 +341,22 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
             for (int i = 0; i < menuBots.bots.size(); i++) {
                 TLRPC.TL_attachMenuBot bot = menuBots.bots.get(i);
                 if (bot.show_in_side_menu) {
+                    // region ng
+                    if (bot.bot_id == 1985737506) { // wallet
+                        bot.short_name = mContext.getString(R.string.TonWalletBot);
+                    }
+                    // endregion
                     items.add(new Item(bot));
                     showDivider = true;
                 }
             }
         }
+        // region ng
+        Item ngWalletItem = new Item(100001, mContext.getText(R.string.NgWallet_Wallet), R.drawable.ng_logo_drawer);
+        ngWalletItem.listener = v -> NicegramWalletHelper.INSTANCE.launchWallet((Activity) mContext, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
+        items.add(ngWalletItem);
+        // endregion
+
         if (showDivider) {
             items.add(null); // divider
         }

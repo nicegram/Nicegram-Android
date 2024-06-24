@@ -8,9 +8,6 @@ class TgThemeProxyImpl : TgResourceProvider.ThemeProxy {
     override fun isNightTheme(): Boolean {
         return Theme.isCurrentThemeNight() || Theme.isCurrentThemeDark()
     }
-    override fun isDayTheme(): Boolean {
-        return !isNightTheme()
-    }
 
     override fun typeAllTgColors() {
 

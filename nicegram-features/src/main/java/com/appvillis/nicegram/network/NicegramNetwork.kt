@@ -1,11 +1,10 @@
 package com.appvillis.nicegram.network
 
 import android.content.Context
+import com.appvillis.core_network.di.NetworkConsts.API_URL
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper
 import com.appvillis.nicegram.BuildConfig
-import com.appvillis.nicegram.NicegramNetworkConsts.API_KEY
 import com.appvillis.nicegram.NicegramNetworkConsts.BASE_URL
-import com.appvillis.nicegram.NicegramNetworkConsts.BASE_URL_NG_APP
 import com.appvillis.nicegram.NicegramScopes.ioScope
 import com.appvillis.nicegram.NicegramScopes.uiScope
 import com.appvillis.nicegram.R
@@ -34,7 +33,7 @@ object NicegramNetwork {
 
     private val nicegramAppApi by lazy {
         val retrofit = Retrofit.Builder()
-            .baseUrl(BASE_URL_NG_APP)
+            .baseUrl(API_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -65,7 +64,7 @@ object NicegramNetwork {
 
         ioScope.launch {
             try {
-                val result = nicegramApi.getRegDate(RegDateRequest((userId)), API_KEY)
+                val result = nicegramAppApi.getRegDate(RegDateRequest((userId)))
                 if (result.data == null) {
                     FirebaseCrashlytics.getInstance().recordException(Throwable("reg date error data=null"))
                     uiScope.launch { callback(null) }

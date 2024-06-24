@@ -36,13 +36,11 @@ public class AiBotSettingsActivity extends BaseFragment {
     private RecyclerListView listView;
     private ListAdapter adapter;
 
-    private int aiChatRow;
     private int aiClearRow;
     private int rowCount = 0;
 
     @Override
     public boolean onFragmentCreate() {
-        aiChatRow = rowCount++;
         aiClearRow = rowCount++;
 
         return super.onFragmentCreate();
@@ -83,13 +81,7 @@ public class AiBotSettingsActivity extends BaseFragment {
             if (getParentActivity() == null) {
                 return;
             }
-            if (position == aiChatRow) {
-                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT, !enabled);
-                editor.apply();
-            } else if (position == aiClearRow) {
+            if (position == aiClearRow) {
                 AlertsCreator.createSimpleAlert(
                         getParentActivity(),
                         getContext().getString(R.string.Chatbot_ClearAlertTitle), getContext().getString(R.string.Chatbot_ClearAlertText),
@@ -165,9 +157,7 @@ public class AiBotSettingsActivity extends BaseFragment {
                 case 1: {
                     TextCheckCell checkCell = (TextCheckCell) holder.itemView;
                     SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                    if (position == aiChatRow) {
-                        checkCell.setTextAndCheck(getContext().getString(R.string.Chatbot_ShowInChat), preferences.getBoolean(NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT, NicegramPrefs.PREF_SHOW_AI_CHAT_BOT_CHAT_DEFAULT), false);
-                    }
+
                     break;
                 }
                 case 2: {
@@ -184,7 +174,7 @@ public class AiBotSettingsActivity extends BaseFragment {
 
         @Override
         public int getItemViewType(int position) {
-            if (position == aiChatRow) {
+            if (false) {
                 return 1;
             } else if (position == aiClearRow) {
                 return 2;

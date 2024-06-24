@@ -352,13 +352,19 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:host="nicegram.app" android:scheme="https" android:path="/deeplink" />
-                <data android:scheme="ncg" />
+
+                <data android:scheme="https"/>
+                <data android:host="nicegram.app"/>
+
+                <data android:path="/tc"/>
+                <data android:path="/deeplink"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="nicegram-tc" />
+                <data android:scheme="tc" />
                 <data android:scheme="ncg" />
             </intent-filter>
             <intent-filter android:icon="@mipmap/ic_launcher_default" android:roundIcon="@mipmap/ic_launcher_default_round" android:priority="1">
