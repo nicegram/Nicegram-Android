@@ -8691,7 +8691,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     passwordSuggestionSectionRow = rowCount++;
                 }
 
-                if (BuildConfig.IS_LITE_CLIENT) {
+                if (!BuildConfig.IS_LITE_CLIENT) {
                     aiChatBotRow = rowCount++;
                     nicegramPremiumRow = rowCount++;
                 }

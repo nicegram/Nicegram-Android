@@ -15,7 +15,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
 import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
 import com.appvillis.feature_nicegram_client.NicegramClientHelper;
-import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.feature_nicegram_client.NicegramConsts;
 import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
 import com.appvillis.nicegram.NicegramPrefs;
@@ -71,6 +70,7 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int shareBotsInfoRow;
     private int shareStickersInfoRow;
     private int showHiddenChatsRow;
+    private int showNgBtnInChatRow;
     private int rowCount = 0;
 
     @Override
@@ -89,6 +89,7 @@ public class NicegramSettingsActivity extends BaseFragment {
         if (!NicegramDoubleBottom.INSTANCE.getLoggedToDbot()) doubleBottomRow = rowCount++;
         else doubleBottomRow = -1;
         //restoreRow = rowCount++;
+        showNgBtnInChatRow = rowCount++;
         showProfileIdRow = rowCount++;
         showRegDateRow = rowCount++;
         hideReactionsRow = rowCount++;
@@ -161,6 +162,9 @@ public class NicegramSettingsActivity extends BaseFragment {
                 editor.putBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, !enabled);
                 editor.apply();
                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.mainUserInfoChanged);
+            } else if (position == showNgBtnInChatRow) {
+                enabled = PrefsHelper.INSTANCE.getShowNgFloatingMenuInChat(currentAccount);
+                PrefsHelper.INSTANCE.setShowNgFloatingMenuInChat(currentAccount, !enabled);
             } else if (position == showProfileIdRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
@@ -321,7 +325,9 @@ public class NicegramSettingsActivity extends BaseFragment {
                 case 1: {
                     TextCheckCell checkCell = (TextCheckCell) holder.itemView;
                     SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                    if (position == showProfileIdRow) {
+                    if (position == showNgBtnInChatRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("NicegramShowNgBtnInChats"), PrefsHelper.INSTANCE.getShowNgFloatingMenuInChat(currentAccount), false);
+                    } else if (position == showProfileIdRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramShowProfileID"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_PROFILE_ID, NicegramPrefs.PREF_SHOW_PROFILE_ID_DEFAULT), false);
                     } else if (position == showRegDateRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramShowRegistrationDate"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT), false);
@@ -384,6 +390,7 @@ public class NicegramSettingsActivity extends BaseFragment {
                     position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow ||
                     position == maxAccountsRow || position == shareChannelsInfoRow ||
                     position == shareBotsInfoRow || position == shareStickersInfoRow ||
+                    position == showNgBtnInChatRow ||
                     pinSectionRowsMap.contains(position) ||
             position == showHiddenChatsRow) {
                 return 1;

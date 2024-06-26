@@ -39368,6 +39368,8 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
     private NgMenuButton ngMenuButton;
 
     private void addNgMenuButton(View ngMenuOverlayView) {
+        if(!PrefsHelper.INSTANCE.getShowNgFloatingMenuInChat(currentAccount)) return;
+
         ngMenuButton = new NgMenuButton(getContext(), null, getThemedColor(Theme.key_chat_goDownButton), getThemedColor(Theme.key_chat_goDownButtonIcon));
 
         contentView.addView(ngMenuButton, LayoutHelper.createFrame(124, 124, Gravity.BOTTOM | Gravity.END, 0f, 0f, 8f, 0));
@@ -39466,7 +39468,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
     }
 
     private int getNgMenuExtraPadding() {
-        return true ? AndroidUtilities.dp(48f + 8f) : 0; // at this iteration always showing
+        return PrefsHelper.INSTANCE.getShowNgFloatingMenuInChat(currentAccount) ? AndroidUtilities.dp(48f + 8f) : 0;
     }
 
     private class RecyclerListViewInternal extends RecyclerListView implements StoriesListPlaceProvider.ClippedView {
