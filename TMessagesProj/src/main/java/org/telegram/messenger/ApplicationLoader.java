@@ -70,6 +70,7 @@ import app.nicegram.NicegramSpeechToTextHelper;
 import com.appvillis.nicegram.ReviewHelper;
 import com.appvillis.feature_nicegram_client.domain.NicegramClientOnboardingUseCase;
 import com.appvillis.nicegram.network.NicegramNetwork;
+import com.appvillis.nicegram_wallet.wallet_storage.domain.GetCurrentWalletUseCase;
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager;
 import com.appvillis.rep_placements.domain.GetChatPlacementsUseCase;
 import com.appvillis.rep_placements.domain.GetPinChatsPlacementsUseCase;
@@ -140,6 +141,8 @@ public class ApplicationLoader extends Application {
     public ClaimDailyRewardUseCase claimDailyRewardUseCase;
     @Inject
     public GetUserStatusUseCase getUserStatusUseCase;
+    @Inject
+    public GetCurrentWalletUseCase getCurrentWalletUseCase;
     @Inject
     public GetChatCommandsUseCase getChatCommandsUseCase;
     @Inject
@@ -721,6 +724,7 @@ public class ApplicationLoader extends Application {
         NicegramSpeechToTextHelper.INSTANCE.setApiService(apiService);
         NicegramWalletHelper.INSTANCE.setTcDeeplinkManager(tcDeeplinkManager);
         NicegramWalletHelper.INSTANCE.setGetUserStatusUseCase(getUserStatusUseCase);
+        NicegramWalletHelper.INSTANCE.setGetCurrentWalletUseCase(getCurrentWalletUseCase);
 
         AnalyticsHelper.INSTANCE.logEvent(getUserStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
         new Handler().postDelayed(() -> NicegramNetwork.INSTANCE.getSettings(UserConfig.getInstance(UserConfig.selectedAccount).clientUserId), 3000);
