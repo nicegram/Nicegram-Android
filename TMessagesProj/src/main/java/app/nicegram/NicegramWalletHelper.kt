@@ -11,7 +11,9 @@ object NicegramWalletHelper {
     var getUserStatusUseCase: GetUserStatusUseCase? = null
     var getCurrentWalletUseCase: GetCurrentWalletUseCase? = null
 
-    fun launchWallet(activity: Activity, telegramId: Long) {
+    fun isLoggedInAndHasWallet() = getUserStatusUseCase?.isUserLoggedIn == true && getCurrentWalletUseCase?.currentWallet != null
+
+    fun launchWalletIfPossible(activity: Activity, telegramId: Long) {
         val getUserStatusUseCase = getUserStatusUseCase ?: return
         val getCurrentWalletUseCase = getCurrentWalletUseCase ?: return
 

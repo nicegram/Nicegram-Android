@@ -93,6 +93,7 @@ import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.feature_nicegram_client.presentation.onboarding.NicegramOnboardingActivity;
 import com.appvillis.feature_nicegram_client.presentation.premium.NicegramPremiumActivity;
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager;
+import com.google.android.exoplayer2.util.Log;
 import com.google.android.gms.common.api.Status;
 import com.google.common.primitives.Longs;
 import com.google.firebase.appindexing.Action;
@@ -351,6 +352,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d("savedRetUrl", "onCreate");
         isActive = true;
         if (BuildVars.DEBUG_VERSION) {
             StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder(StrictMode.getVmPolicy())
@@ -5578,6 +5580,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     @Override
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        Log.d("savedRetUrl", "onNewIntent " + intent.getData().toString());
         handleIntent(intent, true, false, false);
     }
 
@@ -6172,6 +6175,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d("savedRetUrl", "onResume " + getIntent().getData());
         isResumed = true;
         if (onResumeStaticCallback != null) {
             onResumeStaticCallback.run();
@@ -6252,6 +6256,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         if (ApplicationLoader.applicationLoaderInstance != null) {
             ApplicationLoader.applicationLoaderInstance.onResume();
         }
+
+        processTcLinkOnResume();
     }
 
     private void invalidateTabletMode() {
@@ -8224,6 +8230,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     }
 
     private boolean handleNicegramDeeplink(Intent intent) {
+        Log.d("savedRetUrl", "handleNicegramDeeplink");
         if (intent == null || intent.getAction() == null) return false;
 
         if (intent.getAction().equals(Intent.ACTION_VIEW)) {
@@ -8241,10 +8248,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         processDeeplinkUrl(url, data);
                         return true;
                     } else if (path.startsWith("tc")) {
-                        if (tcDeeplinkManager != null) {
-                            tcDeeplinkManager.processLink(data.toString());
-                            return true;
-                        }
+                        pendingTcLink = data.toString();
                     }
                 }
             } else if (scheme != null) {
@@ -8252,15 +8256,29 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     processDeeplinkUrl(data.toString(), data);
                     return true;
                 } else if (scheme.equals("tc") || scheme.equals("nicegram-tc")) {
-                    if (tcDeeplinkManager != null) {
-                        tcDeeplinkManager.processLink(data.toString());
-                        return true;
-                    }
+                    pendingTcLink = data.toString();
                 }
             }
         }
 
         return false;
+    }
+
+    private String pendingTcLink;
+    private void processTcLinkOnResume() {
+        if (pendingTcLink == null || pendingTcLink.isEmpty()) return;
+        String link = pendingTcLink;
+        pendingTcLink = null;
+
+        TcDeeplinkManager tcDeeplinkManager = NicegramWalletHelper.INSTANCE.getTcDeeplinkManager();
+        if (!NicegramWalletHelper.INSTANCE.isLoggedInAndHasWallet()) {
+            NicegramWalletHelper.INSTANCE.launchWalletIfPossible(this, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
+            return;
+        }
+
+        if (tcDeeplinkManager != null) {
+            tcDeeplinkManager.processLink(link);
+        }
     }
 
     private void processDeeplinkUrl(String url, Uri data) {
