@@ -45,7 +45,6 @@ import com.appvillis.feature_avatar_generator.domain.usecases.AvatarsOnboardingU
 import com.appvillis.feature_avatar_generator.domain.usecases.GetAvatarsUseCase;
 import com.appvillis.feature_nicegram_assistant.QrCodeHelper;
 import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase;
-import com.appvillis.feature_nicegram_assistant.domain.GetSetPstStartedStatusUseCase;
 import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase;
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
 import com.appvillis.feature_nicegram_billing.domain.BillingManager;
@@ -62,6 +61,7 @@ import androidx.multidex.MultiDex;
 import app.nicegram.DailyRewardsHelper;
 import app.nicegram.NicegramAnalyticsHelper;
 
+import com.appvillis.nicegram.NicegramIcWalletHelper;
 import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
 import com.appvillis.nicegram.NicegramPrefs;
 
@@ -70,6 +70,7 @@ import app.nicegram.NicegramSpeechToTextHelper;
 import com.appvillis.nicegram.ReviewHelper;
 import com.appvillis.feature_nicegram_client.domain.NicegramClientOnboardingUseCase;
 import com.appvillis.nicegram.network.NicegramNetwork;
+import com.appvillis.nicegram_wallet.module_bridge.InChatResultManager;
 import com.appvillis.nicegram_wallet.wallet_storage.domain.GetCurrentWalletUseCase;
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager;
 import com.appvillis.rep_placements.domain.GetChatPlacementsUseCase;
@@ -166,8 +167,6 @@ public class ApplicationLoader extends Application {
     @Inject
     public GetSpecialOfferUseCase getSpecialOfferUseCase;
     @Inject
-    public GetSetPstStartedStatusUseCase getSetPstStartedStatusUseCase;
-    @Inject
     public AvatarsOnboardingUseCase avatarsOnboardingUseCase;
     @Inject
     public GetAvatarsUseCase getAvatarsUseCase;
@@ -197,6 +196,9 @@ public class ApplicationLoader extends Application {
 
     @Inject
     public TcDeeplinkManager tcDeeplinkManager;
+
+    @Inject
+    public InChatResultManager inChatResultManager;
 
     private static ApplicationLoader appInstance = null;
     public static ApplicationLoader getInstance() {
@@ -712,7 +714,6 @@ public class ApplicationLoader extends Application {
         NicegramAssistantHelper.INSTANCE.setAppSessionControlUseCase(appSessionControlUseCase);
         NicegramAssistantHelper.INSTANCE.setGetChatPlacementsUseCase(chatPlacementsUseCase);
         NicegramAssistantHelper.INSTANCE.setAiChatConfigRepo(remoteConfigRepoAi);
-        NicegramAssistantHelper.INSTANCE.setGetSetPstStartedStatusUseCase(getSetPstStartedStatusUseCase);
         NicegramAssistantHelper.INSTANCE.setAvatarsOnboardingUseCase(avatarsOnboardingUseCase);
         NicegramAssistantHelper.INSTANCE.setGetAvatarsUseCase(getAvatarsUseCase);
         NicegramPinChatsPlacementHelper.INSTANCE.setGetPinChatsPlacementsUseCase(pinChatsPlacementsUseCase);
@@ -725,6 +726,7 @@ public class ApplicationLoader extends Application {
         NicegramWalletHelper.INSTANCE.setTcDeeplinkManager(tcDeeplinkManager);
         NicegramWalletHelper.INSTANCE.setGetUserStatusUseCase(getUserStatusUseCase);
         NicegramWalletHelper.INSTANCE.setGetCurrentWalletUseCase(getCurrentWalletUseCase);
+        NicegramIcWalletHelper.INSTANCE.setInChatResultManager(inChatResultManager);
 
         AnalyticsHelper.INSTANCE.logEvent(getUserStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
         new Handler().postDelayed(() -> NicegramNetwork.INSTANCE.getSettings(UserConfig.getInstance(UserConfig.selectedAccount).clientUserId), 3000);

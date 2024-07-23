@@ -2,7 +2,6 @@ package com.appvillis.nicegram.network
 
 import android.content.Context
 import com.appvillis.core_network.di.NetworkConsts.API_URL
-import com.appvillis.feature_nicegram_billing.NicegramBillingHelper
 import com.appvillis.nicegram.BuildConfig
 import com.appvillis.nicegram.NicegramNetworkConsts.BASE_URL
 import com.appvillis.nicegram.NicegramScopes.ioScope
@@ -10,6 +9,7 @@ import com.appvillis.nicegram.NicegramScopes.uiScope
 import com.appvillis.nicegram.R
 import com.appvillis.nicegram.network.request.RegDateRequest
 import com.appvillis.nicegram.network.response.RegDateResponse
+import com.appvillis.nicegram.network.response.SettingsRequest
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -20,16 +20,6 @@ import java.util.concurrent.TimeUnit
 
 object NicegramNetwork {
     private const val TIMEOUT = 60L
-
-    private val nicegramApi by lazy {
-        val retrofit = Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-
-        retrofit.create(NicegramApi::class.java)
-    }
 
     private val nicegramAppApi by lazy {
         val retrofit = Retrofit.Builder()
@@ -113,33 +103,12 @@ object NicegramNetwork {
     fun getSettings(userId: Long) {
         ioScope.launch {
             try {
-                val result = nicegramAppApi.getSettings(userId)
+                val result = nicegramAppApi.getSettings(SettingsRequest(userId))
                 chatsUnblocked = result.settings.syncChats
                 unblockReasons.clear()
                 unblockReasons.addAll(result.reasons)
-
-                if (result.premium) NicegramBillingHelper.setGiftedPremium(true)
             } catch (e: Exception) {
                 if (BuildConfig.DEBUG) e.printStackTrace()
-            }
-        }
-    }
-
-    var restoreIsLoading = false
-
-    fun restorePremium(telegramUserId: Long, callback: (success: Boolean) -> Unit) {
-        if (restoreIsLoading) return
-        restoreIsLoading = true
-
-        ioScope.launch {
-            try {
-                val result = nicegramApi.restoreAccess(telegramUserId)
-                uiScope.launch { callback(result.data.premiumAccess) }
-            } catch (e: Exception) {
-                if (BuildConfig.DEBUG) e.printStackTrace()
-                uiScope.launch { callback(false) }
-            } finally {
-                restoreIsLoading = false
             }
         }
     }

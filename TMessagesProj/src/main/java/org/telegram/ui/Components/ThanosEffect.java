@@ -194,6 +194,11 @@ public class ThanosEffect extends TextureView {
         if (drawThread != null) {
             drawThread.kill();
         }
+        if (whenDone != null) {
+            Runnable runnable = whenDone;
+            whenDone = null;
+            runnable.run();
+        }
     }
 
     public void scroll(int dx, int dy) {
@@ -383,8 +388,10 @@ public class ThanosEffect extends TextureView {
 
         public void kill() {
             if (!alive) {
+                FileLog.d("ThanosEffect: kill failed, already dead");
                 return;
             }
+            FileLog.d("ThanosEffect: kill");
             try {
                 Handler handler = getHandler();
                 if (handler != null) {
@@ -395,8 +402,10 @@ public class ThanosEffect extends TextureView {
 
         private void killInternal() {
             if (!alive) {
+                FileLog.d("ThanosEffect: killInternal failed, already dead");
                 return;
             }
+            FileLog.d("ThanosEffect: killInternal");
             alive = false;
             for (int i = 0; i < pendingAnimations.size(); ++i) {
                 Animation animation = pendingAnimations.get(i);
@@ -449,11 +458,13 @@ public class ThanosEffect extends TextureView {
 
             eglDisplay = egl.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
             if (eglDisplay == egl.EGL_NO_DISPLAY) {
+                FileLog.e("ThanosEffect: eglDisplay == egl.EGL_NO_DISPLAY");
                 killInternal();
                 return;
             }
             int[] version = new int[2];
             if (!egl.eglInitialize(eglDisplay, version)) {
+                FileLog.e("ThanosEffect: failed eglInitialize");
                 killInternal();
                 return;
             }
@@ -469,6 +480,7 @@ public class ThanosEffect extends TextureView {
             EGLConfig[] eglConfigs = new EGLConfig[1];
             int[] numConfigs = new int[1];
             if (!egl.eglChooseConfig(eglDisplay, configAttributes, eglConfigs, 1, numConfigs)) {
+                FileLog.e("ThanosEffect: failed eglChooseConfig");
                 kill();
                 return;
             }
@@ -480,17 +492,20 @@ public class ThanosEffect extends TextureView {
             };
             eglContext = egl.eglCreateContext(eglDisplay, eglConfig, egl.EGL_NO_CONTEXT, contextAttributes);
             if (eglContext == null) {
+                FileLog.e("ThanosEffect: eglContext == null");
                 killInternal();
                 return;
             }
 
             eglSurface = egl.eglCreateWindowSurface(eglDisplay, eglConfig, surfaceTexture, null);
             if (eglSurface == null) {
+                FileLog.e("ThanosEffect: eglSurface == null");
                 killInternal();
                 return;
             }
 
             if (!egl.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+                FileLog.e("ThanosEffect: failed eglMakeCurrent");
                 killInternal();
                 return;
             }
@@ -498,6 +513,7 @@ public class ThanosEffect extends TextureView {
             int vertexShader = GLES31.glCreateShader(GLES31.GL_VERTEX_SHADER);
             int fragmentShader = GLES31.glCreateShader(GLES31.GL_FRAGMENT_SHADER);
             if (vertexShader == 0 || fragmentShader == 0) {
+                FileLog.e("ThanosEffect: vertexShader == 0 || fragmentShader == 0");
                 killInternal();
                 return;
             }
@@ -522,6 +538,7 @@ public class ThanosEffect extends TextureView {
             }
             drawProgram = GLES31.glCreateProgram();
             if (drawProgram == 0) {
+                FileLog.e("ThanosEffect: drawProgram == 0");
                 killInternal();
                 return;
             }

@@ -4,7 +4,6 @@ import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo
 import com.appvillis.feature_avatar_generator.domain.usecases.AvatarsOnboardingUseCase
 import com.appvillis.feature_avatar_generator.domain.usecases.GetAvatarsUseCase
 import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase
-import com.appvillis.feature_nicegram_assistant.domain.GetSetPstStartedStatusUseCase
 import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase
 import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository
 import com.appvillis.rep_placements.domain.GetChatPlacementsUseCase
@@ -14,13 +13,10 @@ object NicegramAssistantHelper {
     var getNicegramOnboardingStatusUseCase: GetNicegramOnboardingStatusUseCase? = null
     var getSpecialOfferUseCase: GetSpecialOfferUseCase? = null
     var appSessionControlUseCase: AppSessionControlUseCase? = null
-    var getSetPstStartedStatusUseCase: GetSetPstStartedStatusUseCase? = null
     var avatarsOnboardingUseCase: AvatarsOnboardingUseCase? = null
     var getAvatarsUseCase: GetAvatarsUseCase? = null
     lateinit var getChatPlacementsUseCase: GetChatPlacementsUseCase
     lateinit var aiChatConfigRepo: AiChatRemoteConfigRepo
-
-    val pstConfig: AiChatRemoteConfigRepo.PstConfig? get() = aiChatConfigRepo.pstConfig
 
     fun getSpecialOffer(): SpecialOffersRepository.SpecialOffer? {
         if (!getSpecialOfferUseCase!!.haveSeenCurrentOffer() && getSpecialOfferUseCase!!.canShowSpecialOfferCurrentSession(
@@ -32,8 +28,6 @@ object NicegramAssistantHelper {
 
         return null
     }
-
-    fun hasStartedPstOnce() = getSetPstStartedStatusUseCase?.hasStartedBotOnce == true
 
     fun findSpecialOffer(id: Int): SpecialOffersRepository.SpecialOffer? {
         return getSpecialOfferUseCase?.allOffers?.find { it.id == id }

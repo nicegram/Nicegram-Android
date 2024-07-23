@@ -63,7 +63,6 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int downloadVideosToGallery;
     private int hidePhoneNumberRow;
     private int doubleBottomRow;
-    private int restoreRow;
     private int quickRepliesRow;
     private int hideReactionsRow;
     private int shareChannelsInfoRow;
@@ -88,7 +87,6 @@ public class NicegramSettingsActivity extends BaseFragment {
         quickRepliesRow = rowCount++;
         if (!NicegramDoubleBottom.INSTANCE.getLoggedToDbot()) doubleBottomRow = rowCount++;
         else doubleBottomRow = -1;
-        //restoreRow = rowCount++;
         showNgBtnInChatRow = rowCount++;
         showProfileIdRow = rowCount++;
         showRegDateRow = rowCount++;
@@ -211,17 +209,6 @@ public class NicegramSettingsActivity extends BaseFragment {
                 }
             } else if (position == quickRepliesRow) {
                 presentFragment(new QuickRepliesNgFragment());
-            } else if (position == restoreRow) {
-                NicegramNetwork.INSTANCE.restorePremium(getAccountInstance().getUserConfig().clientUserId, success -> {
-                    if (success) {
-                        Toast.makeText(getParentActivity(), "Success! Now you can use Nicegram Premium!", Toast.LENGTH_LONG).show();
-                        NicegramBillingHelper.INSTANCE.setGiftedPremium(true);
-                    } else {
-                        if (getParentActivity() == null) return null;
-                        Toast.makeText(getParentActivity(), R.string.NicegramRequestIsPending, Toast.LENGTH_LONG).show();
-                    }
-                    return null;
-                });
             } else if (position == maxAccountsRow) {
                 enabled = PrefsHelper.INSTANCE.getMaxAccountCount(context) == NicegramPrefs.PREF_MAX_ACCOUNTS_MAX;
                 if (!enabled) {
@@ -367,8 +354,6 @@ public class NicegramSettingsActivity extends BaseFragment {
                         textCell.setText(LocaleController.getString("NicegramUnblockGuide"), false);
                     } else if (position == quickRepliesRow) {
                         textCell.setText(LocaleController.getString("QuickReplies"), false);
-                    } else if (position == restoreRow) {
-                        textCell.setText(LocaleController.getString("NicegramRestorePremium"), false);
                     }
                     break;
                 }
@@ -394,7 +379,7 @@ public class NicegramSettingsActivity extends BaseFragment {
                     pinSectionRowsMap.contains(position) ||
             position == showHiddenChatsRow) {
                 return 1;
-            } else if (position == unblockGuideRow || position == quickRepliesRow || position == restoreRow) {
+            } else if (position == unblockGuideRow || position == quickRepliesRow) {
                 return 2;
             } else if (position == nicegramSectionRow) {
                 return 3;
