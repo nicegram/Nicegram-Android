@@ -8,7 +8,7 @@
         </shape>
     </item>
     <item
-        android:drawable="@drawable/notification"
+        android:drawable="@drawable/ng_logo_no_bg_white"
 		android:gravity="center"
         android:left="-2dp"
         android:width="24dp"

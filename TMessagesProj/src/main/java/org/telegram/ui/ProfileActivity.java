@@ -11332,11 +11332,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         textCell.setTextAndIcon(LocaleController.getString("GiftPremiumGifting", R.string.GiftPremiumGifting), R.drawable.menu_gift, false);
                         textCell.setImageLeft(23);
                     } else if (position == nicegramRow) {
-                        textCell.setTextAndIcon("Nicegram", ResourcesCompat.getDrawable(getParentActivity().getResources(), R.drawable.nicegram_white, null), true);
+                        textCell.setTextAndIcon("Nicegram", ResourcesCompat.getDrawable(getParentActivity().getResources(), R.drawable.ng_logo_no_bg_28, null), true);
                     } else if (position == aiChatBotRow) {
                         textCell.setTextAndIcon("Lily AI", ResourcesCompat.getDrawable(getParentActivity().getResources(), R.drawable.ai_chat_logo_28, null), true);
                     } else if (position == nicegramPremiumRow) {
-                        textCell.setTextAndIcon("Nicegram Premium", ResourcesCompat.getDrawable(getParentActivity().getResources(), R.drawable.nicegram_black, null), true);
+                        textCell.setTextAndIcon("Nicegram Premium", ResourcesCompat.getDrawable(getParentActivity().getResources(), R.drawable.ng_logo_square_28, null), true);
                     }
                     textCell.valueTextView.setTextColor(applyPeerColor(getThemedColor(Theme.key_windowBackgroundWhiteValueText), false));
                     break;

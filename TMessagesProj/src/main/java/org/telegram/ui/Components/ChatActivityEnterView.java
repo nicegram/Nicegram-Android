@@ -4227,8 +4227,6 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                 });
                 sendPopupLayout.setShownFromBottom(false);
 
-            boolean translateButtonValue = parentFragment != null && !parentFragment.isSecretChat(); // ng translate input text
-            boolean translateToButtonValue = parentFragment != null && !parentFragment.isSecretChat(); // ng translate input text
             boolean scheduleButtonValue = parentFragment != null && parentFragment.canScheduleMessage();
             boolean sendWithoutSoundButtonValue = !(self || slowModeTimer > 0 && !isInScheduleMode());
             if (scheduleButtonValue) {
@@ -4277,49 +4275,6 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                 });
                 sendPopupLayout.addView(sendWithoutSoundButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
             }
-            sendPopupLayout.setupRadialSelectors(getThemedColor(Theme.key_dialogButtonSelector));
-
-            // region ng translate input text
-            if (translateButtonValue) {
-                ActionBarMenuSubItem translateButton = new ActionBarMenuSubItem(getContext(), !sendWithoutSoundButtonValue, !translateToButtonValue, resourcesProvider);
-                translateButton.setTextAndIcon(LocaleController.getString("TranslateMessage", R.string.TranslateMessage), R.drawable.msg_translate);
-                translateButton.setMinimumWidth(AndroidUtilities.dp(196));
-                translateButton.setOnClickListener(v -> {
-                    if (sendPopupWindow != null && sendPopupWindow.isShowing()) {
-                        sendPopupWindow.dismiss();
-                    }
-                    if (PrefsHelper.INSTANCE.isCurrentLanguageTheDefault(currentAccount, dialog_id)) {
-                        String errorText = LocaleController.getString("NicegramLanguageDeterminateError", R.string.NicegramLanguageDeterminateError);
-                        Toast.makeText(getContext(), errorText, Toast.LENGTH_LONG).show();
-                        return;
-                    }
-                    String textForTranslation = messageEditText.getText().toString();
-                    String toLang = PrefsHelper.INSTANCE.getTranslateLanguageToShortName(currentAccount,parentFragment.getDialogId());
-                    NicegramTranslator.INSTANCE.translate(textForTranslation, toLang, s -> {
-                        if (s == null) {
-                            translationCallback.error();
-                            return Unit.INSTANCE;
-                        }
-                        translationCallback.changed(s);
-                        return Unit.INSTANCE;
-                    });
-                });
-                sendPopupLayout.addView(translateButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
-            }
-            if (translateToButtonValue) {
-                translateToButton = new ActionBarMenuSubItem(getContext(), !translateButtonValue, true, resourcesProvider);
-                String shortName = PrefsHelper.INSTANCE.getTranslateLanguageToShortName(currentAccount, parentFragment.getDialogId()).toUpperCase();
-                translateToButton.setText(LocaleController.formatString("NicegramToLanguage", R.string.NicegramToLanguage, shortName));
-                translateToButton.setMinimumWidth(AndroidUtilities.dp(196));
-                translateToButton.setOnClickListener(v -> {
-                    if (sendPopupWindow != null && sendPopupWindow.isShowing()) {
-                        sendPopupWindow.dismiss();
-                    }
-                    parentFragment.presentFragment(new LanguagesToTranslateActivity(parentFragment.getDialogId()));
-                });
-                sendPopupLayout.addView(translateToButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
-            }
-            // endregion ng translate input text
             sendPopupLayout.setupRadialSelectors(getThemedColor(Theme.key_dialogButtonSelector));
 
                 sendPopupWindow = new ActionBarPopupWindow(sendPopupLayout, LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT) {
@@ -4509,6 +4464,8 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
         final boolean self = parentFragment != null && UserObject.isUserSelf(parentFragment.getCurrentUser());
         boolean scheduleButtonValue = parentFragment != null && parentFragment.canScheduleMessage();
         boolean sendWithoutSoundButtonValue = !(self || slowModeTimer > 0 && !isInScheduleMode());
+        boolean translateButtonValue = parentFragment != null && !parentFragment.isSecretChat(); // ng translate input text
+        boolean translateToButtonValue = parentFragment != null && !parentFragment.isSecretChat(); // ng translate input text
         if (scheduleButtonValue) {
             options.add(R.drawable.msg_calendar2, getString(self ? R.string.SetReminder : R.string.ScheduleMessage), () -> {
                 AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), new AlertsCreator.ScheduleDatePickerDelegate() {
@@ -4547,6 +4504,50 @@ public class ChatActivityEnterView extends BlurredFrameLayout implements Notific
                 }
             });
         }
+        // region ng translate input text
+        if (translateButtonValue) {
+            options.addGap();
+
+            options.add(R.drawable.msg_translate, getString(R.string.TranslateMessage), () -> {
+                if (containsSendMessage && messageSendPreview != null) {
+                    messageSendPreview.dismiss(false);
+                    messageSendPreview = null;
+                } else {
+                    AndroidUtilities.cancelRunOnUIThread(dismissSendPreview);
+                    AndroidUtilities.runOnUIThread(dismissSendPreview, 500);
+                }
+
+                if (PrefsHelper.INSTANCE.isCurrentLanguageTheDefault(currentAccount, dialog_id)) {
+                    String errorText = LocaleController.getString("NicegramLanguageDeterminateError", R.string.NicegramLanguageDeterminateError);
+                    Toast.makeText(getContext(), errorText, Toast.LENGTH_LONG).show();
+                    return;
+                }
+                String textForTranslation = messageEditText.getText().toString();
+                String toLang = PrefsHelper.INSTANCE.getTranslateLanguageToShortName(currentAccount,parentFragment.getDialogId());
+                NicegramTranslator.INSTANCE.translate(textForTranslation, toLang, s -> {
+                    if (s == null) {
+                        translationCallback.error();
+                        return Unit.INSTANCE;
+                    }
+                    translationCallback.changed(s);
+                    return Unit.INSTANCE;
+                });
+            });
+        }
+        if (translateToButtonValue) {
+            String shortName = PrefsHelper.INSTANCE.getTranslateLanguageToShortName(currentAccount, parentFragment.getDialogId()).toUpperCase();
+            options.add(R.drawable.msg_translate, LocaleController.formatString("NicegramToLanguage", R.string.NicegramToLanguage, shortName), () -> {
+                parentFragment.presentFragment(new LanguagesToTranslateActivity(parentFragment.getDialogId()));
+                if (containsSendMessage && messageSendPreview != null) {
+                    messageSendPreview.dismiss(false);
+                    messageSendPreview = null;
+                } else {
+                    AndroidUtilities.cancelRunOnUIThread(dismissSendPreview);
+                    AndroidUtilities.runOnUIThread(dismissSendPreview, 500);
+                }
+            });
+        }
+        // endregion ng translate input text
         options.setupSelectors();
         if (sendWhenOnlineButton != null) {
             TLRPC.User user = parentFragment == null ? null : parentFragment.getCurrentUser();

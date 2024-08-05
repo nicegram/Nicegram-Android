@@ -5758,7 +5758,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isChatNoForwardsNew(TLRPC.Chat chat) {
-        return !PrefsHelper.INSTANCE.bypassCopyProtection(currentAccount);
+        return !PrefsHelper.INSTANCE.bypassCopyProtection(currentAccount) && isChatNoForwards(chat);
     }
 
     public boolean isChatNoForwardsNew(long chatId) {

@@ -8356,6 +8356,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     private void processDeeplinkUrl(String url, Uri data) {
         if (url.startsWith("https://t.me/")) {
+            actionBarLayout.closeLastFragment();
             Intents.INSTANCE.openUrl(this, url, null, true);
         } else if (url.equals("ncg://assistant")) {
             AnalyticsHelper.INSTANCE.logEvent("assistant_open_from_deeplink", null);

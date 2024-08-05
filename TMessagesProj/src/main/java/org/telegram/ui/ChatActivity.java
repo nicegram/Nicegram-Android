@@ -28668,7 +28668,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                         // endregion ng show message data
                         items.add("Nicegram...");
                         options.add(NICEGRAM_SUBMENU_ACTION_ID);
-                        icons.add(R.drawable.nicegram_logo_full_black);
+                        icons.add(R.drawable.ng_logo_no_bg_black_24);
 
 
                         createMenuRunnable = () -> createMenu(v, true, listView, x, y, searchGroup);
@@ -39657,7 +39657,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
     }
 
     private boolean isMessageTranslatable(MessageObject selectedObject) {
-        if (selectedObject == null || currentEncryptedChat != null || selectedObject.isOut()) return false; // secret chats
+        if (selectedObject == null || currentEncryptedChat != null /*|| selectedObject.isOut() */) return false; // secret chats
 
         if (selectedObject.isRoundVideo()) return false;
         if (selectedObject.isAnimatedSticker() || selectedObject.isSticker() || (selectedObject.isDocument() && TextUtils.isEmpty(selectedObject.caption))) return false;

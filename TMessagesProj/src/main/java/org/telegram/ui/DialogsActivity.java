@@ -3106,7 +3106,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             updatePasscodeButton();
             updateProxyButton(false, false);
         }
-        nicegramLogoItem = menu.addItem(MENU_ID_NICEGRAM, R.drawable.nicegram_logo);
+        nicegramLogoItem = menu.addItem(MENU_ID_NICEGRAM, R.drawable.ng_logo_no_bg_white_24);
         nicegramLogoItem.setOnClickListener(v -> processNicegramLogoClick());
         searchItem = menu.addItem(0, R.drawable.ic_ab_search).setIsSearchField(true, false).setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
             boolean isSpeedItemCreated = false;
