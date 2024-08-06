@@ -777,18 +777,10 @@ public class ApplicationLoader extends Application {
     }
 
     private void setMaxAccountCount() {
-        for (int a = 0; a < NicegramPrefs.PREF_MAX_ACCOUNTS_MAX; a++) {
-            if (UserConfig.getInstance(a).isClientActivatedEarlyCheck()) {
-                Log.d("setMaxAccountCount", "account " + a + " is active");
-            }
-        }
         if (PrefsHelper.INSTANCE.getMaxAccountCountWasSet(this)) {
-            Log.d("setMaxAccountCount", String.format("Max account count was set to %s", PrefsHelper.INSTANCE.getMaxAccountCount(this)));
-
             UserConfig.MAX_ACCOUNT_COUNT = PrefsHelper.INSTANCE.getMaxAccountCount(this);
             UserConfig.MAX_ACCOUNT_DEFAULT_COUNT = PrefsHelper.INSTANCE.getMaxAccountCount(this);
         } else {
-            Log.d("setMaxAccountCount", "Max account count was not set before");
 
             int accountCount = 0;
             for (int a = 0; a < NicegramPrefs.PREF_MAX_ACCOUNTS_MAX; a++) {
@@ -803,8 +795,6 @@ public class ApplicationLoader extends Application {
             PrefsHelper.INSTANCE.setMaxAccountCount(this, accountsToSet);
             UserConfig.MAX_ACCOUNT_COUNT = accountsToSet;
             UserConfig.MAX_ACCOUNT_DEFAULT_COUNT = accountsToSet;
-
-            Log.d("setMaxAccountCount", String.format("Account count is: %s, Max account count was set to %s", accountCount, PrefsHelper.INSTANCE.getMaxAccountCount(this)));
 
             PrefsHelper.INSTANCE.setMaxAccountCountWasSet(this);
         }
