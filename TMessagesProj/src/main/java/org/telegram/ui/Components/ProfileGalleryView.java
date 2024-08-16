@@ -452,10 +452,7 @@ public class ProfileGalleryView extends CircularViewPager implements Notificatio
             if (NicegramSecondTapHelper.INSTANCE.isLongClick(ev)) {
                 callback.onLongClick(); // ng share avatar
             } else if (!isDownReleased) {
-                int itemsCount = dialogPhotos == null ? 0 : dialogPhotos.getCount();
-                if (currentUploadingImageLocation != null) {
-                    itemsCount++;
-                }
+                int itemsCount = getRealCount();
                 int currentItem = getCurrentItem();
                 if (itemsCount > 1) {
                     if (ev.getX() > getWidth() / 3f) {

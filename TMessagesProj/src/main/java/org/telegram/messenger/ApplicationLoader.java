@@ -71,6 +71,7 @@ import com.appvillis.nicegram.ReviewHelper;
 import com.appvillis.feature_nicegram_client.domain.NicegramClientOnboardingUseCase;
 import com.appvillis.nicegram.network.NicegramNetwork;
 import com.appvillis.nicegram_wallet.module_bridge.InChatResultManager;
+import com.appvillis.nicegram_wallet.wallet_security.domain.VerificationManager;
 import com.appvillis.nicegram_wallet.wallet_storage.domain.GetCurrentWalletUseCase;
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager;
 import com.appvillis.rep_placements.domain.GetChatPlacementsUseCase;
@@ -107,6 +108,8 @@ import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramWalletHelper;
 import app.nicegram.PrefsHelper;
 import app.nicegram.TgThemeProxyImpl;
+import app.nicegram.bridge.NicegramDeepLinksHelper;
+import kotlinx.coroutines.CoroutineScope;
 import timber.log.Timber;
 
 public class ApplicationLoader extends Application {
@@ -144,6 +147,10 @@ public class ApplicationLoader extends Application {
     public GetUserStatusUseCase getUserStatusUseCase;
     @Inject
     public GetCurrentWalletUseCase getCurrentWalletUseCase;
+    @Inject
+    public VerificationManager verificationManager;
+    @Inject
+    public CoroutineScope appScope;
     @Inject
     public GetChatCommandsUseCase getChatCommandsUseCase;
     @Inject
@@ -199,6 +206,8 @@ public class ApplicationLoader extends Application {
 
     @Inject
     public InChatResultManager inChatResultManager;
+    @Inject
+    public NicegramDeepLinksHelper nicegramDeepLinksHelper;
 
     private static ApplicationLoader appInstance = null;
     public static ApplicationLoader getInstance() {
@@ -726,7 +735,10 @@ public class ApplicationLoader extends Application {
         NicegramWalletHelper.INSTANCE.setTcDeeplinkManager(tcDeeplinkManager);
         NicegramWalletHelper.INSTANCE.setGetUserStatusUseCase(getUserStatusUseCase);
         NicegramWalletHelper.INSTANCE.setGetCurrentWalletUseCase(getCurrentWalletUseCase);
+        NicegramWalletHelper.INSTANCE.setVerificationManager(verificationManager);
+        NicegramWalletHelper.INSTANCE.setAppScope(appScope);
         NicegramIcWalletHelper.INSTANCE.setInChatResultManager(inChatResultManager);
+        NicegramDeepLinksHelper.Companion.setInstance(nicegramDeepLinksHelper);
 
         AnalyticsHelper.INSTANCE.logEvent(getUserStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
         new Handler().postDelayed(() -> NicegramNetwork.INSTANCE.getSettings(UserConfig.getInstance(UserConfig.selectedAccount).clientUserId), 3000);
@@ -887,5 +899,4 @@ public class ApplicationLoader extends Application {
     public BaseFragment openSettings(int n) {
         return null;
     }
-
 }

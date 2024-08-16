@@ -6,8 +6,6 @@ import android.content.IntentSender
 import android.content.SharedPreferences
 import androidx.fragment.app.Fragment
 import com.appvillis.core_network.ApiService
-import com.appvillis.core_network.data.body.GoogleSubscriptionRequestBody
-import com.appvillis.core_network.data.body.GoogleTopUpRequestBody
 import com.appvillis.core_network.data.body.HuaweiSubscriptionRequestBody
 import com.appvillis.core_network.data.body.HuaweiTopUpRequestBody
 import com.appvillis.feature_nicegram_billing.R
@@ -67,7 +65,7 @@ class HuaweiBillingManagerImpl(
         get() = currentSubPurchaseToken != null
 
     private var _userHasGiftedPremium = false
-    override val userHasChatBotPremiumSub: Boolean
+    override val userHasActiveSub: Boolean
         get() = _userHasGiftedPremium
 
     override var userHasGiftedPremium: Boolean
@@ -76,7 +74,7 @@ class HuaweiBillingManagerImpl(
             _userHasGiftedPremium = value
         }
 
-    private val _userSubState = MutableStateFlow(userHasActiveSub)
+    private val _userSubState = MutableStateFlow(this.userHasActiveSub)
     override val userSubState: StateFlow<Boolean>
         get() = _userSubState
 
@@ -403,7 +401,7 @@ class HuaweiBillingManagerImpl(
                 Timber.d("BILLING_TEST _currentSubPurchaseToken set to ${purchaseDataParsed.purchaseToken}")
 
                 _currentSubPurchaseToken = purchaseDataParsed.purchaseToken
-                _userSubState.value = userHasActiveSub
+                _userSubState.value = this.userHasActiveSub
                 appCoroutineScope.launch {
                     _billingStateFlow.emit(
                         BillingManager.BillingState.Success(

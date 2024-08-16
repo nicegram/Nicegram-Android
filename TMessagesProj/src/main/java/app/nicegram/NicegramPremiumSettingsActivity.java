@@ -37,7 +37,6 @@ public class NicegramPremiumSettingsActivity extends BaseFragment {
     private int saveFolderOnExitRow;
     private int quickTranslateButton;
     private int ignoredLanguagesRow;
-    private int bypassCopyProtectionRow;
     private int openAiSpeech2Text;
     private int rowCount = 0;
 
@@ -48,7 +47,6 @@ public class NicegramPremiumSettingsActivity extends BaseFragment {
         saveFolderOnExitRow = rowCount++;
         quickTranslateButton = rowCount++;
         ignoredLanguagesRow = rowCount++;
-        bypassCopyProtectionRow = rowCount++;
         openAiSpeech2Text = rowCount++;
 
         return super.onFragmentCreate();
@@ -108,12 +106,6 @@ public class NicegramPremiumSettingsActivity extends BaseFragment {
                 SharedPreferences.Editor editor = preferences.edit();
                 enabled = preferences.getBoolean(NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT, NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT_DEFAULT);
                 editor.putBoolean(NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT, !enabled);
-                editor.apply();
-            } else if (position == bypassCopyProtectionRow) {
-                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_BYPASS_COPY_PROTECTION, NicegramPrefs.PREF_BYPASS_COPY_PROTECTION_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_BYPASS_COPY_PROTECTION, !enabled);
                 editor.apply();
             } else if (position == openAiSpeech2Text) {
                 enabled = PrefsHelper.INSTANCE.getSpeech2TextOpenAi(getContext());
@@ -194,8 +186,6 @@ public class NicegramPremiumSettingsActivity extends BaseFragment {
                         checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegramQuickTranslateButton), preferences.getBoolean(NicegramPrefs.PREF_QUICK_TRANSLATE, NicegramPrefs.PREF_QUICK_TRANSLATE_DEFAULT), false);
                     } else if (position == saveFolderOnExitRow) {
                         checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegramSaveFolderOnExit), preferences.getBoolean(NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT, NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT_DEFAULT), false);
-                    } else if (position == bypassCopyProtectionRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegarmBypassCopyProtection), preferences.getBoolean(NicegramPrefs.PREF_BYPASS_COPY_PROTECTION, NicegramPrefs.PREF_BYPASS_COPY_PROTECTION_DEFAULT), false);
                     } else if (position == openAiSpeech2Text) {
                         checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegramOpenAiSpeech2Text), PrefsHelper.INSTANCE.getSpeech2TextOpenAi(getContext()), false);
                     }
@@ -215,7 +205,7 @@ public class NicegramPremiumSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == nicegramSectionRow) {
                 return 0;
-            } else if (position == mentionAllRow || position == quickTranslateButton || position == saveFolderOnExitRow || position == bypassCopyProtectionRow
+            } else if (position == mentionAllRow || position == quickTranslateButton || position == saveFolderOnExitRow
             || position == openAiSpeech2Text) {
                 return 1;
             } else if (position == ignoredLanguagesRow) {

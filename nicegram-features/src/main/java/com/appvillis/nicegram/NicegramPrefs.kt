@@ -13,7 +13,6 @@ object NicegramPrefs {
     const val PREF_CHAT_LANGUAGE_TO_TRANSLATE = "ChatLanguageToTranslate_"
     const val PREF_SAVE_FOLDER_ON_EXIT = "SaveFolderOnExit"
     const val PREF_SAVED_FOLDER = "SavedFolder"
-    const val PREF_BYPASS_COPY_PROTECTION = "BypassCopyProtection"
     const val PREF_SHOW_PIN_CHATS_PLACEMENT_WITH_ID_ = "ShowPinChatPlacementWithId_"
     const val PREF_MAX_ACCOUNTS = "MaxAccountCount"
     const val PREF_MAX_ACCOUNTS_SET = "MaxAccountCountSet"
@@ -34,7 +33,6 @@ object NicegramPrefs {
     const val PREF_HIDE_PHONE_NUMBER_DEFAULT = false
     const val PREF_HIDE_REACTIONS_DEFAULT = false
     const val PREF_CHAT_LANGUAGE_TO_TRANSLATE_DEFAULT = ""
-    const val PREF_BYPASS_COPY_PROTECTION_DEFAULT = true
     const val PREF_SHOW_PIN_CHATS_PLACEMENT_DEFAULT = true
     const val PREF_MAX_ACCOUNTS_DEFAULT = 10
     const val PREF_MAX_ACCOUNTS_MAX = 100

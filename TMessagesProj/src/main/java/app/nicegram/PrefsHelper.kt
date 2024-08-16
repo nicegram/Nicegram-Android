@@ -83,10 +83,8 @@ object PrefsHelper {
             .getBoolean(NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT, NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT_DEFAULT)
     }
 
-    fun bypassCopyProtection(currentAccount: Int): Boolean {
-        val remote = remoteConfigRepo?.allowCopyProtectedContent ?: true
-        return remote && MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(NicegramPrefs.PREF_BYPASS_COPY_PROTECTION, NicegramPrefs.PREF_BYPASS_COPY_PROTECTION_DEFAULT)
+    fun bypassCopyProtection(): Boolean {
+        return remoteConfigRepo?.allowCopyProtectedContent ?: true
     }
 
     fun setCurrentFolder(currentAccount: Int, folder: Int) {
