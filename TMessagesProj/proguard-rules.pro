@@ -284,3 +284,7 @@ public static final ** CREATOR;
 #trustwallet core
 -keep class wallet.core.jni.** {*;}
 -keep class wallet.core.jni.* {*;}
+
+#tg fix
+-keep class org.telegram.ui.Components.RLottieDrawable$LottieMetadata { *; }
+-keep class org.telegram.ui.Stars.StarsIntroActivity$** { *; }

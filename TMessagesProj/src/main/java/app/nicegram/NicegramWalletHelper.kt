@@ -2,6 +2,8 @@ package app.nicegram
 
 import android.content.Context
 import com.appvillis.assistant_core.MainActivity
+import com.appvillis.nicegram_wallet.wallet_scanqr.QrProcessResult
+import com.appvillis.nicegram_wallet.wallet_scanqr.QrResultEmitter
 import com.appvillis.nicegram_wallet.wallet_security.domain.VerificationManager
 import com.appvillis.nicegram_wallet.wallet_storage.domain.GetCurrentWalletUseCase
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager
@@ -15,6 +17,7 @@ object NicegramWalletHelper {
     var getCurrentWalletUseCase: GetCurrentWalletUseCase? = null
     var verificationManager: VerificationManager? = null
     var appScope: CoroutineScope? = null
+    var qrResultEmitter: QrResultEmitter? = null
 
     fun isLoggedInAndHasWallet() =
         getUserStatusUseCase?.isUserLoggedIn == true && getCurrentWalletUseCase?.currentWallet != null
@@ -25,6 +28,17 @@ object NicegramWalletHelper {
 
         if (getUserStatusUseCase.isUserLoggedIn && getCurrentWalletUseCase.currentWallet != null) {
             MainActivity.launchWalletStart(context, telegramId)
+        } else {
+            MainActivity.launchAssistant(context, telegramId)
+        }
+    }
+
+    fun openWcLink(wcLink: String, context: Context, telegramId: Long) {
+        val getUserStatusUseCase = getUserStatusUseCase ?: return
+        val getCurrentWalletUseCase = getCurrentWalletUseCase ?: return
+
+        if (getUserStatusUseCase.isUserLoggedIn && getCurrentWalletUseCase.currentWallet != null) {
+            qrResultEmitter?.emitResult(QrProcessResult.WcLink(wcLink))
         } else {
             MainActivity.launchAssistant(context, telegramId)
         }

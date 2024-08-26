@@ -71,6 +71,7 @@ import com.appvillis.nicegram.ReviewHelper;
 import com.appvillis.feature_nicegram_client.domain.NicegramClientOnboardingUseCase;
 import com.appvillis.nicegram.network.NicegramNetwork;
 import com.appvillis.nicegram_wallet.module_bridge.InChatResultManager;
+import com.appvillis.nicegram_wallet.wallet_scanqr.QrResultEmitter;
 import com.appvillis.nicegram_wallet.wallet_security.domain.VerificationManager;
 import com.appvillis.nicegram_wallet.wallet_storage.domain.GetCurrentWalletUseCase;
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager;
@@ -149,6 +150,8 @@ public class ApplicationLoader extends Application {
     public GetCurrentWalletUseCase getCurrentWalletUseCase;
     @Inject
     public VerificationManager verificationManager;
+    @Inject
+    public QrResultEmitter qrResultEmitter;
     @Inject
     public CoroutineScope appScope;
     @Inject
@@ -737,6 +740,7 @@ public class ApplicationLoader extends Application {
         NicegramWalletHelper.INSTANCE.setGetCurrentWalletUseCase(getCurrentWalletUseCase);
         NicegramWalletHelper.INSTANCE.setVerificationManager(verificationManager);
         NicegramWalletHelper.INSTANCE.setAppScope(appScope);
+        NicegramWalletHelper.INSTANCE.setQrResultEmitter(qrResultEmitter);
         NicegramIcWalletHelper.INSTANCE.setInChatResultManager(inChatResultManager);
         NicegramDeepLinksHelper.Companion.setInstance(nicegramDeepLinksHelper);
 

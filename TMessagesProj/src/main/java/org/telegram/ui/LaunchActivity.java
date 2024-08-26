@@ -6488,6 +6488,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
 
         processTcLinkOnResume();
+        processWcLinkOnResume();
     }
 
     public static Runnable whenResumed;
@@ -8549,6 +8550,10 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         return true;
                     } else if (path.startsWith("tc")) {
                         pendingTcLink = data.toString();
+                    } else if (path.startsWith("wc")) {
+                        String dataS = data.toString();
+                        int startIndex = dataS.indexOf("uri=");
+                        if (startIndex != -1) pendingWcLink = dataS.substring(startIndex + 4);
                     }
                 }
             } else if (scheme != null) {
@@ -8562,6 +8567,15 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
 
         return false;
+    }
+
+    private String pendingWcLink;
+    private void processWcLinkOnResume() {
+        if (pendingWcLink == null || pendingWcLink.isEmpty()) return;
+        String link = pendingWcLink;
+        pendingWcLink = null;
+
+        NicegramWalletHelper.INSTANCE.openWcLink(link, this, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
     }
 
     private String pendingTcLink;
