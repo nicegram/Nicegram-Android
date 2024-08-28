@@ -236,6 +236,12 @@ public static final ** CREATOR;
 -keep class com.appvillis.nicegram_wallet.wallet_tonconnect.data.TonHelperImpl$SendTransactionPayloadJson { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_tonconnect.data.TonHelperImpl$SendTransactionPayloadJson$Message { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_tonconnect.data.TcSseManagerImpl$SseMessageJson { *; }
+-keep class com.appvillis.core_network.NicegramSwapApi.** { *; }
+-keep class com.appvillis.core_network.NicegramSwapApi$* { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_swap.data.SwapNetworkServiceImpl.** { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_swap.data.SwapNetworkServiceImpl$* { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_swap.data.SwapEthNetworkServiceImpl.** { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_swap.data.SwapEthNetworkServiceImpl$* { *; }
 -keep class com.sun.jna.** { *; }
 -keep class * implements com.sun.jna.** { *; }
 -dontwarn java.awt.Component
