@@ -25,7 +25,7 @@ dependencies {
 
 android {
     compileSdkVersion 34
-    buildToolsVersion '33.0.0'
+    buildToolsVersion '34.0.0'
 
     namespace 'app.nicegram'
 
@@ -130,7 +130,7 @@ android {
 
     defaultConfig {
         minSdkVersion 24
-        targetSdkVersion 33
+        targetSdkVersion 34
         versionName APP_VERSION_NAME
         ndkVersion "21.4.7075529"
 
@@ -141,7 +141,7 @@ android {
         externalNativeBuild {
             cmake {
                 version '3.10.2'
-                arguments '-DANDROID_STL=c++_static', '-DANDROID_PLATFORM=android-16', "-j=16"
+                arguments '-DANDROID_STL=c++_static', '-DANDROID_PLATFORM=android-16'
             }
         }
     }
@@ -149,6 +149,7 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    namespace 'org.telegram.messenger.web'
 
     lintOptions {
         checkReleaseBuilds false

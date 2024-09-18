@@ -47,6 +47,8 @@ class NicegramDeepLinksHelper @Inject constructor(
             if (getUserStatusUseCase.isUserLoggedIn && getCurrentWalletUseCase.currentWallet != null) {
                 MainActivity.launchDApp(dAppsMap[domainName] ?: return false, context, telegramId)
             } else {
+                if (dAppsMap[domainName] == null) return false
+
                 MainActivity.launchAssistant(context, telegramId)
             }
 

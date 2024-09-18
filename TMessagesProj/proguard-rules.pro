@@ -294,3 +294,12 @@ public static final ** CREATOR;
 #tg fix
 -keep class org.telegram.ui.Components.RLottieDrawable$LottieMetadata { *; }
 -keep class org.telegram.ui.Stars.StarsIntroActivity$** { *; }
+
+#missing_ryles.txt
+-dontwarn java.lang.invoke.StringConcatFactory
+-keep class app.nicegram.bridge.* { *; }
+-keep class app.nicegram.bridge.** { *; }
+-dontwarn java.beans.ConstructorProperties
+-dontwarn java.beans.Transient
+
+-keep class androidx.recyclerview.widget.PagerSnapHelper { *; }

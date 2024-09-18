@@ -31,7 +31,8 @@ object AiChatBotHelper {
     fun launchAiBot(activity: Activity, telegramId: Long, dialog: Boolean) {
         val getUserStatusUseCase = getUserStatusUseCase ?: return
         if (getUserStatusUseCase.isUserLoggedIn) {
-            if (dialog) MainActivity.launchAiBotDialog(null, null, activity, telegramId)
+            //if (dialog) MainActivity.launchAiBotDialog(null, null, activity, telegramId)
+            if (dialog) MainActivity.launchAiBot(activity, telegramId)
             else MainActivity.launchAiBot(activity, telegramId)
         } else {
             if (dialog) AuthNavHelper.authBack = true
