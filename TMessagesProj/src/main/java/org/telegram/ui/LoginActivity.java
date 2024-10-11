@@ -96,6 +96,7 @@ import androidx.core.graphics.ColorUtils;
 
 import com.appvillis.core_network.data.HeaderInterceptor;
 import com.appvillis.core_resources.widgets.EsimBannerView;
+import com.appvillis.nicegram.NicegramThemeApplyHelper;
 import com.appvillis.nicegram.presentation.NicegramTutorialSmsDialog;
 import com.appvillis.rep_user.domain.UserRepository;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -179,6 +180,8 @@ import org.telegram.ui.Components.VerticalPositionAutoAnimator;
 import org.telegram.ui.Components.spoilers.SpoilersTextView;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -199,6 +202,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramTestPhoneHelper;
 import app.nicegram.RebirthHelper;
+import timber.log.Timber;
 
 @SuppressLint("HardwareIds")
 public class LoginActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
@@ -1693,6 +1697,15 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         ConnectionsManager.getInstance(currentAccount).updateDcSettings();
         MessagesController.getInstance(currentAccount).loadAppConfig();
         MessagesController.getInstance(currentAccount).checkPeerColors(false);
+
+        // region NG Gold theme
+        try {
+            File myFile = NicegramThemeApplyHelper.INSTANCE.getNgGoldTheme(ApplicationLoader.getFilesDirFixed(), LoginActivity.this.getContext());
+            Theme.applyThemeFile(myFile, NicegramThemeApplyHelper.THEME_NAME, null, false);
+        } catch (IOException e) {
+           Timber.e(e);
+        }
+        // endregion NG Gold theme
 
         if (res.future_auth_token != null) {
             AuthTokensHelper.saveLogInToken(res);

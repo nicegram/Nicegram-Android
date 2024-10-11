@@ -185,7 +185,20 @@ public class Utilities {
         }
         return 0;
     }
+    //region ng fix for MAC host
+    public static Integer parseIntIgnoreHost(CharSequence value) {
+        if (value == null) {
+            return 0;
+        }
 
+        Matcher matcher = pattern.matcher(value);
+        if (matcher.find()) {
+            return Integer.valueOf(matcher.group());
+        }
+
+        return 0;
+    }
+    //endregion
     private static int parseInt(final String s) {
         int num = 0;
         boolean negative = true;

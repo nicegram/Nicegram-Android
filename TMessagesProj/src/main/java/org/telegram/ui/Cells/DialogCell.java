@@ -54,7 +54,6 @@ import androidx.collection.LongSparseArray;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 
-import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.rep_placements.domain.entity.PinnedChatsPlacement;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.FutureTarget;
@@ -142,7 +141,8 @@ import timber.log.Timber;
 public class DialogCell extends BaseCell implements StoriesListPlaceProvider.AvatarOverlaysView {
 
 
-    private Map<String, Drawable> badgesMap = new HashMap<>();
+    private final Map<String, Drawable> badgesMap = new HashMap<>();
+    private final List<String> badgesUrlLoading = new ArrayList<>();
 
     public boolean drawingForBlur;
     public boolean collapsed;
@@ -3886,7 +3886,12 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             } else if (customDialog != null && customDialog.placement != null && customDialog.placement.getBadgeImage() != null) { // ng
                 String url = customDialog.placement.getBadgeImage();
                 Drawable badgeDrawable = badgesMap.get(url);
-                if (badgeDrawable != null) {
+                if (badgeDrawable != null &&
+                        (badgeDrawable instanceof BitmapDrawable &&
+                        ((BitmapDrawable) badgeDrawable).getBitmap() != null &&
+                        !((BitmapDrawable) badgeDrawable).getBitmap().isRecycled())) {
+                    Timber.d("badgeImage cached %s", url);
+
                     int heightInPx = dp(18f);
                     int intrinsicWidth = badgeDrawable.getIntrinsicWidth();
                     int intrinsicHeight = badgeDrawable.getIntrinsicHeight();
@@ -3896,7 +3901,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     int startY = dp(13f);
                     badgeDrawable.setBounds(startX, startY, startX + scaledWidthInPx, startY + heightInPx);
                     badgeDrawable.draw(canvas);
-                } else {
+                } else if (!badgesUrlLoading.contains(url)) {
+                    Timber.d("badgeImage not cached %s", url);
+                    badgesUrlLoading.add(url);
+
                     new Thread(() -> {
                         FutureTarget<Drawable> futureTarget =
                                 Glide.with(getContext())
@@ -3909,6 +3917,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                             new Handler(Looper.getMainLooper()).post(this::invalidate);
                         } catch (InterruptedException | ExecutionException e) {
                             Timber.e(e);
+                            badgesUrlLoading.remove(url);
                         } finally {
                             Glide.with(getContext()).clear(futureTarget);
                         }

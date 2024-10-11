@@ -69,6 +69,7 @@ import app.nicegram.NicegramGroupCollectHelper;
 import app.nicegram.NicegramSpeechToTextHelper;
 import com.appvillis.nicegram.ReviewHelper;
 import com.appvillis.feature_nicegram_client.domain.NicegramClientOnboardingUseCase;
+import com.appvillis.nicegram.TgBridgeDependenciesHolder;
 import com.appvillis.nicegram.network.NicegramNetwork;
 import com.appvillis.nicegram_wallet.module_bridge.InChatResultManager;
 import com.appvillis.nicegram_wallet.wallet_scanqr.QrResultEmitter;
@@ -211,6 +212,9 @@ public class ApplicationLoader extends Application {
     public InChatResultManager inChatResultManager;
     @Inject
     public NicegramDeepLinksHelper nicegramDeepLinksHelper;
+
+    @Inject
+    public TgBridgeDependenciesHolder tgBridgeDependenciesHolder;
 
     private static ApplicationLoader appInstance = null;
     public static ApplicationLoader getInstance() {
@@ -743,6 +747,7 @@ public class ApplicationLoader extends Application {
         NicegramWalletHelper.INSTANCE.setQrResultEmitter(qrResultEmitter);
         NicegramIcWalletHelper.INSTANCE.setInChatResultManager(inChatResultManager);
         NicegramDeepLinksHelper.Companion.setInstance(nicegramDeepLinksHelper);
+        TgBridgeDependenciesHolder.Companion.setInstance(tgBridgeDependenciesHolder);
 
         AnalyticsHelper.INSTANCE.logEvent(getUserStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
         new Handler().postDelayed(() -> NicegramNetwork.INSTANCE.getSettings(UserConfig.getInstance(UserConfig.selectedAccount).clientUserId), 3000);

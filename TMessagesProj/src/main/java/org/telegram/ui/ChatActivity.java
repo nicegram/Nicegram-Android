@@ -126,6 +126,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import com.appvillis.feature_ai_chat.domain.UseResultManager;
 import com.appvillis.feature_ai_chat.domain.TgPendingMessage;
 import com.appvillis.feature_ai_chat.domain.entity.AiCommand;
 import com.appvillis.feature_nicegram_client.presentation.NgMenuButton;
@@ -40159,6 +40160,30 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
         ngMenuButton.onAiBotClick(() -> {
             AnalyticsHelper.INSTANCE.logEvent("chatbot_open_from_chat", null);
             AiChatBotHelper.INSTANCE.launchAiBot(getParentActivity(), UserConfig.getInstance(UserConfig.selectedAccount).clientUserId, true);
+
+            AiChatBotHelper.INSTANCE.setUseResultListener(new UseResultManager.UseResultLister() {
+                @Override
+                public void onTextResultUse(@NonNull String text) {
+                    chatActivityEnterView.setFieldText(text);
+                }
+
+                @Override
+                public void onImgResultUse(@NonNull String path) {
+                    ArrayList<MediaController.PhotoEntry> photos = new ArrayList<>();
+                    photos.add(new MediaController.PhotoEntry(
+                            0,
+                            0,
+                            0L,
+                            path,
+                            0,
+                            false,
+                            0,
+                            0,
+                            0L
+                    ));
+                    sendPhotosGroup(photos, true, 0, false);
+                }
+            });
         });
         ngMenuButton.onWalletBotClick(() -> {
             FileLoader fileLoader = AccountInstance.getInstance(currentAccount).getFileLoader();

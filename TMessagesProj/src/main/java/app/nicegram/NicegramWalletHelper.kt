@@ -9,7 +9,6 @@ import com.appvillis.nicegram_wallet.wallet_storage.domain.GetCurrentWalletUseCa
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager
 import com.appvillis.rep_user.domain.GetUserStatusUseCase
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 
 object NicegramWalletHelper {
     var tcDeeplinkManager: TcDeeplinkManager? = null
@@ -27,7 +26,12 @@ object NicegramWalletHelper {
         val getCurrentWalletUseCase = getCurrentWalletUseCase ?: return
 
         if (getUserStatusUseCase.isUserLoggedIn && getCurrentWalletUseCase.currentWallet != null) {
-            MainActivity.launchWalletStart(context, telegramId)
+            appScope?.let { appScope ->
+                verificationManager?.doActionAfterVerification(scope = appScope, action = {
+                    MainActivity.launchWalletStart(context, telegramId)
+                })
+            }
+            MainActivity.launchPassCode(context, telegramId)
         } else {
             MainActivity.launchAssistant(context, telegramId)
         }

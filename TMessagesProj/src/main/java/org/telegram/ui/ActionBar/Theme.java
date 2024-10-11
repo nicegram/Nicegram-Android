@@ -8136,7 +8136,7 @@ public class Theme {
                                         value = Utilities.parseInt(param);
                                     }
                                 } else {
-                                    value = Utilities.parseInt(param);
+                                    value = Utilities.parseIntIgnoreHost(param); // ng fix for MAC host
                                 }
                                 int keyFromString = ThemeColors.stringKeyToInt(key);
                                 if (keyFromString >= 0) {

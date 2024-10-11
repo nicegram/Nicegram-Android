@@ -63,6 +63,14 @@ import androidx.core.content.FileProvider;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.util.Consumer;
 
+import com.google.android.gms.safetynet.SafetyNet;
+
+import com.appvillis.nicegram.TgBridgeDependenciesHolder;
+import com.appvillis.nicegram_wallet.wallet_dapps.domain.BrowserRequest;
+import com.appvillis.nicegram_wallet.wallet_dapps.domain.TgBrowserBridgeFactory;
+import com.appvillis.nicegram_wallet.wallet_dapps.presentation.js_inject.NgWalletInjectHelper;
+import com.google.android.exoplayer2.util.Log;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -139,6 +147,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import kotlin.Unit;
+import kotlin.jvm.functions.Function1;
+import kotlinx.coroutines.CoroutineScope;
+import timber.log.Timber;
 
 public abstract class BotWebViewContainer extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
     private final static String DURGER_KING_USERNAME = "DurgerKingBot";
@@ -2666,6 +2679,10 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
         public boolean dangerousUrl;
 
         public DangerousWebWarning currentWarning;
+
+        private TgBrowserBridgeFactory.TgBrowserBridge tgBrowserBridge;
+        private CoroutineScope tgBrowserBridgeScope = new TgBrowserBridgeFactory.BrowserScope();
+
         public boolean isPageLoaded() {
             return isPageLoaded;
         }
@@ -2687,8 +2704,20 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
 
         public MyWebView(Context context, boolean bot) {
             super(context);
+            tgBrowserBridge = TgBridgeDependenciesHolder.Companion.getTgBrowserBridgeFactory().createBrowserBridge(tgBrowserBridgeScope);
+            tgBrowserBridge.init();
+            TgBridgeDependenciesHolder.Companion.getBrowserResponseManager().addReceiver(NgWalletInjectHelper.INSTANCE.createBrowserEventsReceiver(this), this.toString());
+
             this.bot = bot;
             d("created new webview " + this);
+
+            NgWalletInjectHelper.INSTANCE.onWebViewInit(this, this.toString(), browserRequest -> {
+                tgBrowserBridge.onIncomingRequestEvm(browserRequest, null);
+                return null;
+            }, browserRequest -> {
+                tgBrowserBridge.onIncomingRequestTon(browserRequest);
+                return null;
+            });
 
             setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
@@ -2713,9 +2742,9 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                         builder.setTitleMultipleLines(true);
                         builder.setTitle(formattedUrl);
                         builder.setItems(new CharSequence[]{
-                            LocaleController.getString(R.string.OpenInTelegramBrowser),
-                            LocaleController.getString(R.string.OpenInSystemBrowser),
-                            LocaleController.getString(R.string.Copy)
+                                LocaleController.getString(R.string.OpenInTelegramBrowser),
+                                LocaleController.getString(R.string.OpenInSystemBrowser),
+                                LocaleController.getString(R.string.Copy)
                         }, (dialog, which) -> {
                             if (which == 0) {
                                 loadUrl(url);
@@ -2815,6 +2844,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
             setWebViewClient(new WebViewClient() {
 
                 private boolean firstRequest = true;
+
                 @Nullable
                 @Override
                 public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
@@ -2832,19 +2862,19 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                                 connection = (HttpURLConnection) connectionUrl.openConnection();
                                 connection.setRequestMethod(request.getMethod());
                                 if (request.getRequestHeaders() != null) {
-                                    for (Map.Entry<String, String> e: request.getRequestHeaders().entrySet()) {
+                                    for (Map.Entry<String, String> e : request.getRequestHeaders().entrySet()) {
                                         connection.setRequestProperty(e.getKey(), e.getValue());
                                     }
                                 }
                                 connection.connect();
                                 HashMap<String, String> headers = new HashMap<>();
-                                for (Map.Entry<String, List<String>> e: connection.getHeaderFields().entrySet()) {
+                                for (Map.Entry<String, List<String>> e : connection.getHeaderFields().entrySet()) {
                                     final String key = e.getKey();
                                     if (key == null) continue;
                                     headers.put(key, TextUtils.join(", ", e.getValue()));
                                     if (!dangerousUrl && (
-                                        "cross-origin-resource-policy".equals(key.toLowerCase()) ||
-                                        "cross-origin-embedder-policy".equals(key.toLowerCase())
+                                            "cross-origin-resource-policy".equals(key.toLowerCase()) ||
+                                                    "cross-origin-embedder-policy".equals(key.toLowerCase())
                                     )) {
                                         for (String val : e.getValue()) {
                                             if (val == null) continue;
@@ -2876,12 +2906,12 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                                 }
                                 firstRequest = false;
                                 return new WebResourceResponse(
-                                    contentType,
-                                    encoding,
-                                    connection.getResponseCode(),
-                                    connection.getResponseMessage(),
-                                    headers,
-                                    connection.getInputStream()
+                                        contentType,
+                                        encoding,
+                                        connection.getResponseCode(),
+                                        connection.getResponseMessage(),
+                                        headers,
+                                        connection.getInputStream()
                                 );
                             } catch (Exception e) {
                                 FileLog.e(e);
@@ -3020,7 +3050,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                             return false;
                         }
                         if (MessagesController.getInstance(botWebViewContainer.currentAccount).webAppAllowedProtocols != null &&
-                            MessagesController.getInstance(botWebViewContainer.currentAccount).webAppAllowedProtocols.contains(uriNew.getScheme())) {
+                                MessagesController.getInstance(botWebViewContainer.currentAccount).webAppAllowedProtocols.contains(uriNew.getScheme())) {
                             if (opener != null) {
                                 if (botWebViewContainer.delegate != null) {
                                     botWebViewContainer.delegate.onInstantClose();
@@ -3034,13 +3064,13 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                             }
                             botWebViewContainer.onOpenUri(uriNew);
                         }
-                        d("shouldOverrideUrlLoading("+url+") = true");
+                        d("shouldOverrideUrlLoading(" + url + ") = true");
                         return true;
                     }
                     if (uriNew != null) {
                         currentUrl = uriNew.toString();
                     }
-                    d("shouldOverrideUrlLoading("+url+") = false");
+                    d("shouldOverrideUrlLoading(" + url + ") = false");
                     return false;
                 }
 
@@ -3067,6 +3097,8 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                     }
                     super.onPageStarted(view, url, favicon);
                     injectedJS = false;
+
+                    NgWalletInjectHelper.INSTANCE.onPageStarted(view);
                 }
 
                 @Override
@@ -3164,7 +3196,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
 
                 @Override
                 public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                    d("onReceivedSslError: error="+error+" url=" + (error == null ? null : error.getUrl()));
+                    d("onReceivedSslError: error=" + error + " url=" + (error == null ? null : error.getUrl()));
                     handler.cancel();
                     super.onReceivedSslError(view, handler, error);
                 }
@@ -3354,18 +3386,18 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                             if (lastPermissionsDialog != null) {
                                 lastPermissionsDialog = null;
 
-                                if (allow) {
-                                    botWebViewContainer.runWithPermissions(new String[] {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, allowSystem -> {
-                                        callback.invoke(origin, allowSystem, false);
-                                        if (allowSystem) {
-                                            botWebViewContainer.hasUserPermissions = true;
-                                        }
-                                    });
-                                } else {
-                                    callback.invoke(origin, false, false);
+                                    if (allow) {
+                                        botWebViewContainer.runWithPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, allowSystem -> {
+                                            callback.invoke(origin, allowSystem, false);
+                                            if (allowSystem) {
+                                                botWebViewContainer.hasUserPermissions = true;
+                                            }
+                                        });
+                                    } else {
+                                        callback.invoke(origin, false, false);
+                                    }
                                 }
                             }
-                        }
                     );
                     lastPermissionsDialog.show();
                 }
@@ -3384,7 +3416,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
                 @Override
                 public void onPermissionRequest(PermissionRequest request) {
-                    if (lastPermissionsDialog != null){
+                    if (lastPermissionsDialog != null) {
                         lastPermissionsDialog.dismiss();
                         lastPermissionsDialog = null;
                     }
@@ -3408,60 +3440,60 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                         switch (resource) {
                             case PermissionRequest.RESOURCE_AUDIO_CAPTURE: {
                                 lastPermissionsDialog = AlertsCreator.createWebViewPermissionsRequestDialog(
-                                    botWebViewContainer.parentActivity,
-                                    botWebViewContainer.resourcesProvider,
-                                    new String[] {Manifest.permission.RECORD_AUDIO},
-                                    R.raw.permission_request_microphone,
-                                    formatString(bot ? R.string.BotWebViewRequestMicrophonePermission : R.string.WebViewRequestMicrophonePermission, name),
-                                    formatString(bot ? R.string.BotWebViewRequestMicrophonePermissionWithHint : R.string.WebViewRequestMicrophonePermissionWithHint, name),
-                                    allow -> {
-                                        if (lastPermissionsDialog != null) {
-                                            lastPermissionsDialog = null;
+                                        botWebViewContainer.parentActivity,
+                                        botWebViewContainer.resourcesProvider,
+                                        new String[]{Manifest.permission.RECORD_AUDIO},
+                                        R.raw.permission_request_microphone,
+                                        formatString(bot ? R.string.BotWebViewRequestMicrophonePermission : R.string.WebViewRequestMicrophonePermission, name),
+                                        formatString(bot ? R.string.BotWebViewRequestMicrophonePermissionWithHint : R.string.WebViewRequestMicrophonePermissionWithHint, name),
+                                        allow -> {
+                                            if (lastPermissionsDialog != null) {
+                                                lastPermissionsDialog = null;
 
-                                            if (allow) {
-                                                botWebViewContainer.runWithPermissions(new String[] {Manifest.permission.RECORD_AUDIO}, allowSystem -> {
-                                                    if (allowSystem) {
-                                                        request.grant(new String[] {resource});
-                                                        botWebViewContainer.hasUserPermissions = true;
-                                                    } else {
-                                                        request.deny();
-                                                    }
-                                                });
-                                            } else {
-                                                request.deny();
+                                                if (allow) {
+                                                    botWebViewContainer.runWithPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, allowSystem -> {
+                                                        if (allowSystem) {
+                                                            request.grant(new String[]{resource});
+                                                            botWebViewContainer.hasUserPermissions = true;
+                                                        } else {
+                                                            request.deny();
+                                                        }
+                                                    });
+                                                } else {
+                                                    request.deny();
+                                                }
                                             }
                                         }
-                                    }
                                 );
                                 lastPermissionsDialog.show();
                                 break;
                             }
                             case PermissionRequest.RESOURCE_VIDEO_CAPTURE: {
                                 lastPermissionsDialog = AlertsCreator.createWebViewPermissionsRequestDialog(
-                                    botWebViewContainer.parentActivity,
-                                    botWebViewContainer.resourcesProvider,
-                                    new String[] {Manifest.permission.CAMERA},
-                                    R.raw.permission_request_camera,
-                                    formatString(bot ? R.string.BotWebViewRequestCameraPermission : R.string.WebViewRequestCameraPermission, name),
-                                    formatString(bot ? R.string.BotWebViewRequestCameraPermissionWithHint : R.string.WebViewRequestCameraPermissionWithHint, name),
-                                    allow -> {
-                                        if (lastPermissionsDialog != null) {
-                                            lastPermissionsDialog = null;
+                                        botWebViewContainer.parentActivity,
+                                        botWebViewContainer.resourcesProvider,
+                                        new String[]{Manifest.permission.CAMERA},
+                                        R.raw.permission_request_camera,
+                                        formatString(bot ? R.string.BotWebViewRequestCameraPermission : R.string.WebViewRequestCameraPermission, name),
+                                        formatString(bot ? R.string.BotWebViewRequestCameraPermissionWithHint : R.string.WebViewRequestCameraPermissionWithHint, name),
+                                        allow -> {
+                                            if (lastPermissionsDialog != null) {
+                                                lastPermissionsDialog = null;
 
-                                            if (allow) {
-                                                botWebViewContainer.runWithPermissions(new String[] {Manifest.permission.CAMERA}, allowSystem -> {
-                                                    if (allowSystem) {
-                                                        request.grant(new String[] {resource});
-                                                        botWebViewContainer.hasUserPermissions = true;
-                                                    } else {
-                                                        request.deny();
-                                                    }
-                                                });
-                                            } else {
-                                                request.deny();
+                                                if (allow) {
+                                                    botWebViewContainer.runWithPermissions(new String[]{Manifest.permission.CAMERA}, allowSystem -> {
+                                                        if (allowSystem) {
+                                                            request.grant(new String[]{resource});
+                                                            botWebViewContainer.hasUserPermissions = true;
+                                                        } else {
+                                                            request.deny();
+                                                        }
+                                                    });
+                                                } else {
+                                                    request.deny();
+                                                }
                                             }
                                         }
-                                    }
                                 );
                                 lastPermissionsDialog.show();
                                 break;
@@ -3473,30 +3505,30 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                                     (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resources[1]) || PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resources[1]))
                     ) {
                         lastPermissionsDialog = AlertsCreator.createWebViewPermissionsRequestDialog(
-                            botWebViewContainer.parentActivity,
-                            botWebViewContainer.resourcesProvider,
-                            new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
-                            R.raw.permission_request_camera,
-                            formatString(bot ? R.string.BotWebViewRequestCameraMicPermission : R.string.WebViewRequestCameraMicPermission, name),
-                            formatString(bot ? R.string.BotWebViewRequestCameraMicPermissionWithHint : R.string.WebViewRequestCameraMicPermissionWithHint, name),
-                            allow -> {
-                                if (lastPermissionsDialog != null) {
-                                    lastPermissionsDialog = null;
+                                botWebViewContainer.parentActivity,
+                                botWebViewContainer.resourcesProvider,
+                                new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
+                                R.raw.permission_request_camera,
+                                formatString(bot ? R.string.BotWebViewRequestCameraMicPermission : R.string.WebViewRequestCameraMicPermission, name),
+                                formatString(bot ? R.string.BotWebViewRequestCameraMicPermissionWithHint : R.string.WebViewRequestCameraMicPermissionWithHint, name),
+                                allow -> {
+                                    if (lastPermissionsDialog != null) {
+                                        lastPermissionsDialog = null;
 
-                                    if (allow) {
-                                        botWebViewContainer.runWithPermissions(new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, allowSystem -> {
-                                            if (allowSystem) {
-                                                request.grant(new String[] {resources[0], resources[1]});
-                                                botWebViewContainer.hasUserPermissions = true;
-                                            } else {
-                                                request.deny();
-                                            }
-                                        });
-                                    } else {
-                                        request.deny();
+                                        if (allow) {
+                                            botWebViewContainer.runWithPermissions(new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, allowSystem -> {
+                                                if (allowSystem) {
+                                                    request.grant(new String[]{resources[0], resources[1]});
+                                                    botWebViewContainer.hasUserPermissions = true;
+                                                } else {
+                                                    request.deny();
+                                                }
+                                            });
+                                        } else {
+                                            request.deny();
+                                        }
                                     }
                                 }
-                            }
                         );
                         lastPermissionsDialog.show();
                     }
@@ -3543,7 +3575,8 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                                 if (!TextUtils.isEmpty(ext))
                                     return lastSegment;
                             }
-                        } catch (Exception e) {}
+                        } catch (Exception e) {
+                        }
                         return URLUtil.guessFileName(url, contentDisposition, mimeType);
                     }
 
@@ -3595,7 +3628,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                                     download.run();
                                 }
                             }
-                        } catch(Exception e){
+                        } catch (Exception e) {
                             FileLog.e(e);
                         }
                     }

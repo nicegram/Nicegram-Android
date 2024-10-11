@@ -221,14 +221,16 @@ public static final ** CREATOR;
 #wallet
 -keep class com.appvillis.nicegram_wallet.wallet_walletconnect.data.WcWalletDelegate** { *;}
 -keep class com.appvillis.nicegram_wallet.wallet_web3auth.domain.JwtDecoder** { *;}
--keep class com.appvillis.nicegram_wallet.wallet_storage.data.WalletRepositoryImpl$WalletJson { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_storage.data.WalletRepositoryImpl$* { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_dapps.data.DAppsPermissionsStorageImpl$SavedPermission { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_web3auth.data.DeviceShareStorageImpl$Share { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_dapps_storage.data.FavoriteDAppsRepositoryImpl$FavoriteDApp { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl { *; }
--keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl$WalletConfigJson { *; }
--keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl$WalletConfigJson$InfoButtonsJson { *; }
--keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl$WalletConfigJson$SupportButtonsJson { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl$* { *; }
+-keep class com.appvillis.core_network.NicegramEvmSwapApi$* { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcController { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcController$* { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_external_ton.domain.TcConnectionsManager$TcConnection { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TonDAppManifest { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcLink { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcLink$TcR { *; }
