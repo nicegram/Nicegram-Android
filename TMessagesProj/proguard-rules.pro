@@ -128,12 +128,12 @@
 -keep class com.appvillis.core_network.data.** { *; }
 -keep class com.appvillis.feature_nuhub.data.NuTagsRepositoryImpl$NuTagJson { *; }
 -keep class com.appvillis.feature_nicegram_assistant.data.SpecialOffersRepositoryImpl$SpecialOfferJson { *; }
--keep class com.appvillis.feature_nicegram_client.data.CommonRemoteConfigRepoImpl$DialogsListBannerJson { *; }
--keep class com.appvillis.feature_nicegram_client.data.CommonRemoteConfigRepoImpl$DialogsListBannerJson$DialogsListBannerLocaleJson { *; }
--keep class com.appvillis.feature_nicegram_client.data.CommonRemoteConfigRepoImpl$ReferralDrawJson { *; }
--keep class com.appvillis.feature_nicegram_client.data.CommonRemoteConfigRepoImpl$ReferralDrawJson$ReferralDrawLocaleJson { *; }
--keep class com.appvillis.feature_nicegram_client.data.CommonRemoteConfigRepoImpl$SharingConfigJson { *; }
--keep class com.appvillis.feature_nicegram_client.data.CommonRemoteConfigRepoImpl$SharingPopupJson { *; }
+-keep class com.appvillis.feature_nicegram_client.data.NgClientRemoteConfigRepoImpl$DialogsListBannerJson { *; }
+-keep class com.appvillis.feature_nicegram_client.data.NgClientRemoteConfigRepoImpl$DialogsListBannerJson$DialogsListBannerLocaleJson { *; }
+-keep class com.appvillis.feature_nicegram_client.data.NgClientRemoteConfigRepoImpl$ReferralDrawJson { *; }
+-keep class com.appvillis.feature_nicegram_client.data.NgClientRemoteConfigRepoImpl$ReferralDrawJson$ReferralDrawLocaleJson { *; }
+-keep class com.appvillis.feature_nicegram_client.data.NgClientRemoteConfigRepoImpl$SharingConfigJson { *; }
+-keep class com.appvillis.feature_nicegram_client.data.NgClientRemoteConfigRepoImpl$SharingPopupJson { *; }
 -keep class com.appvillis.rep_placements.data.PlacementsRepoImpl { *; }
 -keep class com.appvillis.rep_placements.data.PlacementsRepoImpl$* { *; }
 #-keep class com.appvillis.feature_ai_chat.data.FirebaseRemoteConfigRepo$.** { *; }
@@ -228,6 +228,8 @@ public static final ** CREATOR;
 -keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl$* { *; }
 -keep class com.appvillis.core_network.NicegramEvmSwapApi$* { *; }
+-keep class com.appvillis.core_network.NicegramTonSwapApi$* { *; }
+-keep class com.appvillis.core_network.ApiService$* { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcController { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcController$* { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_external_ton.domain.TcConnectionsManager$TcConnection { *; }
@@ -238,8 +240,8 @@ public static final ** CREATOR;
 -keep class com.appvillis.nicegram_wallet.wallet_tonconnect.data.TonHelperImpl$SendTransactionPayloadJson { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_tonconnect.data.TonHelperImpl$SendTransactionPayloadJson$Message { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_tonconnect.data.TcSseManagerImpl$SseMessageJson { *; }
--keep class com.appvillis.core_network.NicegramSwapApi.** { *; }
--keep class com.appvillis.core_network.NicegramSwapApi$* { *; }
+
+-keep class com.appvillis.feature_attention_economy.domain.entities.** { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_swap.data.SwapNetworkServiceImpl.** { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_swap.data.SwapNetworkServiceImpl$* { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_swap.data.SwapEthNetworkServiceImpl.** { *; }
@@ -305,3 +307,18 @@ public static final ** CREATOR;
 -dontwarn java.beans.Transient
 
 -keep class androidx.recyclerview.widget.PagerSnapHelper { *; }
+
+-dontwarn org.telegram.ui.LaunchActivity_GeneratedInjector
+-dontwarn org.telegram.ui.BasePermissionsActivity_GeneratedInjector
+# Keep your specific activity
+-keep class org.telegram.ui.LaunchActivity_GeneratedInjector
+-keep class org.telegram.ui.BasePermissionsActivity_GeneratedInjector
+
+# Keep Hilt-generated classes
+-keep,allowobfuscation @dagger.hilt.android.EarlyEntryPoint class *
+-keep,allowobfuscation @dagger.hilt.android.EntryPoint class *
+-keep,allowobfuscation @dagger.hilt.android.AndroidEntryPoint class *
+
+# Keep the Hilt generated code
+-keep,allowobfuscation class * extends dagger.hilt.internal.GeneratedComponent
+-keep,allowobfuscation class * extends dagger.hilt.internal.GeneratedEntryPoint

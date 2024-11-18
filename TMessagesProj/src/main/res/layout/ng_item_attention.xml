@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:paddingVertical="12dp"
+    android:paddingStart="12dp">
+
+    <FrameLayout
+        android:id="@+id/outlineContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:stateListAnimator="@animator/scale_state_list_animator"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent="0.8">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/contentBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#eee"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintWidth_default="percent"
+            app:layout_constraintWidth_percent="0.8">
+
+
+            <ImageView
+                android:id="@+id/image"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:importantForAccessibility="no"
+                android:scaleType="centerCrop"
+                app:layout_constraintDimensionRatio="304:130"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:src="@tools:sample/avatars" />
+
+            <LinearLayout
+                android:id="@+id/titleSubtitleContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="8.dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/image">
+
+                <TextView
+                    android:id="@+id/title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="6.dp"
+                    android:fontFamily="@font/sf_pro_text_semibold"
+                    android:includeFontPadding="false"
+                    tools:text="Title sample" />
+
+                <TextView
+                    android:id="@+id/subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="6.dp"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/sf_pro_text_regular"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="3sp"
+                    tools:text="@tools:sample/lorem" />
+
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/btnContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/att_btn_bg_top_2dp_bot_16dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
+        android:stateListAnimator="@animator/scale_state_list_animator"
+        app:layout_constraintEnd_toEndOf="@id/outlineContainer"
+        app:layout_constraintHeight_min="36dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/outlineContainer">
+
+        <TextView
+            android:id="@+id/btnText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:fontFamily="@font/sf_pro_text_medium"
+            android:includeFontPadding="false"
+            android:lineSpacingExtra="3sp"
+            android:textColor="#000"
+            tools:text="Sample button text" />
+
+        <!--<TextView
+            android:id="@+id/clickPoints"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/sf_pro_text_medium"
+            android:includeFontPadding="false"
+            android:lineSpacingExtra="3sp"
+            android:textColor="#000"
+            tools:text="100" />
+
+        <ImageView
+            android:id="@+id/clickPointsImg"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="2dp"
+            android:src="@drawable/att_coin_black" />-->
+
+    </LinearLayout>
+
+
+    <ImageView
+        android:id="@+id/buttonShare"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/outline_circle"
+        android:backgroundTint="#eee"
+        android:importantForAccessibility="no"
+        android:padding="3dp"
+        android:src="@drawable/att_share"
+        android:stateListAnimator="@animator/scale_state_list_animator_huge"
+        app:layout_constraintBottom_toBottomOf="@id/outlineContainer"
+        app:layout_constraintStart_toEndOf="@id/outlineContainer" />
+
+    <app.rive.runtime.kotlin.RiveAnimationView
+        android:id="@+id/riveView"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="8dp"
+        android:importantForAccessibility="no"
+        app:layout_constraintStart_toEndOf="@id/outlineContainer"
+        app:layout_constraintTop_toTopOf="@id/outlineContainer"
+        app:riveAutoPlay="false"
+        app:riveResource="@raw/att_coin_flip"
+        tools:background="@drawable/att_coin_x3" />
+
+    <View
+        android:id="@+id/coinClickView"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        app:layout_constraintBottom_toBottomOf="@id/riveView"
+        app:layout_constraintEnd_toEndOf="@id/riveView"
+        app:layout_constraintStart_toStartOf="@id/riveView"
+        app:layout_constraintTop_toTopOf="@id/riveView" />
+
+    <TextView
+        android:id="@+id/coinsAnimationText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/sf_pro_display_regular"
+        android:shadowColor="#000"
+        android:shadowDx="0"
+        android:shadowDy="0"
+        android:shadowRadius="2"
+        android:textColor="#fff"
+        android:textSize="8dp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="@id/riveView"
+        app:layout_constraintEnd_toEndOf="@id/riveView"
+        app:layout_constraintStart_toStartOf="@id/riveView"
+        app:layout_constraintTop_toTopOf="@id/riveView"
+        tools:ignore="SpUsage"
+        tools:text="+9999" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -8,6 +8,7 @@
 
 package org.telegram.ui.Adapters;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.PorterDuff;
@@ -29,9 +30,10 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
+import com.appvillis.feature_attention_economy.domain.entities.AttAd;
+import com.appvillis.feature_attention_economy.presentation.ui.banner.AttBannerDialogsView;
 import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
 import com.appvillis.nicegram.AnalyticsHelper;
-import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
 import com.appvillis.rep_placements.domain.entity.PinnedChatsPlacement;
 
@@ -91,6 +93,7 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 
 import app.nicegram.PrefsHelper;
+import app.nicegram.ui.DialogsAttHelper;
 
 public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements DialogCell.DialogCellDelegate {
     public final static int VIEW_TYPE_DIALOG = 0,
@@ -113,7 +116,8 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             VIEW_TYPE_FOLDER_UPDATE_HINT = 17,
             VIEW_TYPE_STORIES = 18,
             VIEW_TYPE_ARCHIVE_FULLSCREEN = 19,
-            VIEW_TYPE_NG_PIN = 100000;
+            VIEW_TYPE_NG_PIN = 100000,
+            VIEW_TYPE_NG_ATT = 100001;
 
     private final MutableIntObjectMap<PinnedChatsPlacement> ngPinnedPlacementMap = new MutableIntObjectMap<>();
     private Context mContext;
@@ -167,6 +171,21 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             this.preloader = new DialogsPreloader();
         }
         this.requestPeerType = requestPeerType;
+        initAtt();
+    }
+
+    private DialogsAttHelper dialogsAttHelper;
+    private void initAtt() {
+        dialogsAttHelper = new DialogsAttHelper(mContext, parentFragment, () -> {
+            this.updateList(null);
+            return null;
+        });
+    }
+
+    @Nullable
+    public AttAd getAttAd() {
+        if (dialogsAttHelper == null) return null;
+        return dialogsAttHelper.getAd();
     }
 
     public void setRecyclerListView(RecyclerListView recyclerListView) {
@@ -362,7 +381,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 return false;
             }
 
-            if (viewType == VIEW_TYPE_NG_PIN) {
+            if (viewType == VIEW_TYPE_NG_PIN || viewType == VIEW_TYPE_NG_ATT) {
                 return true;
             }
             if (viewType == VIEW_TYPE_DIALOG) {
@@ -583,6 +602,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         View view;
         switch (viewType) {
+            case VIEW_TYPE_NG_ATT:
+                view = new AttBannerDialogsView(mContext);
+                break;
             case VIEW_TYPE_NG_PIN:
                 DialogCell ngPinChatCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
                 ngPinChatCell.setArchivedPullAnimation(pullForegroundDrawable);
@@ -812,6 +834,14 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int i) {
         switch (holder.getItemViewType()) {
+            case VIEW_TYPE_NG_ATT: {
+                View view = holder.itemView;
+                if (view instanceof AttBannerDialogsView) {
+                    AttAd ad = dialogsAttHelper.getAd();
+                    if (ad != null) ((AttBannerDialogsView) view).setAd(ad, Theme.getColor(Theme.key_chats_name), Theme.getColor(Theme.key_chats_message), Theme.getColor(Theme.key_chats_pinnedIcon));
+                }
+                break;
+            }
             case VIEW_TYPE_NG_PIN: {
                 DialogCell cell = (DialogCell) holder.itemView;
                 DialogCell.CustomDialog customDialog = new DialogCell.CustomDialog();
@@ -1568,6 +1598,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 break;
             }
         }
+        AttAd ad = dialogsAttHelper.getAd();
+        if (ad != null) hasAnyShowingNgPin = true;
+
         if (hasAnyShowingNgPin) {
             int positionToInsert = 0;
             if (SharedConfig.archiveHidden) {
@@ -1587,6 +1620,12 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     positionToInsert++;
                 }
             }
+            ad = dialogsAttHelper.getAd();
+            if (ad != null) {
+                itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_NG_ATT));
+                positionToInsert++;
+            }
+
             itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_SHADOW));
         }
 

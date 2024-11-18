@@ -372,6 +372,10 @@
                 <data android:scheme="https"/>
                 <data android:scheme="http"/>
                 <data android:host="nicegram.app"/>
+
+                <data android:pathPrefix="/deeplink"/>
+                <data android:pathPrefix="/tc"/>
+                <data android:pathPrefix="/wc"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
@@ -515,6 +519,14 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="org.telegram.messenger.ACTION_MESSAGE_HEARD"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".CopyCodeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.telegram.messenger.ACTION_COPY_CODE"/>
             </intent-filter>
         </receiver>
 

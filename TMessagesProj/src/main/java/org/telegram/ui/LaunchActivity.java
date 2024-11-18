@@ -29,7 +29,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -41,6 +40,7 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.os.Parcelable;
 import android.os.StatFs;
 import android.os.StrictMode;
@@ -58,7 +58,6 @@ import android.util.SparseIntArray;
 import android.view.ActionMode;
 import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
@@ -85,13 +84,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.appvillis.assistant_core.MainActivity;
-import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo;
+import com.appvillis.assistant_core.PopupActivity;
+import com.appvillis.feature_attention_economy.presentation.ui.AttOverlayManager;
+import com.appvillis.feature_auth.presentation.destinations.AuthLoadingPopupScreenDestination;
 import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository;
 import com.appvillis.feature_nicegram_client.NicegramClientHelper;
-import com.appvillis.feature_nicegram_client.domain.CommonRemoteConfigRepo;
-import com.appvillis.feature_nicegram_client.presentation.onboarding.NicegramOnboardingViewModel;
-import com.appvillis.feature_nicegram_client.presentation.onboarding.OnboardingAdapter;
-import com.appvillis.feature_nicegram_client.presentation.onboarding.OnboardingItem;
+import com.appvillis.feature_nicegram_client.domain.NgClientRemoteConfigRepo;
 import com.appvillis.lib_android_base.Intents;
 import com.appvillis.nicegram.AnalyticsHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
@@ -137,6 +135,7 @@ import org.telegram.messenger.PushListenerController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.SharedPrefsHelper;
 import org.telegram.messenger.TopicsController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
@@ -247,7 +246,9 @@ import app.nicegram.AppIconNicegramBulletinLayout;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramIntroActivity;
 import app.nicegram.NicegramWalletHelper;
+import dagger.hilt.android.AndroidEntryPoint;
 
+@AndroidEntryPoint
 public class LaunchActivity extends BasePermissionsActivity implements INavigationLayout.INavigationLayoutDelegate, NotificationCenter.NotificationCenterDelegate, DialogsActivity.DialogsActivityDelegate {
     public final static String EXTRA_FORCE_NOT_INTERNAL_APPS = "force_not_internal_apps";
     public final static Pattern PREFIX_T_ME_PATTERN = Pattern.compile("^(?:http(?:s|)://|)([A-z0-9-]+?)\\.t\\.me");
@@ -1006,6 +1007,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         BackupAgent.requestBackup(this);
 
         RestrictedLanguagesSelectActivity.checkRestrictedLanguages(false);
+
+        initNg();
     }
 
     private void showAttachMenuBot(TLRPC.TL_attachMenuBot attachMenuBot, String startApp, boolean sidemenu) {
@@ -3136,11 +3139,21 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 } else if (open_settings == 7) {
                     bulletinText = "Logs enabled.";
                     ApplicationLoader.applicationContext.getSharedPreferences("systemConfig", Context.MODE_PRIVATE).edit().putBoolean("logsEnabled", BuildVars.LOGS_ENABLED = true).commit();
+                    Thread.setDefaultUncaughtExceptionHandler(BuildVars.LOGS_ENABLED ? (thread, exception) -> {
+                        if (thread == Looper.getMainLooper().getThread()) {
+                            FileLog.fatal(exception, true);
+                        }
+                    } : null);
                 } else if (open_settings == 8) {
                     ProfileActivity.sendLogs(LaunchActivity.this, false);
                 } else if (open_settings == 9) {
                     bulletinText = "Logs disabled.";
                     ApplicationLoader.applicationContext.getSharedPreferences("systemConfig", Context.MODE_PRIVATE).edit().putBoolean("logsEnabled", BuildVars.LOGS_ENABLED = false).commit();
+                    Thread.setDefaultUncaughtExceptionHandler(BuildVars.LOGS_ENABLED ? (thread, exception) -> {
+                        if (thread == Looper.getMainLooper().getThread()) {
+                            FileLog.fatal(exception, true);
+                        }
+                    } : null);
                 }
 
                 if (bulletinText != null) {
@@ -3602,7 +3615,16 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 try (ZipInputStream zis = new ZipInputStream(getContentResolver().openInputStream(uri))) {
                     ZipEntry zipEntry = zis.getNextEntry();
                     while (zipEntry != null) {
-                        if (zipEntry.getName().endsWith(".txt")) {
+                        String name = zipEntry.getName();
+                        if (name == null) {
+                            zipEntry = zis.getNextEntry();
+                            continue;
+                        }
+                        int idx = name.lastIndexOf("/");
+                        if (idx >= 0) {
+                            name = name.substring(idx + 1);
+                        }
+                        if (name.endsWith(".txt")) {
                             try {
                                 int linesCount = 0;
                                 BufferedReader r = new BufferedReader(new InputStreamReader(zis));
@@ -4121,6 +4143,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                             } else if (attachBot.request_write_access || forceNotInternalForApps) {
                                                 AtomicBoolean allowWrite = new AtomicBoolean(true);
                                                 AlertsCreator.createBotLaunchAlert(getLastFragment(), allowWrite, user, () -> {
+                                                    SharedPrefsHelper.setWebViewConfirmShown(currentAccount, peerId, true);
+
                                                     attachBot.inactive = false;
                                                     attachBot.request_write_access = !allowWrite.get();
 
@@ -4159,7 +4183,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         if (botAppStartParam != null) {
                             TLRPC.User user = MessagesController.getInstance(intentAccount).getUser(peerId);
                             if (user != null && user.bot) {
-                                MessagesController.getInstance(intentAccount).openApp(null, user, 0, progress);
+                                MessagesController.getInstance(intentAccount).openApp(null, user, botAppStartParam, 0, progress);
                             }
                         } else if (setAsAttachBot != null && attachMenuBotToOpen == null) {
                             TLRPC.User user = MessagesController.getInstance(intentAccount).getUser(peerId);
@@ -4470,6 +4494,12 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                         } else {
                                             Bundle bundle = new Bundle();
                                             bundle.putLong("chat_id", -dialog_id);
+                                            if (voicechat != null) {
+                                                bundle.putString("voicechat", voicechat);
+                                            }
+                                            if (videochat) {
+                                                bundle.putBoolean("videochat", true);
+                                            }
                                             presentFragment(TopicsFragment.getTopicsOrChat(this, bundle));
                                             try {
                                                 dismissLoading.run();
@@ -5223,6 +5253,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         if (getBottomSheetTabs() != null && getBottomSheetTabs().tryReopenTab(props) != null) {
                             return;
                         }
+                        SharedPrefsHelper.setWebViewConfirmShown(currentAccount, user.id, true);
                         if (AndroidUtilities.isTablet()) {
                             BotWebViewSheet sheet = new BotWebViewSheet(LaunchActivity.this, lastFragment != null ? lastFragment.getResourceProvider() : null);
                             sheet.setWasOpenedByLinkIntent(openedTelegram);
@@ -5946,6 +5977,20 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                             if (photosEditorOpened) {
                                 sendingText = null;
                             }
+                        } else if (videoPath != null) {
+                            if (sendingText != null && sendingText.length() <= 1024) {
+                                captionToSend = sendingText;
+                                sendingText = null;
+                            }
+                            ArrayList<String> arrayList = new ArrayList<>();
+                            arrayList.add(videoPath);
+                            SendMessagesHelper.prepareSendingDocuments(accountInstance, arrayList, arrayList, null, captionToSend, null, did, replyToMsg, replyToMsg, null, null, null, notify, scheduleDate, null, null, 0, 0, false);
+                        } else if (photoPathsArray != null && photoPathsArray.size() > 0 && !photosEditorOpened) {
+                            if (sendingText != null && sendingText.length() <= 1024 && photoPathsArray.size() == 1) {
+                                photoPathsArray.get(0).caption = sendingText;
+                                sendingText = null;
+                            }
+                            SendMessagesHelper.prepareSendingMedia(accountInstance, photoPathsArray, did, replyToMsg, replyToMsg, null, null, false, false, null, notify, scheduleDate, 0, false, null, null, 0, 0, false);
                         }
                     } else {
                         if (videoPath != null) {
@@ -7665,6 +7710,10 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @Override
     public void onBackPressed() {
+        if (AttOverlayManager.INSTANCE.getOverlayVisible()) {
+            AttOverlayManager.INSTANCE.removeOverlay(this);
+            return;
+        }
         if (FloatingDebugController.onBackPressed()) {
             return;
         }
@@ -8581,7 +8630,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             AnalyticsHelper.INSTANCE.logEvent("assistant_open_from_deeplink", null);
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
             MainActivity.Companion.launchAssistant(this, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
-        } else if (url.equals("ncg://assistant-auth")) {
+        } else if (url.startsWith("ncg://assistant-auth")) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
             MainActivity.Companion.launchAssistantAuth(this, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
         } else if (url.equals("ncg://nicegramPremium")) {
@@ -8612,12 +8661,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } else if (url.equals("ncg://profit")) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            MainActivity.Companion.launchProfit(this, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
         } else if (url.equals("ncg://refferaldraw")) {
             if (NicegramClientHelper.INSTANCE.getReferralDrawDataUseCase() == null) return;
-            CommonRemoteConfigRepo.ReferralDrawInfo info = NicegramClientHelper.INSTANCE.getReferralDrawDataUseCase().invoke();
+            NgClientRemoteConfigRepo.ReferralDrawInfo info = NicegramClientHelper.INSTANCE.getReferralDrawDataUseCase().invoke();
             if (info == null) return;
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
             MainActivity.Companion.launchWebViewPopup(this, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId, info.getUrl());
@@ -8631,6 +8677,10 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             MainActivity.Companion.launchAvatarGenerationSplash(this, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
         } else if (url.equals("ncg://wallet/home")) {
             NicegramWalletHelper.INSTANCE.launchWalletIfPossible(this, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
+        } else if (url.equals("ncg://tgAuthSuccess")) {
+            PopupActivity.Companion.launchRoute(this, AuthLoadingPopupScreenDestination.INSTANCE.getRoute());
+        } else if (url.equals("ncg://attention-economy")) {
+            MainActivity.Companion.launchAtt(this, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
         }
     }
 
@@ -8645,6 +8695,15 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     }
 
     // ng
+    private void initNg() {
+        AttOverlayManager.INSTANCE.setNavigator(new AttOverlayManager.AttOverlayNavigator() {
+            @Override
+            public void openAtt() {
+                MainActivity.Companion.launchAtt(LaunchActivity.this, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
+            }
+        });
+    }
+
     private BroadcastReceiver assistantResumeReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {

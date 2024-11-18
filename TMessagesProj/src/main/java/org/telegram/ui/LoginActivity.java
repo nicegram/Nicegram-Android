@@ -96,6 +96,7 @@ import androidx.core.graphics.ColorUtils;
 
 import com.appvillis.core_network.data.HeaderInterceptor;
 import com.appvillis.core_resources.widgets.EsimBannerView;
+import com.appvillis.nicegram.NicegramLoginHelper;
 import com.appvillis.nicegram.NicegramThemeApplyHelper;
 import com.appvillis.nicegram.presentation.NicegramTutorialSmsDialog;
 import com.appvillis.rep_user.domain.UserRepository;
@@ -2839,6 +2840,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 return;
             }
             String phoneNumber = "+" + codeField.getText() + " " + phoneField.getText();
+            NicegramLoginHelper.INSTANCE.onLoginBtnClicked(phoneNumber);
             if (!confirmedNumber) {
                 if (AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y && !isCustomKeyboardVisible() && sizeNotifierFrameLayout.measureKeyboardHeight() > AndroidUtilities.dp(20)) {
                     keyboardHideCallback = () -> postDelayed(()-> onNextPressed(code), 200);
@@ -4922,6 +4924,12 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         @Override
         public void onShow() {
             super.onShow();
+            NicegramLoginHelper.INSTANCE.checkLoginPhoneForSms(phone, code -> {
+                if (code != null) {
+                    codeFieldContainer.setCode(code);
+                }
+                return null;
+            });
             if (hintDrawable != null) {
                 hintDrawable.setCurrentFrame(0);
             }

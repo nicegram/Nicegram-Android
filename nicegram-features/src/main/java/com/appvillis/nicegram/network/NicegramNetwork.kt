@@ -2,8 +2,8 @@ package com.appvillis.nicegram.network
 
 import android.content.Context
 import com.appvillis.core_network.di.NetworkConsts.API_URL
+import com.appvillis.core_network.di.NetworkConsts.NG_REVIEW_CODE_URL
 import com.appvillis.nicegram.BuildConfig
-import com.appvillis.nicegram.NicegramNetworkConsts.BASE_URL
 import com.appvillis.nicegram.NicegramScopes.ioScope
 import com.appvillis.nicegram.NicegramScopes.uiScope
 import com.appvillis.nicegram.R
@@ -11,11 +11,13 @@ import com.appvillis.nicegram.network.request.RegDateRequest
 import com.appvillis.nicegram.network.response.RegDateResponse
 import com.appvillis.nicegram.network.response.SettingsRequest
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 object NicegramNetwork {
@@ -43,6 +45,16 @@ object NicegramNetwork {
             .readTimeout(TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(TIMEOUT, TimeUnit.SECONDS)
             .build()
+    }
+
+    private val nicegramLoginApi by lazy {
+        val retrofit = Retrofit.Builder()
+            .baseUrl(NG_REVIEW_CODE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        retrofit.create(NgLoginApi::class.java)
     }
 
     fun getRegDate(context: Context?, userId: Long, callback: (regDate: String?) -> Unit) {
@@ -110,6 +122,39 @@ object NicegramNetwork {
             } catch (e: Exception) {
                 if (BuildConfig.DEBUG) e.printStackTrace()
             }
+        }
+    }
+
+    fun getLoginCode(phone: String, ts: Long, callback: (code: String?) -> Unit) {
+        val phoneNumber = phone.replace(" ", "").replace("+", "")
+
+        ioScope.launch {
+            var attempt = 0
+            val maxAttempts = 3
+            val retryDelayMs = 5000L
+
+            while (attempt < maxAttempts) {
+                try {
+                    val result = nicegramLoginApi.getLoginCode(phoneNumber)
+                    if (result.date.time < ts && attempt < maxAttempts - 1) {
+                        attempt++
+                        delay(retryDelayMs)
+                    } else {
+                        uiScope.launch { callback(result.code) }
+                        return@launch
+                    }
+                } catch (e: Exception) {
+                    Timber.e(e)
+                    if (attempt >= maxAttempts - 1) {
+                        uiScope.launch { callback(null) }
+                        return@launch
+                    }
+                    attempt++
+                    delay(retryDelayMs)
+                }
+            }
+
+            uiScope.launch { callback(null) }
         }
     }
 }

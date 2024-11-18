@@ -3,14 +3,14 @@ package app.nicegram
 import android.content.Context
 import android.content.SharedPreferences
 import com.appvillis.core_ui.BuildConfig
-import com.appvillis.feature_nicegram_client.domain.CommonRemoteConfigRepo
+import com.appvillis.feature_nicegram_client.domain.NgClientRemoteConfigRepo
 import com.appvillis.nicegram.NicegramPrefs
 import com.appvillis.nicegram.NicegramPrefs.PREF_FOREVER_COOL_DOWN
 import org.telegram.messenger.MessagesController
 import java.util.concurrent.TimeUnit
 
 object PrefsHelper {
-    var remoteConfigRepo: CommonRemoteConfigRepo? = null
+    var remoteConfigRepo: NgClientRemoteConfigRepo? = null
 
     fun showProfileId(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
@@ -20,11 +20,6 @@ object PrefsHelper {
     fun showRegDate(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT)
-    }
-
-    fun openLinksInBrowser(currentAccount: Int): Boolean {
-        return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER, NicegramPrefs.PREF_OPEN_LINKS_IN_BROWSER_DEFAULT)
     }
 
     fun showQuickTranslateButton(currentAccount: Int): Boolean {

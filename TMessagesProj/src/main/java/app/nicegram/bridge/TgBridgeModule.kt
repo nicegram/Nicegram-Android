@@ -2,6 +2,7 @@ package app.nicegram.bridge
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import com.appvillis.core_network.domain.UserLocaleProvider
 import com.appvillis.nicegram_wallet.module_bridge.ContactMessageSender
 import com.appvillis.nicegram_wallet.module_bridge.QrCodeRenderer
 import com.appvillis.nicegram_wallet.wallet_contacts.domain.ContactsRetriever
@@ -13,6 +14,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import org.telegram.messenger.LocaleController
+import java.util.Locale
 import javax.inject.Singleton
 
 @Module
@@ -61,5 +64,18 @@ object TgBridgeModule {
                 return null
             }
         }
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserLocaleProvider(): UserLocaleProvider = object : UserLocaleProvider {
+        override val lang: String?
+            get() = try {
+                LocaleController.getInstance().currentLocale?.language
+            } catch (e: Exception) {
+                Locale.getDefault().language
+            } catch (e: UnsatisfiedLinkError) {
+                Locale.getDefault().language
+            }
     }
 }

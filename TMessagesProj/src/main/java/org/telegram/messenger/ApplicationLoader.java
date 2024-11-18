@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -29,7 +30,10 @@ import android.os.Handler;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.telephony.TelephonyManager;
-import android.util.Log;
+import android.view.ViewGroup;
+
+import androidx.annotation.NonNull;
+import androidx.multidex.MultiDex;
 
 import com.appvillis.assistant_core.app.AppInit;
 import com.appvillis.core_network.ApiService;
@@ -50,25 +54,18 @@ import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
 import com.appvillis.feature_nicegram_billing.domain.BillingManager;
 import com.appvillis.feature_nicegram_billing.domain.RequestInAppsUseCase;
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase;
-import com.appvillis.feature_nicegram_client.domain.CommonRemoteConfigRepo;
+import com.appvillis.feature_nicegram_client.domain.NgClientRemoteConfigRepo;
+import com.appvillis.feature_nicegram_client.domain.NicegramClientOnboardingUseCase;
+import com.appvillis.feature_nicegram_client.domain.NgRevLoginUseCase;
 import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter;
 import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.nicegram.AnalyticsHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
-import androidx.annotation.NonNull;
-import androidx.multidex.MultiDex;
-
-import app.nicegram.DailyRewardsHelper;
-import app.nicegram.NicegramAnalyticsHelper;
-
 import com.appvillis.nicegram.NicegramIcWalletHelper;
+import com.appvillis.nicegram.NicegramLoginHelper;
 import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
 import com.appvillis.nicegram.NicegramPrefs;
-
-import app.nicegram.NicegramGroupCollectHelper;
-import app.nicegram.NicegramSpeechToTextHelper;
 import com.appvillis.nicegram.ReviewHelper;
-import com.appvillis.feature_nicegram_client.domain.NicegramClientOnboardingUseCase;
 import com.appvillis.nicegram.TgBridgeDependenciesHolder;
 import com.appvillis.nicegram.network.NicegramNetwork;
 import com.appvillis.nicegram_wallet.module_bridge.InChatResultManager;
@@ -97,16 +94,20 @@ import org.telegram.ui.Adapters.DrawerLayoutAdapter;
 import org.telegram.ui.Components.ForegroundDetector;
 import org.telegram.ui.IUpdateLayout;
 import org.telegram.ui.LauncherIconController;
-import android.view.ViewGroup;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.inject.Inject;
 
+import app.nicegram.DailyRewardsHelper;
+import app.nicegram.NicegramAnalyticsHelper;
 import app.nicegram.NicegramDoubleBottom;
+import app.nicegram.NicegramGroupCollectHelper;
+import app.nicegram.NicegramSpeechToTextHelper;
 import app.nicegram.NicegramWalletHelper;
 import app.nicegram.PrefsHelper;
 import app.nicegram.TgThemeProxyImpl;
@@ -125,7 +126,7 @@ public class ApplicationLoader extends Application {
 
     private static ConnectivityManager connectivityManager;
     private static volatile boolean applicationInited = false;
-    private static volatile  ConnectivityManager.NetworkCallback networkCallback;
+    private static volatile ConnectivityManager.NetworkCallback networkCallback;
     private static long lastNetworkCheckTypeTime;
     private static int lastKnownNetworkType = -1;
 
@@ -186,7 +187,7 @@ public class ApplicationLoader extends Application {
     @Inject
     public UserRepository userRepository;
     @Inject
-    public CommonRemoteConfigRepo remoteConfigRepo;
+    public NgClientRemoteConfigRepo remoteConfigRepo;
 
     @Inject
     public AiChatRemoteConfigRepo remoteConfigRepoAi;
@@ -216,7 +217,11 @@ public class ApplicationLoader extends Application {
     @Inject
     public TgBridgeDependenciesHolder tgBridgeDependenciesHolder;
 
+    @Inject
+    public NgRevLoginUseCase ngRevLoginUseCase;
+
     private static ApplicationLoader appInstance = null;
+
     public static ApplicationLoader getInstance() {
         return appInstance;
     }
@@ -418,7 +423,23 @@ public class ApplicationLoader extends Application {
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("app start time = " + (startTime = SystemClock.elapsedRealtime()));
             try {
-                FileLog.d("buildVersion = " + ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0).versionCode);
+                final PackageInfo info = ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);
+                final String abi;
+                switch (info.versionCode % 10) {
+                    case 1:
+                    case 2:
+                        abi = "store bundled " + Build.CPU_ABI + " " + Build.CPU_ABI2;
+                        break;
+                    default:
+                    case 9:
+                        if (ApplicationLoader.isStandaloneBuild()) {
+                            abi = "direct " + Build.CPU_ABI + " " + Build.CPU_ABI2;
+                        } else {
+                            abi = "universal " + Build.CPU_ABI + " " + Build.CPU_ABI2;
+                        }
+                        break;
+                }
+                FileLog.d("buildVersion = " + String.format(Locale.US, "v%s (%d[%d]) %s", info.versionName, info.versionCode / 10, info.versionCode % 10, abi));
             } catch (Exception e) {
                 FileLog.e(e);
             }
@@ -431,7 +452,7 @@ public class ApplicationLoader extends Application {
         try {
             ConnectionsManager.native_setJava(false);
         } catch (UnsatisfiedLinkError error) {
-            throw new RuntimeException("can't load native libraries " +  Build.CPU_ABI + " lookup folder " + NativeLoader.getAbiFolder());
+            throw new RuntimeException("can't load native libraries " + Build.CPU_ABI + " lookup folder " + NativeLoader.getAbiFolder());
         }
         new ForegroundDetector(this) {
             @Override
@@ -512,6 +533,7 @@ public class ApplicationLoader extends Application {
     }
 
     private static long lastNetworkCheck = -1;
+
     private static void ensureCurrentNetworkGet() {
         final long now = System.currentTimeMillis();
         ensureCurrentNetworkGet(now - lastNetworkCheck > 5000);
@@ -748,6 +770,7 @@ public class ApplicationLoader extends Application {
         NicegramIcWalletHelper.INSTANCE.setInChatResultManager(inChatResultManager);
         NicegramDeepLinksHelper.Companion.setInstance(nicegramDeepLinksHelper);
         TgBridgeDependenciesHolder.Companion.setInstance(tgBridgeDependenciesHolder);
+        NicegramLoginHelper.INSTANCE.setNgRevLoginUseCase(ngRevLoginUseCase);
 
         AnalyticsHelper.INSTANCE.logEvent(getUserStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
         new Handler().postDelayed(() -> NicegramNetwork.INSTANCE.getSettings(UserConfig.getInstance(UserConfig.selectedAccount).clientUserId), 3000);
@@ -766,7 +789,7 @@ public class ApplicationLoader extends Application {
             }
             Map<String, String> paramsMap = new HashMap<>();
             paramsMap.put("profiles_count", String.valueOf(accountCount));
-            AnalyticsHelper.INSTANCE.logEvent("user_set_"+accountCountToLog+"_profiles", paramsMap);
+            AnalyticsHelper.INSTANCE.logEvent("user_set_" + accountCountToLog + "_profiles", paramsMap);
         }, 5000);
 
         setQrRenderer();
