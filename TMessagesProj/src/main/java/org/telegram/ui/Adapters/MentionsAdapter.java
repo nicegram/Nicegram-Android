@@ -70,6 +70,7 @@ import java.util.Iterator;
 
 import app.nicegram.MentionAllHelper;
 import app.nicegram.QuickRepliesHelper;
+import app.nicegram.ui.AttVH;
 
 public class MentionsAdapter extends RecyclerListView.SelectionAdapter implements NotificationCenter.NotificationCenterDelegate {
 
@@ -1152,6 +1153,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             final ArrayList<Long> users = new ArrayList<>();
             if (messageObjects != null) {
                 for (int a = 0; a < Math.min(100, messageObjects.size()); a++) {
+                    if (messageObjects.get(a) instanceof AttVH.AttMessageObject) continue;
+
                     long from_id = messageObjects.get(a).getFromChatId();
                     if (from_id > 0 && !users.contains(from_id)) {
                         users.add(from_id);

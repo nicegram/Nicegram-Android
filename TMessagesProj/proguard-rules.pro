@@ -310,15 +310,25 @@ public static final ** CREATOR;
 
 -dontwarn org.telegram.ui.LaunchActivity_GeneratedInjector
 -dontwarn org.telegram.ui.BasePermissionsActivity_GeneratedInjector
-# Keep your specific activity
 -keep class org.telegram.ui.LaunchActivity_GeneratedInjector
 -keep class org.telegram.ui.BasePermissionsActivity_GeneratedInjector
 
-# Keep Hilt-generated classes
 -keep,allowobfuscation @dagger.hilt.android.EarlyEntryPoint class *
 -keep,allowobfuscation @dagger.hilt.android.EntryPoint class *
 -keep,allowobfuscation @dagger.hilt.android.AndroidEntryPoint class *
 
-# Keep the Hilt generated code
 -keep,allowobfuscation class * extends dagger.hilt.internal.GeneratedComponent
 -keep,allowobfuscation class * extends dagger.hilt.internal.GeneratedEntryPoint
+
+-ignorewarnings
+-keepattributes *Annotation*
+-keepattributes Exceptions
+-keepattributes InnerClasses
+-keepattributes Signature
+-keepattributes SourceFile,LineNumberTable
+-keep class com.huawei.hianalytics.**{*;}
+-keep class com.huawei.updatesdk.**{*;}
+-keep class com.huawei.hms.**{*;}
+
+-keep class com.appvillis.nicegram_wallet.wallet_swap.data.SwapNetworkServiceImpl.** { *; }
+-keep class app.nicegram.HuaweiBillingManagerImpl$* { *; }

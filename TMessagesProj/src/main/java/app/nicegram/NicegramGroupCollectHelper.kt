@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Base64
+import app.nicegram.ui.AttVH
 import com.appvillis.feature_nicegram_client.NicegramClientHelper
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase.*
@@ -53,6 +54,8 @@ object NicegramGroupCollectHelper {
         }
         var msgForLangDetect: String? = null
         for (message in messages) { // searching for message with length of 16 or more to detect channel lang
+            if (message is AttVH.AttMessageObject) continue
+
             if (!message.isOut) {
                 val textToTranslate = getTranslationTextCallback(message)
                 if (textToTranslate != null && textToTranslate.length >= 16) {
@@ -61,8 +64,10 @@ object NicegramGroupCollectHelper {
                 }
             }
         }
-        if (msgForLangDetect == null && !messages.isEmpty()) {
+        if (msgForLangDetect == null && messages.isNotEmpty()) {
             for (message in messages) {
+                if (message is AttVH.AttMessageObject) continue
+
                 if (!message.isOut) {
                     val textToTranslate = getTranslationTextCallback(message)
                     if (textToTranslate != null) {

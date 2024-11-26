@@ -171,6 +171,8 @@ android {
 
         multiDexEnabled true
 
+        manifestPlaceholders = [MAPS_API_KEY: properties.getProperty("googleMapsApiKey") ?: ""]
+
         vectorDrawables.generatedDensities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi']
 
         externalNativeBuild {

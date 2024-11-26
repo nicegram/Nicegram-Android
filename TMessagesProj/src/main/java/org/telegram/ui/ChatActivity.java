@@ -11820,6 +11820,8 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
         if (firstMessage.messageOwner.date >= date && lastMessage.messageOwner.date <= date || lastMessage.messageOwner.date >= date && endReached[0]) {
             for (int a = messages.size() - 1; a >= 0; a--) {
                 MessageObject message = messages.get(a);
+                if (message instanceof AttVH.AttMessageObject) continue;
+
                 if (message.messageOwner.date >= date && message.getId() != 0) {
                     scrollToMessageId(message.getId(), 0, false, message.getDialogId() == mergeDialogId ? 1 : 0, true, 0);
                     break;
@@ -19487,6 +19489,8 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
             }
             for (int a = 0; a < messArr.size(); a++) {
                 MessageObject obj = messArr.get(a);
+                if (obj instanceof AttVH.AttMessageObject) continue;
+
                 if (obj.replyMessageObject != null) {
                     repliesMessagesDict.put(obj.replyMessageObject.getId(), obj.replyMessageObject);
                     addReplyMessageOwner(obj, 0);
@@ -20452,6 +20456,8 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                 threadMaxInboxReadId = inbox;
                 for (int a = 0, size2 = messages.size(); a < size2; a++) {
                     MessageObject obj = messages.get(a);
+                    if (obj instanceof AttVH.AttMessageObject) continue;
+
                     int messageId = obj.getId();
                     if (!obj.isOut() && messageId > 0 && messageId <= threadMaxInboxReadId) {
                         if (!obj.isUnread()) {
@@ -28174,7 +28180,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
             primaryMessage = null;
             message = null;
         }
-        if (message == null) {
+        if (message == null || message instanceof AttVH.AttMessageObject) {
             return false;
         }
         if (!single && (message.messageOwner.action instanceof TLRPC.TL_messageActionGiftPremium || message.messageOwner.action instanceof TLRPC.TL_messageActionGiftCode || message.messageOwner.action instanceof TLRPC.TL_messageActionGiftStars)) {
@@ -35037,6 +35043,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                 }
 
                 MessageObject message = messages.get(position - messagesStartRow);
+                if (message instanceof AttVH.AttMessageObject) return;
                 View view = holder.itemView;
                 if (message != null && message.messageOwner != null && message.messageOwner.media_unread && message.messageOwner.mentioned) {
                     if (!inPreviewMode && chatMode == 0) {

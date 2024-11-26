@@ -49,7 +49,6 @@ class HuaweiBillingManagerImpl(
 ) : BillingManager, BillingManager.BillingResultActivity.BillingResultListener {
     companion object {
         private const val TAG = "HuaweiBillingManagerImpl"
-        private const val PREF_HAS_GIFTED_PREM = "PREF_HAS_GIFTED_PREM"
         private const val PURCHASE_REQUEST_CODE = 11110
         private const val PREF_SENT_PURCHASE_TOKENS = "PREF_SENT_PURCHASE_TOKENS"
     }
@@ -61,18 +60,9 @@ class HuaweiBillingManagerImpl(
     private val _eventBillingIsReady = MutableStateFlow<Boolean>(false)
     override val eventBillingIsReady: StateFlow<Boolean> get() = _eventBillingIsReady
 
+
     override val userHasActiveSub: Boolean
         get() = currentSubPurchaseToken != null
-
-    private var _userHasGiftedPremium = false
-    override val userHasActiveSub: Boolean
-        get() = _userHasGiftedPremium
-
-    override var userHasGiftedPremium: Boolean
-        get() = false
-        set(value) {
-            _userHasGiftedPremium = value
-        }
 
     private val _userSubState = MutableStateFlow(this.userHasActiveSub)
     override val userSubState: StateFlow<Boolean>
@@ -89,7 +79,6 @@ class HuaweiBillingManagerImpl(
     override fun initializeBilling() {
         Log.d("BILLING_TEST", "initializeBilling")
         connectToBilling()
-        _userHasGiftedPremium = preferences.getBoolean(PREF_HAS_GIFTED_PREM, false)
     }
 
     private fun connectToBilling() {
@@ -307,7 +296,7 @@ class HuaweiBillingManagerImpl(
 
         val req = PurchaseIntentReq()
         req.productId = storeInfo.id
-        req.priceType = if (_subIds.contains(storeInfo.id)) 2 else 0
+        req.priceType = (storeInfo as HuaweiStoreInfo).productInfo.priceType
         req.developerPayload = "test payload"
         val task = Iap.getIapClient(fragment.requireActivity()).createPurchaseIntent(req)
         task.addOnSuccessListener { result ->
@@ -460,7 +449,7 @@ class HuaweiBillingManagerImpl(
         }
     }
 
-    class HuaweiStoreInfo(private val productInfo: ProductInfo) : InApp.StoreInfo {
+    class HuaweiStoreInfo(val productInfo: ProductInfo) : InApp.StoreInfo {
         override val priceWithCurrency: String
             get() = productInfo.price
         override val id: String

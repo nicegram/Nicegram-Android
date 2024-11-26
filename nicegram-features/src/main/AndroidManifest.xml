@@ -3,13 +3,13 @@
     <application>
         <activity android:name="com.appvillis.feature_nicegram_client.presentation.premium.NicegramPremiumActivity"
             android:exported="false"
-            android:theme="@style/Theme.eSIM"
+            android:theme="@style/Theme.NgOpaque"
             android:screenOrientation="portrait"/>
 
         <activity android:name="com.appvillis.feature_nicegram_client.presentation.onboarding.NicegramOnboardingActivity"
             android:exported="false"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.eSIM"
+            android:theme="@style/Theme.NgOpaque"
             android:screenOrientation="portrait"/>
     </application>
 </manifest>

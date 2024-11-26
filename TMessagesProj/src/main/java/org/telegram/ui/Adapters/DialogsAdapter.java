@@ -837,7 +837,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             case VIEW_TYPE_NG_ATT: {
                 View view = holder.itemView;
                 if (view instanceof AttBannerDialogsView) {
-                    AttAd ad = dialogsAttHelper.getAd();
+                    AttAd ad = getAttAd();
                     if (ad != null) ((AttBannerDialogsView) view).setAd(ad, Theme.getColor(Theme.key_chats_name), Theme.getColor(Theme.key_chats_message), Theme.getColor(Theme.key_chats_pinnedIcon));
                 }
                 break;
@@ -1598,7 +1598,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 break;
             }
         }
-        AttAd ad = dialogsAttHelper.getAd();
+        AttAd ad = getAttAd();
         if (ad != null) hasAnyShowingNgPin = true;
 
         if (hasAnyShowingNgPin) {
@@ -1620,7 +1620,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     positionToInsert++;
                 }
             }
-            ad = dialogsAttHelper.getAd();
+            ad = getAttAd();
             if (ad != null) {
                 itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_NG_ATT));
                 positionToInsert++;

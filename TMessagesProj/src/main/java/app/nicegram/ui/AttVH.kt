@@ -22,5 +22,25 @@ class AttVH(val view: AttBannerChatView) : RecyclerListView.Holder(view) {
         override fun getId(): Int {
             return -1
         }
+
+        override fun getFromChatId(): Long {
+            return 0
+        }
+
+        override fun isUnread(): Boolean {
+            return false
+        }
+
+        override fun getGroupIdForUse(): Long {
+            return 0
+        }
+
+        override fun isOut(): Boolean {
+            return false
+        }
+
+        override fun isOutOwner(): Boolean {
+            return false
+        }
     }
 }

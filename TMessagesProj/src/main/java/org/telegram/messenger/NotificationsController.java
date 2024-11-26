@@ -96,6 +96,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 import app.nicegram.NicegramDoubleBottom;
+import app.nicegram.ui.AttVH;
 
 public class NotificationsController extends BaseController {
 
@@ -992,6 +993,8 @@ public class NotificationsController extends BaseController {
 
             for (int a = 0; a < messageObjects.size(); a++) {
                 MessageObject messageObject = messageObjects.get(a);
+                if (messageObject instanceof AttVH.AttMessageObject) continue;
+
                 if (messageObject.messageOwner != null && (messageObject.isImportedForward() ||
                         messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetMessagesTTL ||
                         messageObject.messageOwner.silent && (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionContactSignUp || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionUserJoined)) ||
