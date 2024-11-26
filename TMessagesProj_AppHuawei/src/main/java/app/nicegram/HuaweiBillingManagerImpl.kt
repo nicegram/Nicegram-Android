@@ -441,7 +441,7 @@ class HuaweiBillingManagerImpl(
             val json = preferences.getString(PREF_SENT_PURCHASE_TOKENS, null)
             val listType = object : TypeToken<List<String>?>() {}.type
             val result = gson.fromJson<List<String>>(json, listType)
-            Log.d("BILLING_TEST", "already sentTokens ${result.size} $result")
+            Timber.d("BILLING_TEST already sentTokens ${result.size} $result")
             return result
         } catch (e: Exception) {
             Timber.e(e)
