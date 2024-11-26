@@ -72,7 +72,7 @@ class HuaweiBillingManagerImpl(
     override val billingStateFlow: Flow<BillingManager.BillingState>
         get() = _billingStateFlow
 
-    private var _currentSubPurchaseToken: String? = "null"
+    private var _currentSubPurchaseToken: String? = null
     override val currentSubPurchaseToken
         get() = _currentSubPurchaseToken
 
@@ -275,6 +275,10 @@ class HuaweiBillingManagerImpl(
                 if (e is IOException) {
                     error = context.getString(R.string.Error_Network)
                 } else if (e is HttpException) {
+                    if (e.code() == 409) {
+                        Log.d("BILLING_TEST", "savePurchaseTokenAsSent")
+                        savePurchaseTokenAsSent(purchaseToken)
+                    }
                     error = context.getString(R.string.Error_Default) + " Code: ${e.code()}"
                 }
                 Log.e("BILLING_TEST", "error $error", e)
@@ -362,7 +366,7 @@ class HuaweiBillingManagerImpl(
                     Log.d("BILLING_TEST", "inAppPurchaseData $inAppPurchaseData")
                     Log.d("BILLING_TEST", "inAppPurchaseDataSignature $inAppPurchaseDataSignature")
 
-                    processPurchase(inAppPurchaseData, inAppPurchaseDataSignature)
+                    processPurchase(inAppPurchaseData, inAppPurchaseDataSignature, true)
                 }
 
                 else -> {
@@ -375,7 +379,7 @@ class HuaweiBillingManagerImpl(
         }
     }
 
-    private fun processPurchase(inAppPurchaseData: String, inAppPurchaseDataSignature: String) {
+    private fun processPurchase(inAppPurchaseData: String, inAppPurchaseDataSignature: String, emitSuccess: Boolean = false) {
         try {
             val inAppPurchaseDataBean = InAppPurchaseData(inAppPurchaseData)
             val purchaseState = inAppPurchaseDataBean.purchaseState
@@ -391,13 +395,15 @@ class HuaweiBillingManagerImpl(
 
                 _currentSubPurchaseToken = purchaseDataParsed.purchaseToken
                 _userSubState.value = this.userHasActiveSub
-                appCoroutineScope.launch {
-                    _billingStateFlow.emit(
-                        BillingManager.BillingState.Success(
-                            userBalanceRepository.gemBalance,
-                            true
+                if (emitSuccess) {
+                    appCoroutineScope.launch {
+                        _billingStateFlow.emit(
+                            BillingManager.BillingState.Success(
+                                userBalanceRepository.gemBalance,
+                                true
+                            )
                         )
-                    )
+                    }
                 }
 
                 sendPurchaseToServer(purchaseDataParsed.productId, inAppPurchaseDataBean.subscriptionId, purchaseDataParsed.purchaseToken, true)
@@ -440,13 +446,17 @@ class HuaweiBillingManagerImpl(
         return try {
             val json = preferences.getString(PREF_SENT_PURCHASE_TOKENS, null)
             val listType = object : TypeToken<List<String>?>() {}.type
-            val result = gson.fromJson<List<String>>(json, listType)
-            Timber.d("BILLING_TEST already sentTokens ${result.size} $result")
+            val result = gson.fromJson<List<String>>(json, listType) ?: listOf()
+            Log.d("BILLING_TEST", "already sentTokens ${result.size} $result")
             return result
         } catch (e: Exception) {
             Timber.e(e)
             listOf()
         }
+    }
+
+    override suspend fun sendSubToServer() {
+        // do not need, will be sent at query purchases
     }
 
     class HuaweiStoreInfo(val productInfo: ProductInfo) : InApp.StoreInfo {
