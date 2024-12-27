@@ -16,6 +16,8 @@ import android.view.Gravity;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 
+import com.appvillis.feature_nicegram_client.NicegramClientHelper;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.Emoji;
@@ -171,6 +173,7 @@ public class DrawerUserCell extends FrameLayout implements NotificationCenter.No
             return;
         }
         int counter = MessagesStorage.getInstance(accountNumber).getMainUnreadCount();
+        if (NicegramClientHelper.INSTANCE.getPreferences().getHideUnreadCounter()) counter = 0;   // ng hide Unread counter
         if (counter <= 0) {
             textView.setRightPadding(0);
             return;

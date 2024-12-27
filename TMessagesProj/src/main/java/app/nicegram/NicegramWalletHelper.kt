@@ -9,6 +9,7 @@ import com.appvillis.nicegram_wallet.wallet_storage.domain.GetCurrentWalletUseCa
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager
 import com.appvillis.rep_user.domain.GetUserStatusUseCase
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 
 object NicegramWalletHelper {
     var tcDeeplinkManager: TcDeeplinkManager? = null
@@ -21,30 +22,32 @@ object NicegramWalletHelper {
     fun isLoggedInAndHasWallet() =
         getUserStatusUseCase?.isUserLoggedIn == true && getCurrentWalletUseCase?.currentWallet != null
 
-    fun launchWalletIfPossible(context: Context, telegramId: Long) {
+    fun launchWalletIfPossible(context: Context) {
         val getUserStatusUseCase = getUserStatusUseCase ?: return
         val getCurrentWalletUseCase = getCurrentWalletUseCase ?: return
 
         if (getUserStatusUseCase.isUserLoggedIn && getCurrentWalletUseCase.currentWallet != null) {
             appScope?.let { appScope ->
                 verificationManager?.doActionAfterVerification(scope = appScope, action = {
-                    MainActivity.launchWalletStart(context, telegramId)
+                    delay(600)
+
+                    MainActivity.launchWalletStart(context)
                 })
             }
-            MainActivity.launchPassCode(context, telegramId)
+            MainActivity.launchPassCode(context)
         } else {
-            MainActivity.launchAssistant(context, telegramId)
+            MainActivity.launchAssistant(context)
         }
     }
 
-    fun openWcLink(wcLink: String, context: Context, telegramId: Long) {
+    fun openWcLink(wcLink: String, context: Context) {
         val getUserStatusUseCase = getUserStatusUseCase ?: return
         val getCurrentWalletUseCase = getCurrentWalletUseCase ?: return
 
         if (getUserStatusUseCase.isUserLoggedIn && getCurrentWalletUseCase.currentWallet != null) {
             qrResultEmitter?.emitResult(QrProcessResult.WcLink(wcLink))
         } else {
-            MainActivity.launchAssistant(context, telegramId)
+            MainActivity.launchAssistant(context)
         }
     }
 }

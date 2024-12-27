@@ -137,6 +137,7 @@
 -keep class com.appvillis.feature_nicegram_client.data.NgClientRemoteConfigRepoImpl$ReferralDrawJson$ReferralDrawLocaleJson { *; }
 -keep class com.appvillis.feature_nicegram_client.data.NgClientRemoteConfigRepoImpl$SharingConfigJson { *; }
 -keep class com.appvillis.feature_nicegram_client.data.NgClientRemoteConfigRepoImpl$SharingPopupJson { *; }
+-keep class com.appvillis.feature_nicegram_client.data.NgClientRemoteConfigRepoImpl$OnboardingConfigJson { *; }
 -keep class com.appvillis.rep_placements.data.PlacementsRepoImpl { *; }
 -keep class com.appvillis.rep_placements.data.PlacementsRepoImpl$* { *; }
 #-keep class com.appvillis.feature_ai_chat.data.FirebaseRemoteConfigRepo$.** { *; }
@@ -222,6 +223,8 @@ public static final ** CREATOR;
 #web3j end
 
 #wallet
+-keep class com.appvillis.nicegram_wallet.wallet_settings.data.RemoteBlockchainsRepositoryImpl$* { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_settings.domain.RemoteBlockchainsManager$* { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_walletconnect.data.WcWalletDelegate** { *;}
 -keep class com.appvillis.nicegram_wallet.wallet_web3auth.domain.JwtDecoder** { *;}
 -keep class com.appvillis.nicegram_wallet.wallet_storage.data.WalletRepositoryImpl$* { *; }

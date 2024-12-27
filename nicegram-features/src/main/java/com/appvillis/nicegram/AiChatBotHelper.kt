@@ -28,25 +28,25 @@ object AiChatBotHelper {
         useResultManager?.listener = listener
     }
 
-    fun launchAiBot(activity: Activity, telegramId: Long, dialog: Boolean) {
+    fun launchAiBot(activity: Activity, dialog: Boolean) {
         val getUserStatusUseCase = getUserStatusUseCase ?: return
         if (getUserStatusUseCase.isUserLoggedIn) {
             //if (dialog) MainActivity.launchAiBotDialog(null, null, activity, telegramId)
-            if (dialog) MainActivity.launchAiBot(activity, telegramId)
-            else MainActivity.launchAiBot(activity, telegramId)
+            if (dialog) MainActivity.launchAiBot(activity)
+            else MainActivity.launchAiBot(activity)
         } else {
             if (dialog) AuthNavHelper.authBack = true
-            MainActivity.launchAiGreetings(activity, telegramId)
+            MainActivity.launchAiGreetings(activity)
         }
     }
 
     private var topUpRequestJob: Job? = null
 
-    fun registerTopUpCallback(callbackActivity: Activity, telegramId: Long) {
+    fun registerTopUpCallback(callbackActivity: Activity) {
         val getBalanceTopUpRequestUseCase = getBalanceTopUpRequestUseCase ?: return
         topUpRequestJob = uiScope.launch {
             getBalanceTopUpRequestUseCase().collect {
-                MainActivity.launchAiTopUp(callbackActivity, false, telegramId)
+                MainActivity.launchAiTopUp(callbackActivity, false)
             }
         }
     }
@@ -60,13 +60,13 @@ object AiChatBotHelper {
         return getChatCommandsUseCase.contextCommands
     }
 
-    fun onContextCommandClick(activity: Activity, command: AiCommand, text: String, telegramId: Long) {
+    fun onContextCommandClick(activity: Activity, command: AiCommand, text: String) {
         val getUserStatusUseCase = getUserStatusUseCase ?: return
         if (getUserStatusUseCase.isUserLoggedIn) {
-            MainActivity.launchAiBotDialog(command, text, activity, telegramId)
+            MainActivity.launchAiBotDialog(command, text, activity)
         } else {
             AuthNavHelper.authBack = true
-            MainActivity.launchAiGreetings(activity, telegramId)
+            MainActivity.launchAiGreetings(activity)
         }
     }
 }

@@ -23,6 +23,7 @@ def modules = [
         'core-ui',
         'core-network',
         'core-markets',
+        'bridges',
         'feature-avatar-generator',
         'nicegram-wallet',
         'feature-attention-economy',

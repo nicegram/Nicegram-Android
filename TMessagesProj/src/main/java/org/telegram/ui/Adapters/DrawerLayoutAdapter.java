@@ -342,8 +342,8 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
             }
         }
         // region ng
-        Item ngWalletItem = new Item(100001, mContext.getText(R.string.NgWallet_Wallet), R.drawable.ng_logo_no_bg_black);
-        ngWalletItem.listener = v -> NicegramWalletHelper.INSTANCE.launchWalletIfPossible(mContext, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
+        Item ngWalletItem = new Item(100001, mContext.getText(R.string.NgWallet_SolanaWallet), R.drawable.ng_wallet_wallet_outline);
+        ngWalletItem.listener = v -> NicegramWalletHelper.INSTANCE.launchWalletIfPossible(mContext);
         items.add(ngWalletItem);
         // endregion
 

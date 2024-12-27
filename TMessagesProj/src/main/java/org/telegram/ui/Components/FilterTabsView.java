@@ -46,6 +46,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.feature_nicegram_client.NicegramClientHelper;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.LocaleController;
@@ -309,7 +311,7 @@ public class FilterTabsView extends FrameLayout {
             boolean animateCounterRemove = animateFromTabCount > 0 && currentTab.counter == 0 && animateTabCounter;
             boolean animateCounterReplace = animateFromTabCount > 0 && currentTab.counter > 0 && animateTabCounter;
 
-            if (currentTab.counter > 0 || animateCounterRemove) {
+            if (currentTab.counter > 0 && !NicegramClientHelper.INSTANCE.getPreferences().getHideUnreadCounter() || animateCounterRemove ) {
                 if (animateCounterRemove) {
                     counterText = String.format("%d", animateFromTabCount);
                 } else {

@@ -8,6 +8,7 @@
 
 package org.telegram.ui;
 
+import static android.view.View.LAYER_TYPE_HARDWARE;
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
@@ -130,6 +131,7 @@ import androidx.viewpager.widget.ViewPager;
 import com.appvillis.feature_ai_chat.domain.UseResultManager;
 import com.appvillis.feature_ai_chat.domain.TgPendingMessage;
 import com.appvillis.feature_ai_chat.domain.entity.AiCommand;
+import com.appvillis.feature_nicegram_client.NicegramClientHelper;
 import com.appvillis.feature_nicegram_client.presentation.NgMenuButton;
 import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.nicegram.AnalyticsHelper;
@@ -309,6 +311,7 @@ import app.nicegram.MentionAllHelper;
 import app.nicegram.NicegramPremiumSettingsActivity;
 import app.nicegram.PrefsHelper;
 import app.nicegram.ui.AttVH;
+import timber.log.Timber;
 
 @SuppressWarnings("unchecked")
 public class
@@ -1868,6 +1871,8 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
             if (!getMessagesController().premiumFeaturesBlocked() && getMessagesController().transcribeAudioTrialWeeklyNumber <= 0 && !getMessagesController().didPressTranscribeButtonEnough() && !getUserConfig().isPremium() && !TextUtils.isEmpty(message) && messages != null) {
                 for (int i = 1; i < Math.min(5, messages.size()); ++i) {
                     MessageObject msg = messages.get(i);
+                    if (msg instanceof AttVH.AttMessageObject) continue;
+
                     if (msg != null && !msg.isOutOwner() && (msg.isVoice() || msg.isRoundVideo()) && msg.isContentUnread()) {
                         TranscribeButton.showOffTranscribe(msg);
                     }
@@ -11534,7 +11539,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                     public void setVisibility(int visibility) {
                         super.setVisibility(visibility);
                         if (visibility == VISIBLE) {
-                            setLayerType(View.LAYER_TYPE_HARDWARE, null);
+                            setLayerType(LAYER_TYPE_HARDWARE, null);
                         }
                     }
 
@@ -12978,7 +12983,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
         }
         chatAttachAlert.enableDefaultMode();
         chatAttachAlert.init();
-        chatAttachAlert.getCommentTextView().setText(chatActivityEnterView.getFieldText());
+        chatAttachAlert.getCommentView().setText(chatActivityEnterView.getFieldText());
         chatAttachAlert.parentThemeDelegate = themeDelegate;
         showDialog(chatAttachAlert);
     }
@@ -23670,7 +23675,9 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                 } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGameScore) {
                     messageObject.generateGameMessageText(null);
                 } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSent) {
-                    messageObject.generatePaymentSentMessageText(null);
+                    messageObject.generatePaymentSentMessageText(null, false);
+                }else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSentMe) {
+                    messageObject.generatePaymentSentMessageText(null, true);
                 }
             }
 
@@ -24706,7 +24713,9 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                     if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGameScore) {
                         messageObject.generateGameMessageText(null);
                     } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSent) {
-                        messageObject.generatePaymentSentMessageText(null);
+                        messageObject.generatePaymentSentMessageText(null, false);
+                    } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSentMe) {
+                        messageObject.generatePaymentSentMessageText(null, true);
                     }
                 }
                 if (old.isWebpage() && messageObject.isWebpage()) {
@@ -27882,6 +27891,8 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
     public void onResume() {
         super.onResume();
 
+        NicegramClientHelper.INSTANCE.tryToApplyGrayscaleFilter(fragmentView, true, false);
+
         try {
             AndroidUtilities.runOnUIThread(() -> NicegramGroupCollectHelper.INSTANCE.tryToCollectChannelInfo(
                     currentAccount,
@@ -29214,7 +29225,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                             icons.add(R.drawable.msg_link);
                         }
                         // region ng restricted from context menu
-                        if ((getUserConfig().clientUserId != selectedObject.messageOwner.from_id.user_id) &&// isn't your message
+                        if (!(selectedObject instanceof AttVH.AttMessageObject) && (getUserConfig().clientUserId!=selectedObject.messageOwner.from_id.user_id) &&// isn't your message
                                 (!ChatObject.isChannel(currentChat) || currentChat.megagroup) &&
                                 currentChat != null &&
                                 (currentChat.creator || currentChat.admin_rights != null && currentChat.admin_rights.edit_messages)) {
@@ -30517,6 +30528,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                     return b;
                 }
             };
+            NicegramClientHelper.INSTANCE.tryToApplyGrayscaleFilter(scrimPopupContainerLayout, true, false, true);
             scrimPopupContainerLayout.setOnTouchListener(new View.OnTouchListener() {
 
                 private int[] pos = new int[2];
@@ -31618,6 +31630,9 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                 MessageObject.GroupedMessages group = new MessageObject.GroupedMessages();
                 for (int index = 0, allMessages = messages.size(), counter = 0; index < allMessages && counter < 100 ; index++) {
                     MessageObject messageObject = messages.get(index);
+
+                    if (messageObject instanceof AttVH.AttMessageObject) continue;
+
                     if (messageObject.messageOwner.from_id != null) {
                             if (messageObject.messageOwner.from_id.user_id == messageOwnerId) {
                             group.messages.add(messageObject);
@@ -31684,7 +31699,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                 for (AiCommand command: contextCommands) {
                     ActionBarMenuSubItem item = new ActionBarMenuSubItem(getContext(), true, true);
                     item.setOnClickListener(v -> {
-                        AiChatBotHelper.INSTANCE.onContextCommandClick(getParentActivity(), command, textFinal, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
+                        AiChatBotHelper.INSTANCE.onContextCommandClick(getParentActivity(), command, textFinal);
                         window.dismiss();
                     });
                     item.setText(command.getEmoji() + " " + command.getTitle());
@@ -37793,23 +37808,46 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
             if (getMessagesController().premiumFeaturesBlocked() || span == null || span.standard) {
                 return false;
             }
-            long documentId = span.getDocumentId();
-            TLRPC.Document document = span.document == null ? AnimatedEmojiDrawable.findDocument(currentAccount, documentId) : span.document;
-            if (document == null) {
-                return false;
-            }
-            Bulletin bulletin = BulletinFactory.of(ChatActivity.this).createContainsEmojiBulletin(document, BulletinFactory.CONTAINS_EMOJI_IN_MESSAGE, set -> {
-                ArrayList<TLRPC.InputStickerSet> inputSets = new ArrayList<>(1);
-                inputSets.add(set);
-                EmojiPacksAlert alert = new EmojiPacksAlert(ChatActivity.this, getParentActivity(), themeDelegate, inputSets);
-                alert.setCalcMandatoryInsets(isKeyboardVisible());
-                showDialog(alert);
-            });
-            if (bulletin != null) {
-                bulletin.show();
-                return true;
-            }
-            return false;
+            final long documentId = span.getDocumentId();
+            final TLRPC.Document document = span.document == null ? AnimatedEmojiDrawable.findDocument(currentAccount, documentId) : span.document;
+            if (document == null) return false;
+            final TLRPC.InputStickerSet inputStickerSet = MessageObject.getInputStickerSet(document);
+            if (inputStickerSet == null) return false;
+            final TLRPC.TL_messages_stickerSet cachedSet = MediaDataController.getInstance(UserConfig.selectedAccount).getStickerSet(inputStickerSet, true);
+//            if (cachedSet == null || cachedSet.set == null) {
+//                final boolean[] cancelled = new boolean[1];
+//                final AlertDialog progressDialog = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER);
+//                progressDialog.showDelayed(200);
+//                progressDialog.setCanCancel(true);
+//                progressDialog.setOnCancelListener(d -> cancelled[0] = true);
+//                MediaDataController.getInstance(UserConfig.selectedAccount).getStickerSet(inputStickerSet, null, false, set -> {
+//                    if (cancelled[0]) return;
+//                    ArrayList<TLRPC.InputStickerSet> inputSets = new ArrayList<>(1);
+//                    inputSets.add(inputStickerSet);
+//                    EmojiPacksAlert alert = new EmojiPacksAlert(ChatActivity.this, getParentActivity(), themeDelegate, inputSets);
+//                    alert.setCalcMandatoryInsets(isKeyboardVisible());
+//                    showDialog(alert);
+//                });
+//            } else {
+            final ArrayList<TLRPC.InputStickerSet> inputSets = new ArrayList<>(1);
+            inputSets.add(inputStickerSet);
+            final EmojiPacksAlert alert = new EmojiPacksAlert(ChatActivity.this, getParentActivity(), themeDelegate, inputSets);
+            alert.setPreviewEmoji(document);
+            alert.setCalcMandatoryInsets(isKeyboardVisible());
+            showDialog(alert);
+//            }
+//            Bulletin bulletin = BulletinFactory.of(ChatActivity.this).createContainsEmojiBulletin(document, BulletinFactory.CONTAINS_EMOJI_IN_MESSAGE, set -> {
+//                ArrayList<TLRPC.InputStickerSet> inputSets = new ArrayList<>(1);
+//                inputSets.add(set);
+//                EmojiPacksAlert alert = new EmojiPacksAlert(ChatActivity.this, getParentActivity(), themeDelegate, inputSets);
+//                alert.setCalcMandatoryInsets(isKeyboardVisible());
+//                showDialog(alert);
+//            });
+//            if (bulletin != null) {
+//                bulletin.show();
+//                return true;
+//            }
+            return true;
         }
 
         @Override
@@ -41158,7 +41196,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
         ngMenuButton.setNgInChatOverlayView(ngMenuOverlayView);
         ngMenuButton.onAiBotClick(() -> {
             AnalyticsHelper.INSTANCE.logEvent("chatbot_open_from_chat", null);
-            AiChatBotHelper.INSTANCE.launchAiBot(getParentActivity(), UserConfig.getInstance(UserConfig.selectedAccount).clientUserId, true);
+            AiChatBotHelper.INSTANCE.launchAiBot(getParentActivity(), true);
 
             AiChatBotHelper.INSTANCE.setUseResultListener(new UseResultManager.UseResultLister() {
                 @Override
@@ -41193,8 +41231,8 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                         currentUser.first_name,
                         currentUser.last_name,
                         currentUser.username,
-                        currentUser.photo != null ? fileLoader.getPathToAttach(currentUser.photo.photo_small, true).toString() : "",
-                        UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
+                        currentUser.photo != null ? fileLoader.getPathToAttach(currentUser.photo.photo_small, true).toString() : ""
+                );
             } else if (currentChat != null) {
                 NicegramIcWalletHelper.INSTANCE.launchInChatWidget(
                         getParentActivity(),
@@ -41202,8 +41240,8 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                         currentChat.title,
                         null,
                         currentChat.username,
-                        currentChat.photo != null ? fileLoader.getPathToAttach(currentChat.photo.photo_small, true).toString() : "",
-                        UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
+                        currentChat.photo != null ? fileLoader.getPathToAttach(currentChat.photo.photo_small, true).toString() : ""
+                );
             }
 
             NicegramIcWalletHelper.INSTANCE.setUseResultListener(new InChatResultManager.InChatResultLister() {
@@ -41223,7 +41261,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
         chatListView.addOnLayoutChangeListener(layoutChangeListener);
 
         AiChatBotHelper.INSTANCE.unregisterTopUpCallback();
-        AiChatBotHelper.INSTANCE.registerTopUpCallback(getParentActivity(), UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
+        AiChatBotHelper.INSTANCE.registerTopUpCallback(getParentActivity());
     }
 
     private void addNgMenuOverlay() {

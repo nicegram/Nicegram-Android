@@ -58,6 +58,7 @@ import com.appvillis.feature_nicegram_client.domain.NgClientRemoteConfigRepo;
 import com.appvillis.feature_nicegram_client.domain.NicegramClientOnboardingUseCase;
 import com.appvillis.feature_nicegram_client.domain.NgRevLoginUseCase;
 import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter;
+import com.appvillis.lib_android_base.Intents;
 import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.nicegram.AnalyticsHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
@@ -86,6 +87,7 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
 import org.json.JSONObject;
+import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -773,6 +775,11 @@ public class ApplicationLoader extends Application {
         NicegramDeepLinksHelper.Companion.setInstance(nicegramDeepLinksHelper);
         TgBridgeDependenciesHolder.Companion.setInstance(tgBridgeDependenciesHolder);
         NicegramLoginHelper.INSTANCE.setNgRevLoginUseCase(ngRevLoginUseCase);
+
+        Intents.INSTANCE.setTgBrowserBridge((activity, s) -> {
+            Browser.openUrl(activity, s);
+            return null;
+        });
 
         AnalyticsHelper.INSTANCE.logEvent(getUserStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
         new Handler().postDelayed(() -> NicegramNetwork.INSTANCE.getSettings(UserConfig.getInstance(UserConfig.selectedAccount).clientUserId), 3000);

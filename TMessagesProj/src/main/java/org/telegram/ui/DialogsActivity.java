@@ -60,7 +60,6 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.transition.ChangeBounds;
 import android.transition.TransitionManager;
-import android.util.Log;
 import android.util.LongSparseArray;
 import android.util.Property;
 import android.util.StateSet;
@@ -102,11 +101,10 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.appvillis.assistant_core.MainActivity;
 import com.appvillis.core_network.data.HeaderInterceptor;
-import com.appvillis.feature_attention_economy.domain.features.AttBannerFeature;
-import com.appvillis.feature_attention_economy.presentation.ui.banner.AttBannerDialogsView;
 import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository;
 import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
 import com.appvillis.feature_nicegram_client.NicegramClientHelper;
+import com.appvillis.feature_nicegram_client.NicegramOnboardingHelper;
 import com.appvillis.feature_nicegram_client.NicegramSessionPrefs;
 import com.appvillis.lib_android_base.Intents;
 import com.appvillis.nicegram.AnalyticsHelper;
@@ -114,7 +112,6 @@ import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
 import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
 import com.appvillis.nicegram.ReviewHelper;
-import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.rep_placements.domain.entity.PinnedChatsPlacement;
 import com.appvillis.rep_user.domain.UserRepository;
 import timber.log.Timber;
@@ -137,7 +134,6 @@ import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
@@ -4531,6 +4527,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 protected void onArchiveSettingsClick() {
                     presentFragment(new ArchiveSettingsActivity());
                 }
+
+                @Override
+                protected boolean showOpenBotButton() {
+                    return initialDialogsType == DIALOGS_TYPE_DEFAULT;
+                }
+                @Override
+                protected void onOpenBot(TLRPC.User bot) {
+                    MessagesController.getInstance(currentAccount).openApp(bot, 0);
+                }
             };
             viewPage.dialogsAdapter.setRecyclerListView(viewPage.listView);
             viewPage.dialogsAdapter.setForceShowEmptyCell(afterSignup);
@@ -5607,7 +5612,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     c.loadInsufficientSubscriptions();
                     return false;
                 } else {
-                    long starsNeeded = -c.balance;
+                    long starsNeeded = -c.balance.amount;
                     for (int i = 0; i < c.insufficientSubscriptions.size(); ++i) {
                         final TL_stars.StarsSubscription sub = c.insufficientSubscriptions.get(i);
                         final long did = DialogObject.getPeerDialogId(sub.peer);
@@ -5937,7 +5942,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     updateDialogsHint();
                 }).show();
             });
-            dialogsHintCell.setText(StarsIntroActivity.replaceStarsWithPlain(formatPluralStringComma("StarsSubscriptionExpiredHintTitle2", (int) (starsNeeded - c.balance <= 0 ? starsNeeded : starsNeeded - c.balance), starsNeededName), .72f), LocaleController.getString(R.string.StarsSubscriptionExpiredHintText));
+            dialogsHintCell.setText(StarsIntroActivity.replaceStarsWithPlain(formatPluralStringComma("StarsSubscriptionExpiredHintTitle2", (int) (starsNeeded - c.balance.amount <= 0 ? starsNeeded : starsNeeded - c.balance.amount), starsNeededName), .72f), LocaleController.getString(R.string.StarsSubscriptionExpiredHintText));
             dialogsHintCell.setOnCloseListener(v -> {
                 MessagesController.getInstance(currentAccount).removeSuggestion(0, "STARS_SUBSCRIPTION_LOW_BALANCE");
                 ChangeBounds transition = new ChangeBounds();
@@ -6899,13 +6904,17 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
 
         // region ng
+        NicegramClientHelper.INSTANCE.tryToApplyGrayscaleFilter(fragmentView, false, true);
         ReviewHelper.INSTANCE.launchReview(getParentActivity());
-
-        nicegramLogoItem.postDelayed(() -> {
-            if (!isPaused) {
-                showPopupIfNeeded();
-            }
-        }, 3000);
+        NicegramOnboardingHelper.INSTANCE.continueOnboardingIfNeeded(isPaused, getParentActivity(),
+                () -> MainActivity.Companion.launchNgVerificationOnboarding(getParentActivity()),
+                () -> MainActivity.Companion.launchSecondNgOnboarding(getParentActivity()),
+                () -> nicegramLogoItem.postDelayed(() -> {
+                        if (!isPaused) {
+                            showPopupIfNeeded();
+                        }
+                    }, 3000)
+        );
 
         selectSavedFolderIfNeeded();
         // endregion ng
@@ -8832,19 +8841,17 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             previewMenu[0].addView(muteItem);
         }
 
-        if (dialogId != UserObject.VERIFY) {
-            ActionBarMenuSubItem deleteItem = new ActionBarMenuSubItem(getParentActivity(), false, true);
-            deleteItem.setIconColor(getThemedColor(Theme.key_text_RedRegular));
-            deleteItem.setTextColor(getThemedColor(Theme.key_text_RedBold));
-            deleteItem.setSelectorColor(Theme.multAlpha(getThemedColor(Theme.key_text_RedBold), .12f));
-            deleteItem.setTextAndIcon(LocaleController.getString(R.string.Delete), R.drawable.msg_delete);
-            deleteItem.setMinimumWidth(160);
-            deleteItem.setOnClickListener(e -> {
-                performSelectedDialogsAction(dialogIdArray, delete, false, false);
-                finishPreviewFragment();
-            });
-            previewMenu[0].addView(deleteItem);
-        }
+        ActionBarMenuSubItem deleteItem = new ActionBarMenuSubItem(getParentActivity(), false, true);
+        deleteItem.setIconColor(getThemedColor(Theme.key_text_RedRegular));
+        deleteItem.setTextColor(getThemedColor(Theme.key_text_RedBold));
+        deleteItem.setSelectorColor(Theme.multAlpha(getThemedColor(Theme.key_text_RedBold), .12f));
+        deleteItem.setTextAndIcon(LocaleController.getString(R.string.Delete), R.drawable.msg_delete);
+        deleteItem.setMinimumWidth(160);
+        deleteItem.setOnClickListener(e -> {
+            performSelectedDialogsAction(dialogIdArray, delete, false, false);
+            finishPreviewFragment();
+        });
+        previewMenu[0].addView(deleteItem);
 
         if (getMessagesController().checkCanOpenChat(args, DialogsActivity.this)) {
             if (searchString != null) {
@@ -9835,9 +9842,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     canPinCount++;
                 }
                 canClearHistoryCount++;
-                if (dialog.id != UserObject.VERIFY) {
-                    canDeleteCount++;
-                }
+                canDeleteCount++;
             }
         }
         if (deleteItem != null) {
@@ -12732,7 +12737,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         AnalyticsHelper.INSTANCE.logEvent("assistant_open_from_icon", null);
 
         getParentActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        MainActivity.Companion.launchAssistant(getParentActivity(), UserConfig.getInstance(UserConfig.selectedAccount).clientUserId);
+        MainActivity.Companion.launchAssistant(getParentActivity());
     }
 
     private boolean hasSeenNgPopupThisSession;
@@ -12748,7 +12753,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (NicegramClientHelper.INSTANCE.getDialogsBannerUseCase() != null && NicegramClientHelper.INSTANCE.getDialogsBannerUseCase().invoke() != null) {
             if (!isPaused) {
                 getParentActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                MainActivity.Companion.launchDialogsBanner(getParentActivity(), UserConfig.getInstance(currentAccount).clientUserId);
+                MainActivity.Companion.launchDialogsBanner(getParentActivity());
             }
         } else if (offer != null) {
             nicegramLogoItem.postDelayed(() -> {
@@ -12837,7 +12842,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (dialogStoriesCell == null || storiesVisibilityAnimator != null || rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment() || searchIsShowed || actionBar.isActionModeShowed() || onlySelect) {
             return;
         }
-        if (StoryRecorder.isVisible() || (getLastStoryViewer() != null && getLastStoryViewer().isFullyVisible())) {
+        if (StoryRecorder.isVisible() || (getLastStoryViewer() != null && getLastStoryViewer().isFullyVisible()) || NicegramClientHelper.INSTANCE.getPreferences().getHideStories()) {
             animated = false;
         }
         boolean onlySelfStories = !isArchive() && getStoriesController().hasOnlySelfStories();
@@ -12845,8 +12850,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (isArchive()) {
             newVisibility = !getStoriesController().getHiddenList().isEmpty();
         } else {
-            newVisibility = !onlySelfStories && getStoriesController().hasStories();
-            onlySelfStories = getStoriesController().hasOnlySelfStories();
+            newVisibility = !onlySelfStories && getStoriesController().hasStories() && !NicegramClientHelper.INSTANCE.getPreferences().getHideStories();
+            onlySelfStories = getStoriesController().hasOnlySelfStories() && !NicegramClientHelper.INSTANCE.getPreferences().getHideStories();
         }
 
         hasOnlySlefStories = onlySelfStories;

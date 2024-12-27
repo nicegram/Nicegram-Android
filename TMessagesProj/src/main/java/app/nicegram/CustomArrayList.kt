@@ -98,7 +98,7 @@ class CustomArrayList : ArrayList<MessageObject>() {
     }
 
     private fun findNotGroupedPosition(from: Int, older: Boolean): Int {
-        Timber.d("----findNotGroupedPosition older: $from $older")
+        Timber.d("----findNotGroupedPosition older: $from $older, size: $size")
         var previousGroupId = -1L
         if (older) {
             for (i in from..<size) {
@@ -108,7 +108,7 @@ class CustomArrayList : ArrayList<MessageObject>() {
                     return i
                 } else {
                     if (previousGroupId != -1L && previousGroupId != get(i).groupId) {
-                        Timber.d("new group started return $i")
+                        Timber.d("findNotGroupedPosition new group started return $i")
                         return i
                     }
 
@@ -118,17 +118,17 @@ class CustomArrayList : ArrayList<MessageObject>() {
         } else {
             for (i in from downTo 0) {
                 Timber.d("findNotGroupedPosition older:$older grp:${get(i).groupId} from:$from i:$i")
-                if (get(i).groupId == 0L) {
+                val groupId = get(i).groupId
+                //val nextGroupId = getOrNull( i - 1)?.groupId ?: 0
+                if (groupId == 0L) {
                     Timber.d("findNotGroupedPosition return $i")
                     return i
-                } else {
-                    if (previousGroupId != -1L && previousGroupId != get(i).groupId) {
-                        Timber.d("new group started return $i")
+                } /*else {
+                    if (groupId != nextGroupId) {
+                        Timber.d("findNotGroupedPosition new group started return $i")
                         return i
                     }
-
-                    previousGroupId = get(i).groupId
-                }
+                }*/
             }
         }
 

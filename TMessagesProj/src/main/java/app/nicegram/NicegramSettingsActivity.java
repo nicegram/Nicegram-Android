@@ -12,15 +12,14 @@ import androidx.collection.MutableIntObjectMap;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
 import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
 import com.appvillis.feature_nicegram_client.NicegramClientHelper;
 import com.appvillis.feature_nicegram_client.NicegramConsts;
 import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
 import com.appvillis.nicegram.NicegramPrefs;
-import com.appvillis.nicegram.network.NicegramNetwork;
 import com.appvillis.rep_placements.domain.entity.PinnedChatsPlacement;
 
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
@@ -39,6 +38,7 @@ import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
+import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PasscodeActivity;
 
 import java.util.ArrayList;
@@ -64,6 +64,14 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int doubleBottomRow;
     private int quickRepliesRow;
     private int hideReactionsRow;
+    private int hideStoriesRow;
+    private int hideReactionsNotificationRow;
+    private int hideUnreadCounterRow;
+    private int hideMentionNotificationRow;
+    private int animationsInChatList;
+    private int fullscreenGrayscale;
+    private int grayscaleInChatList;
+    private int grayscaleInChat;
     private int shareChannelsInfoRow;
     private int shareBotsInfoRow;
     private int shareStickersInfoRow;
@@ -73,7 +81,8 @@ public class NicegramSettingsActivity extends BaseFragment {
 
     @Override
     public boolean onFragmentCreate() {
-        if (NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements().size() > 0) pinSectionHeaderRow = rowCount++;
+        if (NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements().size() > 0)
+            pinSectionHeaderRow = rowCount++;
         for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements()) {
             pinSectionRowsMap.put(rowCount++, placement);
         }
@@ -90,6 +99,14 @@ public class NicegramSettingsActivity extends BaseFragment {
         showProfileIdRow = rowCount++;
         showRegDateRow = rowCount++;
         hideReactionsRow = rowCount++;
+        hideStoriesRow = rowCount++;
+        hideReactionsNotificationRow = rowCount++;
+        hideUnreadCounterRow = rowCount++;
+        hideMentionNotificationRow = rowCount++;
+        animationsInChatList = rowCount++;
+        fullscreenGrayscale = rowCount++;
+        grayscaleInChatList = rowCount++;
+        grayscaleInChat = rowCount++;
         shareChannelsInfoRow = rowCount++;
         //shareBotsInfoRow = rowCount++;
         //shareStickersInfoRow = rowCount++;
@@ -139,6 +156,39 @@ public class NicegramSettingsActivity extends BaseFragment {
                 enabled = preferences.getBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, NicegramPrefs.PREF_HIDE_REACTIONS_DEFAULT);
                 editor.putBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, !enabled);
                 editor.apply();
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_CHAT);
+            } else if (position == hideStoriesRow) {
+                enabled = NicegramClientHelper.INSTANCE.getPreferences().getHideStories();
+                NicegramClientHelper.INSTANCE.getPreferences().setHideStories(!enabled);
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_ALL);
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.storiesUpdated);
+            } else if (position == hideReactionsNotificationRow) {
+                enabled = NicegramClientHelper.INSTANCE.getPreferences().getHideReactionsNotification();
+                NicegramClientHelper.INSTANCE.getPreferences().setHideReactionsNotification(!enabled);
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_ALL);
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.mainUserInfoChanged);
+            } else if (position == hideUnreadCounterRow) {
+                enabled = NicegramClientHelper.INSTANCE.getPreferences().getHideUnreadCounter();
+                NicegramClientHelper.INSTANCE.getPreferences().setHideUnreadCounter(!enabled);
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_CHAT);
+            } else if (position == hideMentionNotificationRow) {
+                enabled = NicegramClientHelper.INSTANCE.getPreferences().getHideMentionNotification();
+                NicegramClientHelper.INSTANCE.getPreferences().setHideMentionNotification(!enabled);
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_CHAT);
+            } else if (position == animationsInChatList) {
+                enabled = NicegramClientHelper.INSTANCE.getPreferences().getAnimationInChatList();
+                NicegramClientHelper.INSTANCE.getPreferences().setAnimationInChatList(!enabled);
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_CHAT);
+            } else if (position == fullscreenGrayscale) {
+                enabled = NicegramClientHelper.INSTANCE.getPreferences().getGrayscaleFullScreen();
+                NicegramClientHelper.INSTANCE.getPreferences().setGrayscaleFullScreen(!enabled);
+                ((LaunchActivity) AndroidUtilities.findActivity(context)).tryUpdateGrayscale();
+            } else if (position == grayscaleInChatList) {
+                enabled = NicegramClientHelper.INSTANCE.getPreferences().getGrayscaleInChatList();
+                NicegramClientHelper.INSTANCE.getPreferences().setGrayscaleInChatList(!enabled);
+            } else if (position == grayscaleInChat) {
+                enabled = NicegramClientHelper.INSTANCE.getPreferences().getGrayscaleInChat();
+                NicegramClientHelper.INSTANCE.getPreferences().setGrayscaleInChat(!enabled);
             } else if (position == startWithRearCameraRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
@@ -321,6 +371,22 @@ public class NicegramSettingsActivity extends BaseFragment {
                         checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramHidePhoneNumber"), LocaleController.getString("NicegramHidePhoneNumberDesc"), preferences.getBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, NicegramPrefs.PREF_HIDE_PHONE_NUMBER_DEFAULT), true, false);
                     } else if (position == hideReactionsRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramHideReactions"), preferences.getBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, NicegramPrefs.PREF_HIDE_REACTIONS_DEFAULT), false);
+                    } else if (position == hideStoriesRow) {
+                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramHideStories), NicegramClientHelper.INSTANCE.getPreferences().getHideStories(), false);
+                    } else if (position == hideReactionsNotificationRow) {
+                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramHideReactionsNotification), NicegramClientHelper.INSTANCE.getPreferences().getHideReactionsNotification(), false);
+                    } else if (position == hideUnreadCounterRow) {
+                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramHideUnreadCounter), NicegramClientHelper.INSTANCE.getPreferences().getHideUnreadCounter(), false);
+                    } else if (position == hideMentionNotificationRow) {
+                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramHideMentionNotification), NicegramClientHelper.INSTANCE.getPreferences().getHideMentionNotification(), false);
+                    } else if (position == animationsInChatList) {
+                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramAnimationsInChatList), NicegramClientHelper.INSTANCE.getPreferences().getAnimationInChatList(), false);
+                    } else if (position == fullscreenGrayscale) {
+                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramFullScreenGrayscale), NicegramClientHelper.INSTANCE.getPreferences().getGrayscaleFullScreen(), false);
+                    } else if (position == grayscaleInChatList) {
+                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramGrayscaleInChatList), NicegramClientHelper.INSTANCE.getPreferences().getGrayscaleInChatList(), false);
+                    } else if (position == grayscaleInChat) {
+                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramGrayscaleInChat), NicegramClientHelper.INSTANCE.getPreferences().getGrayscaleInChat(), false);
                     } else if (position == shareChannelsInfoRow) {
                         checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramShareChannelInfo"), LocaleController.getString("NicegramShareChannelInfoDesc"), NicegramClientHelper.INSTANCE.getPreferences().getCanShareChannels(), true, false);
                     } else if (position == shareBotsInfoRow) {
@@ -364,9 +430,13 @@ public class NicegramSettingsActivity extends BaseFragment {
                     position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow ||
                     position == maxAccountsRow || position == shareChannelsInfoRow ||
                     position == shareBotsInfoRow || position == shareStickersInfoRow ||
-                    position == showNgBtnInChatRow ||
-                    pinSectionRowsMap.contains(position) ||
-            position == showHiddenChatsRow) {
+                    position == showNgBtnInChatRow || position == showHiddenChatsRow ||
+                    pinSectionRowsMap.contains(position) || position == hideMentionNotificationRow ||
+                    position == hideReactionsNotificationRow || position == hideUnreadCounterRow ||
+                    position == hideStoriesRow || position == animationsInChatList ||
+                    position == fullscreenGrayscale || position == grayscaleInChatList ||
+                    position == grayscaleInChat
+            ) {
                 return 1;
             } else if (position == unblockGuideRow || position == quickRepliesRow) {
                 return 2;

@@ -787,9 +787,9 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
     public int getMinHeight() {
         if (getParent() instanceof ChatAttachAlertBotWebViewLayout.WebViewSwipeContainer) {
             ChatAttachAlertBotWebViewLayout.WebViewSwipeContainer swipeContainer = (ChatAttachAlertBotWebViewLayout.WebViewSwipeContainer) getParent();
-//            if (swipeContainer.isFullSize()) {
-//                return (int) (swipeContainer.getMeasuredHeight() - swipeContainer.getOffsetY() - swipeContainer.getTopActionBarOffsetY() + viewPortHeightOffset);
-//            }
+            if (swipeContainer.isFullSize()) {
+                return (int) (swipeContainer.getMeasuredHeight() - swipeContainer.getOffsetY() /*- swipeContainer.getTopActionBarOffsetY()*/ + viewPortHeightOffset);
+            }
         }
         return 0;
     }
@@ -1215,7 +1215,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                     x = jsonArray.optBoolean(0, true);
                     y = jsonArray.optBoolean(1, true);
                 } catch (Exception e) {}
-                d("allowScroll " + x + " " + y);
+//                d("allowScroll " + x + " " + y);
                 if (getParent() instanceof ChatAttachAlertBotWebViewLayout.WebViewSwipeContainer) {
                     ChatAttachAlertBotWebViewLayout.WebViewSwipeContainer swipeContainer = (ChatAttachAlertBotWebViewLayout.WebViewSwipeContainer) getParent();
                     swipeContainer.allowThisScroll(x, y);
@@ -3235,6 +3235,9 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                 return null;
             }, browserRequest -> {
                 tgBrowserBridge.onIncomingRequestTon(browserRequest);
+                return null;
+            }, browserRequest -> {
+                tgBrowserBridge.onIncomingRequestSolana(browserRequest, null);
                 return null;
             });
 

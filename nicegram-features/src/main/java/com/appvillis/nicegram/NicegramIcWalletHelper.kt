@@ -18,8 +18,7 @@ object NicegramIcWalletHelper {
         firstName: String?,
         lastName: String?,
         username: String?,
-        img: String,
-        telegramId: Long
+        img: String
     ) {
         InChatMainActivity.launch(
             activity, WalletContact(
@@ -27,7 +26,7 @@ object NicegramIcWalletHelper {
                 nameString(firstName, lastName),
                 usernameString(username),
                 img
-            ), telegramId
+            )
         )
     }
 

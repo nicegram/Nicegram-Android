@@ -3,7 +3,9 @@ package app.nicegram
 import android.content.Context
 import android.content.SharedPreferences
 import com.appvillis.core_ui.BuildConfig
+import com.appvillis.feature_nicegram_client.NicegramClientHelper
 import com.appvillis.feature_nicegram_client.domain.NgClientRemoteConfigRepo
+import com.appvillis.nicegram.NicegramPinChatsPlacementHelper.AI_ID
 import com.appvillis.nicegram.NicegramPrefs
 import com.appvillis.nicegram.NicegramPrefs.PREF_FOREVER_COOL_DOWN
 import org.telegram.messenger.MessagesController
@@ -128,6 +130,8 @@ object PrefsHelper {
     }
 
     fun setShowPinChatsPlacementWithId(currentAccount: Int, show: Boolean, id: String) {
+        if (id == AI_ID) NicegramClientHelper.preferences?.let { it.showLilyAiInChatList = show }
+
         MessagesController.getNicegramSettings(currentAccount)
             .edit()
             .putBoolean(getShowPinChatsPlacementKeyForId(id), show)
@@ -135,7 +139,9 @@ object PrefsHelper {
     }
 
     fun getShowPinChatsPlacementWithId(currentAccount: Int, id: String): Boolean {
-        return MessagesController.getNicegramSettings(currentAccount)
+        return if (id == AI_ID) {
+            NicegramClientHelper.preferences?.showLilyAiInChatList != false
+        } else MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(getShowPinChatsPlacementKeyForId(id), NicegramPrefs.PREF_SHOW_PIN_CHATS_PLACEMENT_DEFAULT)
     }
 
@@ -190,7 +196,10 @@ object PrefsHelper {
 
     fun getShowNgFloatingMenuInChat(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(NicegramPrefs.PREF_SHOW_FLOATING_NG_MENU_IN_CHAT, NicegramPrefs.PREF_SHOW_FLOATING_NG_MENU_IN_CHAT_DEFAULT)
+            .getBoolean(
+                NicegramPrefs.PREF_SHOW_FLOATING_NG_MENU_IN_CHAT,
+                NicegramPrefs.PREF_SHOW_FLOATING_NG_MENU_IN_CHAT_DEFAULT
+            )
     }
 
     private fun getNgGlobalPrefs(context: Context) =

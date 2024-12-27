@@ -52,11 +52,11 @@ class NicegramDeepLinksHelper @Inject constructor(
                 getDAppsUseCase().value.data.associateBy { (Uri.parse(it.url).host?.getSLDnTLDFromHost() ?: "") }
 
             if (getUserStatusUseCase.isUserLoggedIn && getCurrentWalletUseCase.currentWallet != null) {
-                MainActivity.launchDApp(dAppsMap[domainName] ?: return false, context, telegramId)
+                MainActivity.launchDApp(dAppsMap[domainName] ?: return false, context)
             } else {
                 if (dAppsMap[domainName] == null) return false
 
-                MainActivity.launchAssistant(context, telegramId)
+                MainActivity.launchAssistant(context)
             }
 
             analyticsManager.logEvent("wallet_dapp_link_click")

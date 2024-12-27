@@ -26,6 +26,8 @@ import android.widget.TextView;
 import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.feature_nicegram_client.NicegramClientHelper;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
@@ -174,7 +176,7 @@ public class StoriesUtilities {
             params.inc = false;
         }
         params.showProgress = showProgress;
-        if (params.currentState == STATE_EMPTY && params.progressToSate == 1f) {
+        if ((params.currentState == STATE_EMPTY && params.progressToSate == 1f) || NicegramClientHelper.INSTANCE.getPreferences().getHideStories()) {
             avatarImage.setImageCoords(params.originalAvatarRect);
             avatarImage.draw(canvas);
             return;
