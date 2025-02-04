@@ -1,10 +1,8 @@
 package app.nicegram
 
 import com.appvillis.feature_analytics.domain.AnalyticsManager
-import com.google.android.exoplayer2.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import org.telegram.messenger.ChatObject
-import org.telegram.tgnet.TLObject
 import org.telegram.tgnet.TLRPC.*
 import java.lang.Exception
 

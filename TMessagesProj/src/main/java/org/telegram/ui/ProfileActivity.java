@@ -4242,7 +4242,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         CharSequence[] items;
                         items = new CharSequence[]{
                                 getString("DebugMenuImportContacts", R.string.DebugMenuImportContacts),
-                                getString("DebugMenuImportContacts", R.string.DebugMenuImportContacts),
                                 getString("DebugMenuReloadContacts", R.string.DebugMenuReloadContacts),
                                 getString("DebugMenuResetContacts", R.string.DebugMenuResetContacts),
                                 getString("DebugMenuResetDialogs", R.string.DebugMenuResetDialogs),
@@ -4560,7 +4559,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 SharedConfig.toggleBrowserAdaptableColors();
                             } else if (which == 33) {
                                 SharedConfig.toggleDebugVideoQualities();
-                            } else if (which == 35) {
+                            } else if (which == 34) {
                                 boolean enabled = rep.getMultichainEnabled();
                                 rep.setMutlichainEnabled(!enabled);
                             }

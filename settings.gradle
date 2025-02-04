@@ -28,6 +28,7 @@ def modules = [
         'nicegram-wallet',
         'feature-attention-economy',
         'feature-onboarding-steps',
+        'feature-chat-widgets',
 ]
 
 for (module in modules) {

@@ -228,6 +228,7 @@ public static final ** CREATOR;
 -keep class com.appvillis.nicegram_wallet.wallet_walletconnect.data.WcWalletDelegate** { *;}
 -keep class com.appvillis.nicegram_wallet.wallet_web3auth.domain.JwtDecoder** { *;}
 -keep class com.appvillis.nicegram_wallet.wallet_storage.data.WalletRepositoryImpl$* { *; }
+-keep class com.appvillis.nicegram_wallet.wallet_dapps.data.DAppsRepositoryImpl$* { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_dapps.data.DAppsPermissionsStorageImpl$SavedPermission { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_web3auth.data.DeviceShareStorageImpl$Share { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_dapps_storage.data.FavoriteDAppsRepositoryImpl$FavoriteDApp { *; }
@@ -313,7 +314,6 @@ public static final ** CREATOR;
 -dontwarn java.beans.Transient
 
 -keep class androidx.recyclerview.widget.PagerSnapHelper { *; }
-
 -dontwarn org.telegram.ui.LaunchActivity_GeneratedInjector
 -dontwarn org.telegram.ui.BasePermissionsActivity_GeneratedInjector
 -keep class org.telegram.ui.LaunchActivity_GeneratedInjector

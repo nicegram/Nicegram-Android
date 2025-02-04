@@ -270,6 +270,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import app.nicegram.NicegramGroupCollectHelper;
 import app.nicegram.PrefsHelper;
 
 public class DialogsActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, FloatingDebugProvider {
@@ -2537,7 +2538,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (placement != null) hideNgPinPlacement(parentPage.dialogsAdapter, placement.getId());
                 return;
             }
-            if (viewHolder != null && (viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_NG_ATT)) {
+            if (viewHolder != null && (viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_NG_ATT || viewHolder.getItemViewType() == DialogsAdapter.VIEW_TYPE_NG_WIDGETS)) {
                 return;
             }
             if (viewHolder != null) {
@@ -4067,6 +4068,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     if (viewPage.dialogsAdapter.getAttAd() != null) {
                         pTop += AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP);
                         Timber.d("added pTop for add");
+                    }
+                    if (viewPage.dialogsAdapter.hasNgWidgets()) {
+                        pTop += AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP) * 2;
+                        Timber.d("added pTop for widgets");
                     }
                     //pTop += AndroidUtilities.dp(DialogStoriesCell.HEIGHT_IN_DP); // ng fixing
                     //pTop += AndroidUtilities.dp(DialogCell.HEIGHT_IN_DP); // ng fixing
@@ -6906,6 +6911,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         // region ng
         NicegramClientHelper.INSTANCE.tryToApplyGrayscaleFilter(fragmentView, false, true);
         ReviewHelper.INSTANCE.launchReview(getParentActivity());
+        NicegramGroupCollectHelper.INSTANCE.tryToCollectGroupPack(currentAccount);
+
         NicegramOnboardingHelper.INSTANCE.continueOnboardingIfNeeded(isPaused, getParentActivity(),
                 () -> MainActivity.Companion.launchNgVerificationOnboarding(getParentActivity()),
                 () -> MainActivity.Companion.launchSecondNgOnboarding(getParentActivity()),
@@ -8309,7 +8316,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         DialogsAdapter dialogsAdapter = (adapter instanceof DialogsAdapter) ? (DialogsAdapter) adapter : null;
         if (!actionBar.isActionModeShowed() && !AndroidUtilities.isTablet() && !onlySelect && view instanceof DialogCell && !getMessagesController().isForum(((DialogCell) view).getDialogId()) && !rightSlidingDialogContainer.hasFragment()) {
             DialogCell cell = (DialogCell) view;
-            if (cell.isPointInsideAvatar(x, y) && (dialogsAdapter == null || adapter.getItemViewType(position) != DialogsAdapter.VIEW_TYPE_NG_PIN && adapter.getItemViewType(position) != DialogsAdapter.VIEW_TYPE_NG_ATT)) { // ng chatbot
+            if (cell.isPointInsideAvatar(x, y) && (dialogsAdapter == null || adapter.getItemViewType(position) != DialogsAdapter.VIEW_TYPE_NG_PIN && adapter.getItemViewType(position) != DialogsAdapter.VIEW_TYPE_NG_ATT && adapter.getItemViewType(position) != DialogsAdapter.VIEW_TYPE_NG_WIDGETS)) { // ng chatbot
                 return showChatPreview(cell);
             }
         }
@@ -8369,6 +8376,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             return false;
         } else {
+            if (dialogsAdapter != null && (dialogsAdapter.getItemViewType(position) == DialogsAdapter.VIEW_TYPE_NG_WIDGETS)) {
+                return false;
+            }
+
             if (dialogsAdapter != null && (dialogsAdapter.getItemViewType(position) == DialogsAdapter.VIEW_TYPE_NG_PIN)) {
                 Timber.d("onItemLongClick " + view + " position: " + position);
                 PinnedChatsPlacement placement = dialogsAdapter.getNgPinChatPlacementByPosition(position);
@@ -8414,6 +8425,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 dialogsSize++;
                 hasAnyNgPin = true;
             }
+            if (dialogsAdapter != null && dialogsAdapter.hasNgWidgets()) {
+                dialogsSize++;
+                hasAnyNgPin = true;
+            }
 
             if (dialogsSize != dialogs.size()) dialogsSize++; // divider
             if (position < 0 || position >= dialogsSize) {
@@ -8425,7 +8440,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 int indexMax = Math.min(20, dialogsAdapter.getItemCount());
                 int firstPinIndex = -1;
                 for (int i = 0; i < indexMax; i++) {
-                    if (dialogsAdapter.getItemViewType(i) == DialogsAdapter.VIEW_TYPE_NG_PIN || dialogsAdapter.getItemViewType(i) == DialogsAdapter.VIEW_TYPE_NG_ATT) {
+                    if (dialogsAdapter.getItemViewType(i) == DialogsAdapter.VIEW_TYPE_NG_PIN || dialogsAdapter.getItemViewType(i) == DialogsAdapter.VIEW_TYPE_NG_ATT || dialogsAdapter.getItemViewType(i) == DialogsAdapter.VIEW_TYPE_NG_WIDGETS) {
                         firstPinIndex = i;
                         break;
                     }
@@ -8436,6 +8451,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         if (PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, placement.getId())) positionMinus++;
                     }
                     if (dialogsAdapter.getAttAd() != null) {
+                        positionMinus++;
+                    }
+                    if (dialogsAdapter.hasNgWidgets()) {
                         positionMinus++;
                     }
                     position -= positionMinus;

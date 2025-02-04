@@ -3,6 +3,7 @@ package app.nicegram.bridge
 import android.graphics.Bitmap
 import android.graphics.Color
 import com.appvillis.core_network.domain.UserLocaleProvider
+import com.appvillis.feature_auth.domain.TelegramBotBridge
 import com.appvillis.feature_auth.domain.TelegramIdBridge
 import com.appvillis.nicegram_wallet.module_bridge.ContactMessageSender
 import com.appvillis.nicegram_wallet.module_bridge.QrCodeRenderer
@@ -87,4 +88,8 @@ object TgBridgeModule {
         override val telegramId: Long
             get() = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId
     }
+
+    @Provides
+    @Singleton
+    fun provideTelegramBotBridge(): TelegramBotBridge = TelegramBotBridgeImpl()
 }

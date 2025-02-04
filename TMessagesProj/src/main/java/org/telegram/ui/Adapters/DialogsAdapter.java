@@ -8,9 +8,9 @@
 
 package org.telegram.ui.Adapters;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
@@ -32,6 +32,8 @@ import androidx.viewpager.widget.ViewPager;
 
 import com.appvillis.feature_attention_economy.domain.entities.AttAd;
 import com.appvillis.feature_attention_economy.presentation.ui.banner.AttBannerDialogsView;
+import com.appvillis.feature_chat_widgets.NgWidgetsHelper;
+import com.appvillis.feature_chat_widgets.NgWidgetsView;
 import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
 import com.appvillis.nicegram.AnalyticsHelper;
 import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
@@ -84,10 +86,8 @@ import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 
 import javax.annotation.Nullable;
@@ -117,7 +117,8 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             VIEW_TYPE_STORIES = 18,
             VIEW_TYPE_ARCHIVE_FULLSCREEN = 19,
             VIEW_TYPE_NG_PIN = 100000,
-            VIEW_TYPE_NG_ATT = 100001;
+            VIEW_TYPE_NG_ATT = 100001,
+            VIEW_TYPE_NG_WIDGETS = 100002;
 
     private final MutableIntObjectMap<PinnedChatsPlacement> ngPinnedPlacementMap = new MutableIntObjectMap<>();
     private Context mContext;
@@ -171,15 +172,22 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             this.preloader = new DialogsPreloader();
         }
         this.requestPeerType = requestPeerType;
-        initAtt();
+        initNgHelpers();
     }
 
     private DialogsAttHelper dialogsAttHelper;
-    private void initAtt() {
+    private NgWidgetsHelper ngWidgetsHelper;
+    private void initNgHelpers() {
         dialogsAttHelper = new DialogsAttHelper(mContext, parentFragment, () -> {
             this.updateList(null);
             return null;
         });
+        ngWidgetsHelper = new NgWidgetsHelper(mContext);
+    }
+
+    public boolean hasNgWidgets() {
+        if (ngWidgetsHelper == null) return false;
+        return ngWidgetsHelper.needToShowWidgets();
     }
 
     @Nullable
@@ -381,7 +389,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 return false;
             }
 
-            if (viewType == VIEW_TYPE_NG_PIN || viewType == VIEW_TYPE_NG_ATT) {
+            if (viewType == VIEW_TYPE_NG_PIN || viewType == VIEW_TYPE_NG_ATT || viewType == VIEW_TYPE_NG_WIDGETS) {
                 return true;
             }
             if (viewType == VIEW_TYPE_DIALOG) {
@@ -604,6 +612,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         switch (viewType) {
             case VIEW_TYPE_NG_ATT:
                 view = new AttBannerDialogsView(mContext);
+                break;
+            case VIEW_TYPE_NG_WIDGETS:
+                view = new NgWidgetsView(mContext);
                 break;
             case VIEW_TYPE_NG_PIN:
                 DialogCell ngPinChatCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
@@ -842,6 +853,13 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 if (view instanceof AttBannerDialogsView) {
                     AttAd ad = getAttAd();
                     if (ad != null) ((AttBannerDialogsView) view).setAd(ad, Theme.getColor(Theme.key_chats_name), Theme.getColor(Theme.key_chats_message), Theme.getColor(Theme.key_chats_pinnedIcon));
+                }
+                break;
+            }
+            case VIEW_TYPE_NG_WIDGETS: {
+                View view = holder.itemView;
+                if (view instanceof NgWidgetsView) {
+                    ((NgWidgetsView) view).setData(Theme.getColor(Theme.key_chats_name), Theme.getColor(Theme.key_chats_message), Color.TRANSPARENT);
                 }
                 break;
             }
@@ -1604,6 +1622,8 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         AttAd ad = getAttAd();
         if (ad != null) hasAnyShowingNgPin = true;
 
+        if (hasNgWidgets()) hasAnyShowingNgPin = true;
+
         if (hasAnyShowingNgPin) {
             int positionToInsert = 0;
             if (SharedConfig.archiveHidden) {
@@ -1614,6 +1634,11 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                         break;
                     }
                 }
+            }
+
+            if (hasNgWidgets()) {
+                itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_NG_WIDGETS));
+                positionToInsert++;
             }
 
             for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements()) {

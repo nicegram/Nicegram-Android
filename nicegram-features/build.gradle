@@ -11,7 +11,7 @@ properties.load(project.rootProject.file("local.properties").newDataInputStream(
 
 android {
     namespace "com.appvillis.nicegram_features"
-    compileSdkVersion 34
+    compileSdkVersion 35
 
     defaultConfig {
         minSdkVersion 24

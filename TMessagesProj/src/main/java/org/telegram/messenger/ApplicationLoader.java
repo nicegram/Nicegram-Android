@@ -763,6 +763,7 @@ public class ApplicationLoader extends Application {
         NicegramBillingHelper.INSTANCE.setBillingManager(billingManager);
         NicegramBillingHelper.INSTANCE.setUserRepository(userRepository);
         NicegramGroupCollectHelper.INSTANCE.setCollectGroupInfoUseCase(collectGroupInfoUseCase);
+        NicegramGroupCollectHelper.INSTANCE.setAppScope(appScope);
         PrefsHelper.INSTANCE.setRemoteConfigRepo(remoteConfigRepo);
         NicegramSpeechToTextHelper.INSTANCE.setApiService(apiService);
         NicegramWalletHelper.INSTANCE.setTcDeeplinkManager(tcDeeplinkManager);

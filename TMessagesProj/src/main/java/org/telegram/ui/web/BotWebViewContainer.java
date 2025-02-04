@@ -73,7 +73,6 @@ import androidx.core.util.Consumer;
 import com.google.android.gms.safetynet.SafetyNet;
 
 import com.appvillis.nicegram.TgBridgeDependenciesHolder;
-import com.appvillis.nicegram_wallet.wallet_dapps.domain.BrowserRequest;
 import com.appvillis.nicegram_wallet.wallet_dapps.domain.TgBrowserBridgeFactory;
 import com.appvillis.nicegram_wallet.wallet_dapps.presentation.js_inject.NgWalletInjectHelper;
 
