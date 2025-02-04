@@ -162,13 +162,9 @@ public class ApplicationLoader extends Application {
     @Inject
     public GetChatCommandsUseCase getChatCommandsUseCase;
     @Inject
-    public AiChatCommandsRepository commandsRepo;
-    @Inject
     public GetBalanceTopUpRequestUseCase getBalanceTopUpRequestUseCase;
     @Inject
     public RequestInAppsUseCase requestInAppsUseCase;
-    @Inject
-    public NicegramClientOnboardingUseCase nicegramClientOnboardingUseCase;
     @Inject
     public GetNicegramOnboardingStatusUseCase getNicegramOnboardingStatusUseCase;
     @Inject
