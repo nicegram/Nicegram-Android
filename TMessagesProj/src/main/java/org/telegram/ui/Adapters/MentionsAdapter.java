@@ -31,6 +31,7 @@ import androidx.collection.LongSparseArray;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
@@ -2085,7 +2086,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
 
     private Boolean shouldShowMentionAll() {
         if (info == null) return false;
-        return MentionAllHelper.INSTANCE.shouldShowMentionAll(info.participants_count, currentAccount);
+        return MentionAllHelper.INSTANCE.shouldShowMentionAll(ApplicationLoader.applicationContext, info.participants_count, currentAccount);
     }
 
     public void setDialogId(long dialogId) {

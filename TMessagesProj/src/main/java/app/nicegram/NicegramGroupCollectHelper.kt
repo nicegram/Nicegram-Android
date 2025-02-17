@@ -11,11 +11,13 @@ import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase.Geo
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase.InviteLink
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase.Restriction
-import kotlinx.coroutines.CoroutineScope
+import com.appvillis.nicegram.NicegramAssistantEntryPoint
+import dagger.hilt.EntryPoints
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.telegram.messenger.AndroidUtilities
+import org.telegram.messenger.ApplicationLoader
 import org.telegram.messenger.ChatObject
 import org.telegram.messenger.LanguageDetector
 import org.telegram.messenger.MessageObject
@@ -41,8 +43,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 object NicegramGroupCollectHelper {
-    var collectGroupInfoUseCase: CollectGroupInfoUseCase? = null
-    var appScope: CoroutineScope? = null
+    private fun entryPoint() = EntryPoints.get(ApplicationLoader.applicationContext, NicegramAssistantEntryPoint::class.java)
 
     fun tryToCollectChannelInfo(
         currentAccount: Int,
@@ -56,7 +57,7 @@ object NicegramGroupCollectHelper {
         avatarDrawable: Drawable?,
         getTranslationTextCallback: (MessageObject) -> String?
     ) {
-        val collectGroupInfoUseCase = collectGroupInfoUseCase ?: return
+        val collectGroupInfoUseCase = entryPoint().collectGroupInfoUseCase()
         if (currentChat == null) {
             if (currentUser != null) {
                 //tryCollectBotInfo(currentUser, avatarDrawable, currentAccount)
@@ -149,13 +150,13 @@ object NicegramGroupCollectHelper {
     fun tryToCollectGroupPack(currentAccount: Int) {
         if (NicegramClientHelper.preferences?.canShareChannels != true) return
 
-        val collectGroupInfoUseCase = collectGroupInfoUseCase ?: return
+        val collectGroupInfoUseCase = entryPoint().collectGroupInfoUseCase()
         if (!collectGroupInfoUseCase.canCollectGroupPack()) return
 
         if (collectInProgress.value) return
         collectInProgress.value = true
 
-        appScope?.launch(Dispatchers.IO) {
+        entryPoint().appScope().launch(Dispatchers.IO) {
             try {
                 val usernameWithToken = collectGroupInfoUseCase.getGroupsUsernameForCollect()
                 val channelInfoList = collectChannelsInfo(currentAccount, usernameWithToken.keys.toList())
@@ -482,7 +483,7 @@ object NicegramGroupCollectHelper {
 
         val pplCount = getPplCount(currentChat, chatInfo)
 
-        collectGroupInfoUseCase?.collectInfo(
+        entryPoint().collectGroupInfoUseCase().collectInfo(
             CollectGroupInfoUseCase.GroupCollectInfoData.CollectInfoData(
                 currentChat.id,
                 invites,
@@ -507,7 +508,7 @@ object NicegramGroupCollectHelper {
     }
 
     private fun tryCollectBotInfo(user: User, avatarDrawable: Drawable?, currentAccount: Int) {
-        val collectGroupInfoUseCase = collectGroupInfoUseCase ?: return
+        val collectGroupInfoUseCase = entryPoint().collectGroupInfoUseCase()
         if (!user.bot) return
 
         if (NicegramClientHelper.preferences?.canShareBots != true) {

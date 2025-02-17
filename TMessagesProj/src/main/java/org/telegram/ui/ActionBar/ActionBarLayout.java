@@ -53,6 +53,8 @@ import androidx.annotation.Keep;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.math.MathUtils;
 
+import com.appvillis.core_resources.widgets.ToastViewHelper;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.BuildVars;
@@ -1842,6 +1844,8 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         }
         ImageLoader.getInstance().onFragmentStackChanged();
         checkBlackScreen(action);
+
+        if (action.equals("closeLastFragment")) ToastViewHelper.INSTANCE.clearToasts(); // ng
     }
 
     @Override
@@ -2023,7 +2027,9 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
             }
         });
         animatorSet.start();
-        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+        try {
+            performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+        } catch (Exception ignore) {}
 
         fragment.setInPreviewMode(false);
         fragment.setInMenuMode(false);

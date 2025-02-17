@@ -5,20 +5,23 @@ import android.content.res.Resources
 import android.os.Build
 import android.util.Base64
 import android.util.Base64OutputStream
-import com.appvillis.core_network.ApiService
 import com.appvillis.core_network.data.body.Speech2TextBody
-import com.appvillis.feature_nicegram_billing.NicegramBillingHelper
+import com.appvillis.nicegram.NicegramBillingHelper
 import com.appvillis.feature_nicegram_billing.NicegramConsts.NICEGRAM_PREMIUM_SUB_ID
+import com.appvillis.nicegram.NicegramAssistantEntryPoint
 import com.appvillis.nicegram.NicegramScopes.ioScope
 import com.appvillis.nicegram.NicegramScopes.uiScope
+import dagger.hilt.EntryPoints
 import kotlinx.coroutines.launch
+import org.telegram.messenger.ApplicationLoader
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.*
 
 object NicegramSpeechToTextHelper {
-    var apiService: ApiService? = null
+    private fun entryPoint() =
+        EntryPoints.get(ApplicationLoader.applicationContext, NicegramAssistantEntryPoint::class.java)
 
     private const val PROVIDER_OPEN_AI = "OPEN_AI"
     private const val PROVIDER_GOOGLE = "GOOGLE"
@@ -37,7 +40,7 @@ object NicegramSpeechToTextHelper {
 
         ioScope.launch {
             try {
-                val result = apiService?.speech2Text(Speech2TextBody(fileToBytes(audioFile), provider, deviceLang, alternatives, NicegramBillingHelper.billingManager?.currentSubPurchaseToken, NICEGRAM_PREMIUM_SUB_ID))?.data?.text
+                val result = entryPoint().apiService().speech2Text(Speech2TextBody(fileToBytes(audioFile), provider, deviceLang, alternatives, entryPoint().billingManager().currentSubPurchaseToken, NICEGRAM_PREMIUM_SUB_ID)).data?.text
                 uiScope.launch { callback(result) }
             } catch (e: Exception) {
                 Timber.e(e)
@@ -48,7 +51,7 @@ object NicegramSpeechToTextHelper {
     }
 
     private fun pickProvider(context: Context): String {
-        return if (NicegramBillingHelper.userHasNgPremiumSub && PrefsHelper.getSpeech2TextOpenAi(context)) {
+        return if (NicegramBillingHelper.getUserHasNgPremiumSub(context) && PrefsHelper.getSpeech2TextOpenAi(context)) {
             PROVIDER_OPEN_AI
         } else {
             PROVIDER_GOOGLE

@@ -17,6 +17,8 @@ import android.view.ViewGroup;
 import androidx.annotation.Keep;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.assistant_core.MainActivity;
+
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramWalletHelper;
 
@@ -307,6 +309,13 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
         }
         UserConfig me = UserConfig.getInstance(UserConfig.selectedAccount);
         boolean showDivider = false;
+
+        // region ng
+        Item ngAssistantItem = new Item(100001, mContext.getText(R.string.NicegramAppName), R.drawable.ng_logo_no_bg_white_24);
+        ngAssistantItem.listener = v -> MainActivity.Companion.launchAssistant(mContext);
+        items.add(ngAssistantItem);
+        // endregion
+
         items.add(new Item(16, LocaleController.getString(R.string.MyProfile), R.drawable.left_status_profile));
         if (me != null && me.isPremium()) {
             if (me.getEmojiStatus() != null) {
@@ -341,11 +350,6 @@ public class DrawerLayoutAdapter extends RecyclerListView.SelectionAdapter {
                 }
             }
         }
-        // region ng
-        Item ngWalletItem = new Item(100001, mContext.getText(R.string.NgWallet_SolanaWallet), R.drawable.ng_wallet_wallet_outline);
-        ngWalletItem.listener = v -> NicegramWalletHelper.INSTANCE.launchWalletIfPossible(mContext);
-        items.add(ngWalletItem);
-        // endregion
 
         if (showDivider) {
             items.add(null); // divider

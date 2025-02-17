@@ -1,15 +1,18 @@
 package com.appvillis.nicegram
 
 import android.app.Activity
+import android.content.Context
 import com.appvillis.assistant_core.InChatMainActivity
 import com.appvillis.nicegram_wallet.module_bridge.InChatResultManager
 import com.appvillis.nicegram_wallet.wallet_contacts.domain.WalletContact
+import dagger.hilt.EntryPoints
 
 object NicegramIcWalletHelper {
-    var inChatResultManager: InChatResultManager? = null
+    private fun entryPoint(context: Context) =
+        EntryPoints.get(context.applicationContext, NicegramAssistantEntryPoint::class.java)
 
-    fun setUseResultListener(listener: InChatResultManager.InChatResultLister) {
-        inChatResultManager?.listener = listener
+    fun setUseResultListener(context: Context, listener: InChatResultManager.InChatResultLister) {
+        entryPoint(context).inChatResultManager().listener = listener
     }
 
     fun launchInChatWidget(
@@ -30,14 +33,14 @@ object NicegramIcWalletHelper {
         )
     }
 
-    private fun nameString(firstName: String?, lastName: String?): String {
+    fun nameString(firstName: String?, lastName: String?): String {
         return if (firstName.isNullOrEmpty() && lastName.isNullOrEmpty()) ""
         else if (firstName.isNullOrEmpty() && !lastName.isNullOrEmpty()) lastName
         else if (lastName.isNullOrEmpty() && !firstName.isNullOrEmpty()) firstName
         else "$firstName $lastName"
     }
 
-    private fun usernameString(username: String?): String {
+    fun usernameString(username: String?): String {
         return if (username.isNullOrEmpty()) ""
         else "@${username}"
     }

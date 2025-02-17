@@ -25,19 +25,13 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import androidx.collection.MutableIntObjectMap;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
-import com.appvillis.feature_attention_economy.domain.entities.AttAd;
-import com.appvillis.feature_attention_economy.presentation.ui.banner.AttBannerDialogsView;
 import com.appvillis.feature_chat_widgets.NgWidgetsHelper;
 import com.appvillis.feature_chat_widgets.NgWidgetsView;
 import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
-import com.appvillis.nicegram.AnalyticsHelper;
-import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
-import com.appvillis.rep_placements.domain.entity.PinnedChatsPlacement;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
@@ -90,10 +84,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 
-import javax.annotation.Nullable;
-
-import app.nicegram.PrefsHelper;
-import app.nicegram.ui.DialogsAttHelper;
+import timber.log.Timber;
 
 public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements DialogCell.DialogCellDelegate {
     public final static int VIEW_TYPE_DIALOG = 0,
@@ -116,11 +107,8 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             VIEW_TYPE_FOLDER_UPDATE_HINT = 17,
             VIEW_TYPE_STORIES = 18,
             VIEW_TYPE_ARCHIVE_FULLSCREEN = 19,
-            VIEW_TYPE_NG_PIN = 100000,
-            VIEW_TYPE_NG_ATT = 100001,
             VIEW_TYPE_NG_WIDGETS = 100002;
 
-    private final MutableIntObjectMap<PinnedChatsPlacement> ngPinnedPlacementMap = new MutableIntObjectMap<>();
     private Context mContext;
     private ArchiveHintCell archiveHintCell;
     private ArrayList<TLRPC.TL_contact> onlineContacts;
@@ -175,25 +163,14 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         initNgHelpers();
     }
 
-    private DialogsAttHelper dialogsAttHelper;
     private NgWidgetsHelper ngWidgetsHelper;
     private void initNgHelpers() {
-        dialogsAttHelper = new DialogsAttHelper(mContext, parentFragment, () -> {
-            this.updateList(null);
-            return null;
-        });
         ngWidgetsHelper = new NgWidgetsHelper(mContext);
     }
 
     public boolean hasNgWidgets() {
         if (ngWidgetsHelper == null) return false;
         return ngWidgetsHelper.needToShowWidgets();
-    }
-
-    @Nullable
-    public AttAd getAttAd() {
-        if (dialogsAttHelper == null) return null;
-        return dialogsAttHelper.getAd();
     }
 
     public void setRecyclerListView(RecyclerListView recyclerListView) {
@@ -389,7 +366,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 return false;
             }
 
-            if (viewType == VIEW_TYPE_NG_PIN || viewType == VIEW_TYPE_NG_ATT || viewType == VIEW_TYPE_NG_WIDGETS) {
+            if (viewType == VIEW_TYPE_NG_WIDGETS) {
                 return true;
             }
             if (viewType == VIEW_TYPE_DIALOG) {
@@ -603,26 +580,15 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         return viewType != VIEW_TYPE_FLICKER && viewType != VIEW_TYPE_EMPTY && viewType != VIEW_TYPE_DIVIDER &&
                 viewType != VIEW_TYPE_SHADOW && viewType != VIEW_TYPE_HEADER &&
                 viewType != VIEW_TYPE_LAST_EMPTY && viewType != VIEW_TYPE_NEW_CHAT_HINT && viewType != VIEW_TYPE_CONTACTS_FLICKER &&
-                viewType != VIEW_TYPE_REQUIREMENTS && viewType != VIEW_TYPE_REQUIRED_EMPTY && viewType != VIEW_TYPE_STORIES && viewType != VIEW_TYPE_ARCHIVE_FULLSCREEN;
+                viewType != VIEW_TYPE_REQUIREMENTS && viewType != VIEW_TYPE_REQUIRED_EMPTY && viewType != VIEW_TYPE_STORIES && viewType != VIEW_TYPE_ARCHIVE_FULLSCREEN && viewType != VIEW_TYPE_NG_WIDGETS;
     }
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
         View view;
         switch (viewType) {
-            case VIEW_TYPE_NG_ATT:
-                view = new AttBannerDialogsView(mContext);
-                break;
             case VIEW_TYPE_NG_WIDGETS:
                 view = new NgWidgetsView(mContext);
-                break;
-            case VIEW_TYPE_NG_PIN:
-                DialogCell ngPinChatCell = new DialogCell(parentFragment, mContext, true, false, currentAccount, null);
-                ngPinChatCell.setArchivedPullAnimation(pullForegroundDrawable);
-                ngPinChatCell.setPreloader(preloader);
-                ngPinChatCell.setDialogCellDelegate(this);
-                ngPinChatCell.setIsTransitionSupport(isTransitionSupport);
-                view = ngPinChatCell;
                 break;
             case VIEW_TYPE_DIALOG:
                 if (dialogsType == DialogsActivity.DIALOGS_TYPE_ADD_USERS_TO ||
@@ -848,33 +814,11 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int i) {
         switch (holder.getItemViewType()) {
-            case VIEW_TYPE_NG_ATT: {
-                View view = holder.itemView;
-                if (view instanceof AttBannerDialogsView) {
-                    AttAd ad = getAttAd();
-                    if (ad != null) ((AttBannerDialogsView) view).setAd(ad, Theme.getColor(Theme.key_chats_name), Theme.getColor(Theme.key_chats_message), Theme.getColor(Theme.key_chats_pinnedIcon));
-                }
-                break;
-            }
             case VIEW_TYPE_NG_WIDGETS: {
                 View view = holder.itemView;
                 if (view instanceof NgWidgetsView) {
-                    ((NgWidgetsView) view).setData(Theme.getColor(Theme.key_chats_name), Theme.getColor(Theme.key_chats_message), Color.TRANSPARENT);
+                    ((NgWidgetsView) view).setData(Theme.getColor(Theme.key_chats_name), Theme.getColor(Theme.key_chats_message), Theme.getColor(Theme.key_chats_pinnedOverlay));
                 }
-                break;
-            }
-            case VIEW_TYPE_NG_PIN: {
-                DialogCell cell = (DialogCell) holder.itemView;
-                DialogCell.CustomDialog customDialog = new DialogCell.CustomDialog();
-                PinnedChatsPlacement placement = ngPinnedPlacementMap.get(i);
-                if (placement == null) break;
-                customDialog.placement = placement;
-                customDialog.name = placement.getName();
-                customDialog.message = placement.getDesc();
-                customDialog.pinned = true;
-                cell.setDialog(customDialog);
-
-                AnalyticsHelper.INSTANCE.logOneTimePerSessionEvent("pin_show_" + placement.getId(), null);
                 break;
             }
             case VIEW_TYPE_DIALOG: {
@@ -1117,9 +1061,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     public int getItemViewType(int i) {
         return itemInternals.get(i).viewType;
     }
-
-    @Nullable
-    public PinnedChatsPlacement getNgPinChatPlacementByPosition(int position) { return ngPinnedPlacementMap.get(position); }
 
     public void moveDialogs(RecyclerListView recyclerView, int fromPosition, int toPosition) {
         ArrayList<TLRPC.Dialog> dialogs = parentFragment.getDialogsArray(currentAccount, dialogsType, folderId, false);
@@ -1612,49 +1553,21 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             }
         }
 
-        boolean hasAnyShowingNgPin = false;
-        for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements()) {
-            if (PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, placement.getId())) {
-                hasAnyShowingNgPin = true;
+        int positionToInsert = 0;
+        for (int i = 0; i < itemInternals.size(); i++) {
+            ItemInternal item = itemInternals.get(i);
+            if (item.dialog != null && !(item.dialog instanceof TLRPC.TL_dialogFolder)) {
+                positionToInsert = i;
                 break;
             }
         }
-        AttAd ad = getAttAd();
-        if (ad != null) hasAnyShowingNgPin = true;
 
-        if (hasNgWidgets()) hasAnyShowingNgPin = true;
-
-        if (hasAnyShowingNgPin) {
-            int positionToInsert = 0;
-            if (SharedConfig.archiveHidden) {
-                for (int i = 0; i < itemInternals.size(); i++) {
-                    ItemInternal item = itemInternals.get(i);
-                    if (item.dialog != null && !(item.dialog instanceof TLRPC.TL_dialogFolder)) {
-                        positionToInsert = i;
-                        break;
-                    }
-                }
-            }
-
-            if (hasNgWidgets()) {
-                itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_NG_WIDGETS));
-                positionToInsert++;
-            }
-
-            for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements()) {
-                if (PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, placement.getId())) {
-                    ngPinnedPlacementMap.put(positionToInsert, placement);
-                    itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_NG_PIN));
-                    positionToInsert++;
-                }
-            }
-            ad = getAttAd();
-            if (ad != null) {
-                itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_NG_ATT));
-                positionToInsert++;
-            }
-
-            itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_SHADOW));
+        if (hasNgWidgets()) {
+            //itemInternals.add(SharedConfig.archiveHidden ? positionToInsert : 0, new ItemInternal(VIEW_TYPE_NG_WIDGETS));
+            itemInternals.add(positionToInsert, new ItemInternal(VIEW_TYPE_NG_WIDGETS));
+            Timber.d("VIEW_TYPE_NG_WIDGETS added");
+        } else {
+            Timber.d("VIEW_TYPE_NG_WIDGETS not added");
         }
 
         // region ng hidden chats
@@ -1692,6 +1605,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             } else {
                 return cellHeight;
             }
+        } else if (itemInternals.get(position).viewType == VIEW_TYPE_NG_WIDGETS) {
+            RecyclerView.ViewHolder vh = this.recyclerListView.findViewHolderForAdapterPosition(position);
+            return vh != null ? vh.itemView.getHeight() : 0;
         }
         return 0;
     }

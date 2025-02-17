@@ -87,11 +87,9 @@ public class AiBotSettingsActivity extends BaseFragment {
                         getContext().getString(R.string.Chatbot_ClearAlertTitle), getContext().getString(R.string.Chatbot_ClearAlertText),
                         getContext().getString(R.string.Chatbot_ClearAlertYes),
                         () -> {
-                            if (AiChatBotHelper.INSTANCE.getClearDataUseCase() != null) {
-                                AiChatBotHelper.INSTANCE.getClearDataUseCase().invoke();
-                                ToastView toastView = ToastView.Companion.newInstance(getParentActivity(), LocaleController.getString("CancelLinkSuccessTitle"), R.drawable.toast_success_icon, false);
-                                ToastViewHelper.INSTANCE.showViewToast(toastView, fragmentView, true, true, AndroidUtilities.dp(24));
-                            }
+                            AiChatBotHelper.INSTANCE.getClearDataUseCase(getContext()).invoke();
+                            ToastView toastView = ToastView.Companion.newInstance(getParentActivity(), LocaleController.getString("CancelLinkSuccessTitle"), R.drawable.toast_success_icon, false);
+                            ToastViewHelper.INSTANCE.showViewToast(toastView, fragmentView, true, true, AndroidUtilities.dp(24));
                         },
                         getResourceProvider()
                 ).create().show();

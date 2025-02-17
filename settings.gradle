@@ -29,6 +29,8 @@ def modules = [
         'feature-attention-economy',
         'feature-onboarding-steps',
         'feature-chat-widgets',
+        'feature-pump-ads',
+        'feature-ai-agents',
 ]
 
 for (module in modules) {

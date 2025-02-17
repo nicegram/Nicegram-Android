@@ -20,6 +20,7 @@ import com.appvillis.nicegram.NicegramPrefs;
 import com.appvillis.rep_placements.domain.entity.PinnedChatsPlacement;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
@@ -50,7 +51,7 @@ public class NicegramSettingsActivity extends BaseFragment {
 
 
     private int pinSectionHeaderRow;
-    private final MutableIntObjectMap<PinnedChatsPlacement> pinSectionRowsMap = new MutableIntObjectMap<>();
+    private final MutableIntObjectMap<PinRow> pinSectionRowsMap = new MutableIntObjectMap<>();
     private int unblockGuideRow;
 
     private int nicegramSectionRow;
@@ -79,13 +80,40 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int showNgBtnInChatRow;
     private int rowCount = 0;
 
+    abstract static class PinRow {
+        abstract String getName();
+
+        static class ChatPlacementPin extends PinRow {
+            PinnedChatsPlacement placement;
+
+            public ChatPlacementPin(PinnedChatsPlacement placement) {
+                this.placement = placement;
+            }
+            @Override
+            String getName() {
+                return placement.getName();
+            }
+        }
+
+        static class PumpPin extends PinRow {
+            @Override
+            String getName() {
+                return "Pump Advertising";
+            }
+        }
+    }
+
     @Override
     public boolean onFragmentCreate() {
-        if (NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements().size() > 0)
+        if (!NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements(ApplicationLoader.applicationContext).isEmpty() || NicegramPinChatsPlacementHelper.INSTANCE.pumpFeatureEnabled(ApplicationLoader.applicationContext))
             pinSectionHeaderRow = rowCount++;
-        for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements()) {
-            pinSectionRowsMap.put(rowCount++, placement);
+        for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements(ApplicationLoader.applicationContext)) {
+            pinSectionRowsMap.put(rowCount++, new PinRow.ChatPlacementPin(placement));
         }
+        if (NicegramPinChatsPlacementHelper.INSTANCE.pumpFeatureEnabled(ApplicationLoader.applicationContext)) {
+            pinSectionRowsMap.put(rowCount++, new PinRow.PumpPin());
+        }
+
         nicegramSectionRow = rowCount++;
         unblockGuideRow = rowCount++;
         maxAccountsRow = rowCount++;
@@ -233,9 +261,15 @@ public class NicegramSettingsActivity extends BaseFragment {
                 enabled = NicegramClientHelper.INSTANCE.getPreferences().getCanShareStickers();
                 NicegramClientHelper.INSTANCE.getPreferences().setCanShareStickers(!enabled);
             } else if (pinSectionRowsMap.contains(position)) {
-                PinnedChatsPlacement placement = pinSectionRowsMap.get(position);
-                enabled = PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, placement.getId());
-                PrefsHelper.INSTANCE.setShowPinChatsPlacementWithId(currentAccount, !enabled, placement.getId());
+                PinRow pinRow = pinSectionRowsMap.get(position);
+                if (pinRow instanceof PinRow.ChatPlacementPin) {
+                    PinnedChatsPlacement placement = ((PinRow.ChatPlacementPin) pinRow).placement;
+                    enabled = !NicegramPinChatsPlacementHelper.INSTANCE.isPinnedChatHidden(context, ((PinRow.ChatPlacementPin) pinRow).placement.getId());
+                    NicegramPinChatsPlacementHelper.INSTANCE.setPinnedChatHidden(context, placement.getId(), enabled);
+                } else if (pinRow instanceof PinRow.PumpPin) {
+                    enabled = NicegramPinChatsPlacementHelper.INSTANCE.pumpEnabled(context);
+                    NicegramPinChatsPlacementHelper.INSTANCE.setPumpEnabled(context, !enabled);
+                }
             } else if (position == unblockGuideRow) {
                 Browser.openUrl(getParentActivity(), NicegramConsts.UNBLOCK_URL);
             } else if (position == doubleBottomRow) {
@@ -399,8 +433,15 @@ public class NicegramSettingsActivity extends BaseFragment {
                     } else if (position == showHiddenChatsRow) {
                         checkCell.setTextAndCheck(getContext().getString(R.string.NicegramShowHiddenChats), HiddenChatsHelper.INSTANCE.getShowHiddenChats(), false);
                     } else if (pinSectionRowsMap.contains(position)) {
-                        PinnedChatsPlacement placement = pinSectionRowsMap.get(position);
-                        checkCell.setTextAndCheck(SpannableStringBuilder.valueOf(placement.getName()), PrefsHelper.INSTANCE.getShowPinChatsPlacementWithId(currentAccount, placement.getId()), false);
+                        PinRow pinRow = pinSectionRowsMap.get(position);
+                        boolean checked = false;
+                        if (pinRow instanceof PinRow.ChatPlacementPin) {
+                            PinnedChatsPlacement placement = ((PinRow.ChatPlacementPin) pinRow).placement;
+                            checked = !NicegramPinChatsPlacementHelper.INSTANCE.isPinnedChatHidden(mContext, placement.getId());
+                        } else if (pinRow instanceof PinRow.PumpPin) {
+                            checked = NicegramPinChatsPlacementHelper.INSTANCE.pumpEnabled(mContext);
+                        }
+                        checkCell.setTextAndCheck(pinRow.getName(), checked, false);
                     }
                     break;
                 }

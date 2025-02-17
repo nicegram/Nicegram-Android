@@ -1,48 +1,45 @@
 package com.appvillis.nicegram
 
-import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo
-import com.appvillis.feature_avatar_generator.domain.usecases.AvatarsOnboardingUseCase
-import com.appvillis.feature_avatar_generator.domain.usecases.GetAvatarsUseCase
-import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase
-import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase
+import android.content.Context
 import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository
-import com.appvillis.rep_placements.domain.GetChatPlacementsUseCase
-import com.appvillis.rep_user.domain.AppSessionControlUseCase
+import dagger.hilt.EntryPoints
 
 object NicegramAssistantHelper {
-    var getNicegramOnboardingStatusUseCase: GetNicegramOnboardingStatusUseCase? = null
-    var getSpecialOfferUseCase: GetSpecialOfferUseCase? = null
-    var appSessionControlUseCase: AppSessionControlUseCase? = null
-    var avatarsOnboardingUseCase: AvatarsOnboardingUseCase? = null
-    var getAvatarsUseCase: GetAvatarsUseCase? = null
-    lateinit var getChatPlacementsUseCase: GetChatPlacementsUseCase
-    lateinit var aiChatConfigRepo: AiChatRemoteConfigRepo
+    private fun entryPoint(context: Context) = EntryPoints.get(context.applicationContext, NicegramAssistantEntryPoint::class.java)
 
-    fun getSpecialOffer(): SpecialOffersRepository.SpecialOffer? {
-        if (!getSpecialOfferUseCase!!.haveSeenCurrentOffer() && getSpecialOfferUseCase!!.canShowSpecialOfferCurrentSession(
-                appSessionControlUseCase!!.appSessionNumber
+    fun getSpecialOffer(context: Context): SpecialOffersRepository.SpecialOffer? {
+        val ep = entryPoint(context)
+        val getSpecialOfferUseCase = ep.getSpecialOfferUseCase()
+        val appSessionControlUseCase = ep.appSessionControlUseCase()
+
+        if (!getSpecialOfferUseCase.haveSeenCurrentOffer() && getSpecialOfferUseCase.canShowSpecialOfferCurrentSession(
+                appSessionControlUseCase.appSessionNumber
             )
         ) {
-            return getSpecialOfferUseCase!!.specialOffer
+            return getSpecialOfferUseCase.specialOffer
         }
 
         return null
     }
 
-    fun findSpecialOffer(id: Int): SpecialOffersRepository.SpecialOffer? {
-        return getSpecialOfferUseCase?.allOffers?.find { it.id == id }
+    fun findSpecialOffer(context: Context, id: Int): SpecialOffersRepository.SpecialOffer? {
+        val ep = entryPoint(context)
+        val getSpecialOfferUseCase = ep.getSpecialOfferUseCase()
+
+        return getSpecialOfferUseCase.allOffers.find { it.id == id }
     }
 
-    fun getPossibleChatPlacements(isRestricted: Boolean, hasNgPremium: Boolean) =
-        getChatPlacementsUseCase.invoke()
+    fun getPossibleChatPlacements(context: Context, isRestricted: Boolean, hasNgPremium: Boolean) =
+        entryPoint(context).getChatPlacementsUseCase().invoke()
             .filter { placement ->
                 val isChatTypeMatch = if (isRestricted) placement.showInRestrictedChat else placement.showInChat
-                val isUserTypeMatch = if (hasNgPremium) placement.showToPremium else true // Предполагаем, что все могут видеть непремиум-контент
+                val isUserTypeMatch =
+                    if (hasNgPremium) placement.showToPremium else true // Предполагаем, что все могут видеть непремиум-контент
                 isChatTypeMatch && isUserTypeMatch
             }
 
-    val esimSplashData get() = aiChatConfigRepo.esimSplashData
+    fun getEsimSplashData(context: Context) = entryPoint(context).aiChatRemoteConfigRepo().esimSplashData
 
-    fun shouldShowAvatarsWelcome() = avatarsOnboardingUseCase?.hasSeenWelcome == false
-    fun hasGeneratedAvatar() = getAvatarsUseCase?.hasAnyAvatar == true
+    fun shouldShowAvatarsWelcome(context: Context) = !entryPoint(context).avatarsOnboardingUseCase().hasSeenWelcome
+    fun hasGeneratedAvatar(context: Context) = entryPoint(context).getAvatarsUseCase().hasAnyAvatar
 }

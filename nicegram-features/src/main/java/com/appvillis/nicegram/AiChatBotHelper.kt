@@ -1,35 +1,28 @@
 package com.appvillis.nicegram
 
 import android.app.Activity
+import android.content.Context
 import com.appvillis.assistant_core.MainActivity
-import com.appvillis.core_resources.domain.TgResourceProvider
-import com.appvillis.feature_ai_chat.domain.ClearDataUseCase
 import com.appvillis.feature_ai_chat.domain.UseResultManager
 import com.appvillis.feature_ai_chat.domain.entity.AiCommand
-import com.appvillis.feature_ai_chat.domain.usecases.GetBalanceTopUpRequestUseCase
-import com.appvillis.feature_ai_chat.domain.usecases.GetChatCommandsUseCase
 import com.appvillis.feature_auth.AuthNavHelper
-import com.appvillis.feature_nicegram_billing.domain.RequestInAppsUseCase
 import com.appvillis.nicegram.NicegramScopes.uiScope
-import com.appvillis.rep_user.domain.GetUserStatusUseCase
+import dagger.hilt.EntryPoints
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 object AiChatBotHelper {
-    var getChatCommandsUseCase: GetChatCommandsUseCase? = null
-    var getUserStatusUseCase: GetUserStatusUseCase? = null
-    var requestInAppsUseCase: RequestInAppsUseCase? = null
-    var getBalanceTopUpRequestUseCase: GetBalanceTopUpRequestUseCase? = null
-    var useResultManager: UseResultManager? = null
-    var clearDataUseCase: ClearDataUseCase? = null
-    var tgResourceProvider: TgResourceProvider? = null
+    private fun entryPoint(context: Context) =
+        EntryPoints.get(context.applicationContext, NicegramAssistantEntryPoint::class.java)
 
-    fun setUseResultListener(listener: UseResultManager.UseResultLister) {
-        useResultManager?.listener = listener
+    fun getClearDataUseCase(context: Context) = entryPoint(context).clearDataUseCase()
+
+    fun setUseResultListener(context: Context, listener: UseResultManager.UseResultLister) {
+        entryPoint(context).useResultManager().listener = listener
     }
 
     fun launchAiBot(activity: Activity, dialog: Boolean) {
-        val getUserStatusUseCase = getUserStatusUseCase ?: return
+        val getUserStatusUseCase = entryPoint(activity).getUserStatusUseCase()
         if (getUserStatusUseCase.isUserLoggedIn) {
             //if (dialog) MainActivity.launchAiBotDialog(null, null, activity, telegramId)
             if (dialog) MainActivity.launchAiBot(activity)
@@ -43,7 +36,7 @@ object AiChatBotHelper {
     private var topUpRequestJob: Job? = null
 
     fun registerTopUpCallback(callbackActivity: Activity) {
-        val getBalanceTopUpRequestUseCase = getBalanceTopUpRequestUseCase ?: return
+        val getBalanceTopUpRequestUseCase = entryPoint(callbackActivity).getBalanceTopUpRequestUseCase()
         topUpRequestJob = uiScope.launch {
             getBalanceTopUpRequestUseCase().collect {
                 MainActivity.launchAiTopUp(callbackActivity, false)
@@ -55,13 +48,12 @@ object AiChatBotHelper {
         topUpRequestJob?.cancel()
     }
 
-    fun getContextCommands(): List<AiCommand> {
-        val getChatCommandsUseCase = getChatCommandsUseCase ?: return listOf()
-        return getChatCommandsUseCase.contextCommands
+    fun getContextCommands(context: Context): List<AiCommand> {
+        return entryPoint(context).getChatCommandsUseCase().contextCommands
     }
 
     fun onContextCommandClick(activity: Activity, command: AiCommand, text: String) {
-        val getUserStatusUseCase = getUserStatusUseCase ?: return
+        val getUserStatusUseCase = entryPoint(activity).getUserStatusUseCase()
         if (getUserStatusUseCase.isUserLoggedIn) {
             MainActivity.launchAiBotDialog(command, text, activity)
         } else {

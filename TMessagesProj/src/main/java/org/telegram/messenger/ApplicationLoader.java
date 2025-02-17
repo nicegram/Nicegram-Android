@@ -36,50 +36,15 @@ import androidx.annotation.NonNull;
 import androidx.multidex.MultiDex;
 
 import com.appvillis.assistant_core.app.AppInit;
-import com.appvillis.core_network.ApiService;
 import com.appvillis.core_resources.domain.TgResourceProvider;
-import com.appvillis.feature_ai_chat.domain.AiChatCommandsRepository;
-import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo;
-import com.appvillis.feature_ai_chat.domain.ClearDataUseCase;
-import com.appvillis.feature_ai_chat.domain.UseResultManager;
-import com.appvillis.feature_ai_chat.domain.usecases.GetBalanceTopUpRequestUseCase;
-import com.appvillis.feature_ai_chat.domain.usecases.GetChatCommandsUseCase;
-import com.appvillis.feature_analytics.domain.AnalyticsManager;
-import com.appvillis.feature_avatar_generator.domain.usecases.AvatarsOnboardingUseCase;
-import com.appvillis.feature_avatar_generator.domain.usecases.GetAvatarsUseCase;
 import com.appvillis.feature_nicegram_assistant.QrCodeHelper;
-import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase;
-import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase;
-import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
-import com.appvillis.feature_nicegram_billing.domain.BillingManager;
-import com.appvillis.feature_nicegram_billing.domain.RequestInAppsUseCase;
-import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase;
-import com.appvillis.feature_nicegram_client.domain.NgClientRemoteConfigRepo;
-import com.appvillis.feature_nicegram_client.domain.NicegramClientOnboardingUseCase;
-import com.appvillis.feature_nicegram_client.domain.NgRevLoginUseCase;
 import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter;
 import com.appvillis.lib_android_base.Intents;
-import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.nicegram.AnalyticsHelper;
-import com.appvillis.nicegram.NicegramAssistantHelper;
-import com.appvillis.nicegram.NicegramIcWalletHelper;
-import com.appvillis.nicegram.NicegramLoginHelper;
-import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
 import com.appvillis.nicegram.NicegramPrefs;
-import com.appvillis.nicegram.ReviewHelper;
-import com.appvillis.nicegram.TgBridgeDependenciesHolder;
 import com.appvillis.nicegram.network.NicegramNetwork;
-import com.appvillis.nicegram_wallet.module_bridge.InChatResultManager;
-import com.appvillis.nicegram_wallet.wallet_scanqr.QrResultEmitter;
-import com.appvillis.nicegram_wallet.wallet_security.domain.VerificationManager;
-import com.appvillis.nicegram_wallet.wallet_storage.domain.GetCurrentWalletUseCase;
-import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager;
-import com.appvillis.rep_placements.domain.GetChatPlacementsUseCase;
-import com.appvillis.rep_placements.domain.GetPinChatsPlacementsUseCase;
 import com.appvillis.rep_user.domain.AppSessionControlUseCase;
-import com.appvillis.rep_user.domain.ClaimDailyRewardUseCase;
 import com.appvillis.rep_user.domain.GetUserStatusUseCase;
-import com.appvillis.rep_user.domain.UserRepository;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.zxing.BarcodeFormat;
@@ -106,16 +71,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import app.nicegram.DailyRewardsHelper;
-import app.nicegram.NicegramAnalyticsHelper;
 import app.nicegram.NicegramDoubleBottom;
-import app.nicegram.NicegramGroupCollectHelper;
-import app.nicegram.NicegramSpeechToTextHelper;
-import app.nicegram.NicegramWalletHelper;
 import app.nicegram.PrefsHelper;
 import app.nicegram.TgThemeProxyImpl;
-import app.nicegram.bridge.NicegramDeepLinksHelper;
-import kotlinx.coroutines.CoroutineScope;
 import timber.log.Timber;
 
 public class ApplicationLoader extends Application {
@@ -148,76 +106,15 @@ public class ApplicationLoader extends Application {
     private static ILocationServiceProvider locationServiceProvider;
 
     @Inject
-    public ClaimDailyRewardUseCase claimDailyRewardUseCase;
-    @Inject
     public GetUserStatusUseCase getUserStatusUseCase;
-    @Inject
-    public GetCurrentWalletUseCase getCurrentWalletUseCase;
-    @Inject
-    public VerificationManager verificationManager;
-    @Inject
-    public QrResultEmitter qrResultEmitter;
-    @Inject
-    public CoroutineScope appScope;
-    @Inject
-    public GetChatCommandsUseCase getChatCommandsUseCase;
-    @Inject
-    public GetBalanceTopUpRequestUseCase getBalanceTopUpRequestUseCase;
-    @Inject
-    public RequestInAppsUseCase requestInAppsUseCase;
-    @Inject
-    public GetNicegramOnboardingStatusUseCase getNicegramOnboardingStatusUseCase;
-    @Inject
-    public CollectGroupInfoUseCase collectGroupInfoUseCase;
     @Inject
     public AppSessionControlUseCase appSessionControlUseCase;
     @Inject
-    public GetPinChatsPlacementsUseCase pinChatsPlacementsUseCase;
-    @Inject
-    public GetChatPlacementsUseCase chatPlacementsUseCase;
-    @Inject
-    public GetSpecialOfferUseCase getSpecialOfferUseCase;
-    @Inject
-    public AvatarsOnboardingUseCase avatarsOnboardingUseCase;
-    @Inject
-    public GetAvatarsUseCase getAvatarsUseCase;
-    @Inject
-    public BillingManager billingManager;
-    @Inject
-    public UserRepository userRepository;
-    @Inject
-    public NgClientRemoteConfigRepo remoteConfigRepo;
-
-    @Inject
-    public AiChatRemoteConfigRepo remoteConfigRepoAi;
-    @Inject
     public NicegramSessionCounter nicegramSessionCounter;
-    @Inject
-    public UseResultManager useResultManager;
-    @Inject
-    public ClearDataUseCase clearDataUseCase;
     @Inject
     public AppInit appInit;
     @Inject
     public TgResourceProvider tgResourceProvider;
-    @Inject
-    public AnalyticsManager analyticsManager;
-    @Inject
-    public ApiService apiService;
-
-    @Inject
-    public TcDeeplinkManager tcDeeplinkManager;
-
-    @Inject
-    public InChatResultManager inChatResultManager;
-    @Inject
-    public NicegramDeepLinksHelper nicegramDeepLinksHelper;
-
-    @Inject
-    public TgBridgeDependenciesHolder tgBridgeDependenciesHolder;
-
-    @Inject
-    public NgRevLoginUseCase ngRevLoginUseCase;
 
     private static ApplicationLoader appInstance = null;
 
@@ -728,57 +625,18 @@ public class ApplicationLoader extends Application {
         NicegramDoubleBottom.INSTANCE.init(this);
 
         nicegramSessionCounter.increaseSessionCount();
-        ReviewHelper.INSTANCE.setNicegramSessionCounter(nicegramSessionCounter);
+        appSessionControlUseCase.increaseSessionCount();
 
         appInit.initialize();
 
-        appSessionControlUseCase.increaseSessionCount();
         tgResourceProvider.setThemeProxy(new TgThemeProxyImpl());
-
-        AnalyticsHelper.INSTANCE.setAnalyticsManager(analyticsManager);
-
-        DailyRewardsHelper.INSTANCE.setUseCase(claimDailyRewardUseCase);
-
-        AiChatBotHelper.INSTANCE.setGetChatCommandsUseCase(getChatCommandsUseCase);
-        AiChatBotHelper.INSTANCE.setGetUserStatusUseCase(getUserStatusUseCase);
-        AiChatBotHelper.INSTANCE.setClearDataUseCase(clearDataUseCase);
-        AiChatBotHelper.INSTANCE.setRequestInAppsUseCase(requestInAppsUseCase);
-        AiChatBotHelper.INSTANCE.setGetBalanceTopUpRequestUseCase(getBalanceTopUpRequestUseCase);
-        AiChatBotHelper.INSTANCE.setUseResultManager(useResultManager);
-        AiChatBotHelper.INSTANCE.setTgResourceProvider(tgResourceProvider);
-
-        NicegramAssistantHelper.INSTANCE.setGetNicegramOnboardingStatusUseCase(getNicegramOnboardingStatusUseCase);
-        NicegramAssistantHelper.INSTANCE.setGetSpecialOfferUseCase(getSpecialOfferUseCase);
-        NicegramAssistantHelper.INSTANCE.setAppSessionControlUseCase(appSessionControlUseCase);
-        NicegramAssistantHelper.INSTANCE.setGetChatPlacementsUseCase(chatPlacementsUseCase);
-        NicegramAssistantHelper.INSTANCE.setAiChatConfigRepo(remoteConfigRepoAi);
-        NicegramAssistantHelper.INSTANCE.setAvatarsOnboardingUseCase(avatarsOnboardingUseCase);
-        NicegramAssistantHelper.INSTANCE.setGetAvatarsUseCase(getAvatarsUseCase);
-        NicegramPinChatsPlacementHelper.INSTANCE.setGetPinChatsPlacementsUseCase(pinChatsPlacementsUseCase);
-        NicegramAnalyticsHelper.INSTANCE.setAnalyticsManager(analyticsManager);
-        NicegramBillingHelper.INSTANCE.setBillingManager(billingManager);
-        NicegramBillingHelper.INSTANCE.setUserRepository(userRepository);
-        NicegramGroupCollectHelper.INSTANCE.setCollectGroupInfoUseCase(collectGroupInfoUseCase);
-        NicegramGroupCollectHelper.INSTANCE.setAppScope(appScope);
-        PrefsHelper.INSTANCE.setRemoteConfigRepo(remoteConfigRepo);
-        NicegramSpeechToTextHelper.INSTANCE.setApiService(apiService);
-        NicegramWalletHelper.INSTANCE.setTcDeeplinkManager(tcDeeplinkManager);
-        NicegramWalletHelper.INSTANCE.setGetUserStatusUseCase(getUserStatusUseCase);
-        NicegramWalletHelper.INSTANCE.setGetCurrentWalletUseCase(getCurrentWalletUseCase);
-        NicegramWalletHelper.INSTANCE.setVerificationManager(verificationManager);
-        NicegramWalletHelper.INSTANCE.setAppScope(appScope);
-        NicegramWalletHelper.INSTANCE.setQrResultEmitter(qrResultEmitter);
-        NicegramIcWalletHelper.INSTANCE.setInChatResultManager(inChatResultManager);
-        NicegramDeepLinksHelper.Companion.setInstance(nicegramDeepLinksHelper);
-        TgBridgeDependenciesHolder.Companion.setInstance(tgBridgeDependenciesHolder);
-        NicegramLoginHelper.INSTANCE.setNgRevLoginUseCase(ngRevLoginUseCase);
 
         Intents.INSTANCE.setTgBrowserBridge((activity, s) -> {
             Browser.openUrl(activity, s);
             return null;
         });
 
-        AnalyticsHelper.INSTANCE.logEvent(getUserStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
+        AnalyticsHelper.INSTANCE.logEvent(this, getUserStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
         new Handler().postDelayed(() -> NicegramNetwork.INSTANCE.getSettings(UserConfig.getInstance(UserConfig.selectedAccount).clientUserId), 3000);
         new Handler().postDelayed(() -> {
             int accountCount = 0;
@@ -795,7 +653,7 @@ public class ApplicationLoader extends Application {
             }
             Map<String, String> paramsMap = new HashMap<>();
             paramsMap.put("profiles_count", String.valueOf(accountCount));
-            AnalyticsHelper.INSTANCE.logEvent("user_set_" + accountCountToLog + "_profiles", paramsMap);
+            AnalyticsHelper.INSTANCE.logEvent(this, "user_set_" + accountCountToLog + "_profiles", paramsMap);
         }, 5000);
 
         setQrRenderer();

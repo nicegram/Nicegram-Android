@@ -1,20 +1,21 @@
 package com.appvillis.nicegram
 
-import com.appvillis.feature_analytics.domain.AnalyticsManager
+import android.content.Context
+import dagger.hilt.EntryPoints
 
 object AnalyticsHelper {
-    var analyticsManager: AnalyticsManager? = null
+    private fun entryPoint(context: Context) = EntryPoints.get(context.applicationContext, NicegramAssistantEntryPoint::class.java)
 
-    val eventsLoggedThisSession = mutableListOf<String>()
+    private val eventsLoggedThisSession = mutableListOf<String>()
 
-    fun logEvent(name: String, params: Map<String, String>?) {
-        analyticsManager?.logEvent(name, params ?: mapOf())
+    fun logEvent(context: Context, name: String, params: Map<String, String>?) {
+        entryPoint(context).analyticsManager().logEvent(name, params ?: mapOf())
     }
 
-    fun logOneTimePerSessionEvent(name: String, params: Map<String, String>?) {
+    fun logOneTimePerSessionEvent(context: Context, name: String, params: Map<String, String>?) {
         if (eventsLoggedThisSession.contains(name)) return
         eventsLoggedThisSession.add(name)
 
-        logEvent(name, params)
+        logEvent(context, name, params)
     }
 }

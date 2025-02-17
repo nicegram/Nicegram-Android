@@ -1,24 +1,26 @@
 package com.appvillis.nicegram
 
-import com.appvillis.feature_nicegram_billing.NicegramBillingHelper
-import com.appvillis.rep_placements.domain.GetPinChatsPlacementsUseCase
-import javax.annotation.Nullable
+import android.content.Context
+import dagger.hilt.EntryPoints
 
 object NicegramPinChatsPlacementHelper {
-    const val AI_ID = "lily_ai"
+    private fun entryPoint(context: Context) =
+        EntryPoints.get(context.applicationContext, NicegramAssistantEntryPoint::class.java)
 
-    var getPinChatsPlacementsUseCase: GetPinChatsPlacementsUseCase? = null
+    fun getPossiblePinChatsPlacements(context: Context) = entryPoint(context).getPinChatsPlacementsUseCase().noFilters()
 
-    private val hasNgPremium get() = NicegramBillingHelper.userHasNgPremiumSub
-    private val filterByPremiumPlacements get() = (getPinChatsPlacementsUseCase?.invoke() ?: emptyList())
-        .filter { placement ->
-            val isUserTypeMatch =
-                if (hasNgPremium) placement.showToPremium else true // Предполагаем, что все могут видеть непремиум-контент
-            isUserTypeMatch
-        }
+    fun isPinnedChatHidden(context: Context, id: String) =
+        entryPoint(context).getPinPlacementsStatusUseCase().invoke(id)
 
-    fun getPossiblePinChatsPlacements() = filterByPremiumPlacements
+    fun setPinnedChatHidden(context: Context, id: String, hidden: Boolean) {
+        if (hidden) entryPoint(context).hidePlacementUseCase().invoke(id)
+        else entryPoint(context).hidePlacementUseCase().unhide(id)
+    }
 
-    @Nullable
-    fun getPinChatsPlacementWithId(pinPlacementId: String) = filterByPremiumPlacements.find { it.id == pinPlacementId }
+    fun pumpFeatureEnabled(context: Context) = entryPoint(context).getPumpAdsConfigUseCase().invoke().value != null
+    fun pumpEnabled(context: Context) = entryPoint(context).getPumpSettingsUseCase().invoke().value.enabled
+
+    fun setPumpEnabled(context: Context, enabled: Boolean) {
+        entryPoint(context).updatePumpSettingsUseCase().setEnabled(enabled)
+    }
 }

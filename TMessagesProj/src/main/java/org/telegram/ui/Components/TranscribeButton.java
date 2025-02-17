@@ -32,7 +32,7 @@ import androidx.core.math.MathUtils;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
 import com.appvillis.core_ui.BuildConfig;
-import com.appvillis.feature_nicegram_billing.NicegramBillingHelper;
+import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.feature_nicegram_client.presentation.premium.NicegramPremiumActivity;
 
 import app.nicegram.NicegramSpeechToTextHelper;
@@ -40,6 +40,7 @@ import app.nicegram.PrefsHelper;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
@@ -131,7 +132,7 @@ public class TranscribeButton {
         this.shouldBeOpen = false;
         premium = parent.getMessageObject() != null && UserConfig.getInstance(parent.getMessageObject().currentAccount).isPremium();
         isRoundVideo = parent.getMessageObject().isRoundVideo();
-        ngCanTranscribe = premium || ((NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub() || PrefsHelper.INSTANCE.alwaysShowSpeech2Text()) && !isRoundVideo);
+        ngCanTranscribe = premium || ((NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub(ApplicationLoader.applicationContext) || PrefsHelper.INSTANCE.alwaysShowSpeech2Text(parent.getContext())) && !isRoundVideo);
 
         loadingFloat = new AnimatedFloat(parent, 250, CubicBezierInterpolator.EASE_OUT_QUINT);
         animatedDrawLock = new AnimatedFloat(parent, 250, CubicBezierInterpolator.EASE_OUT_QUINT);
@@ -692,8 +693,8 @@ public class TranscribeButton {
                     NotificationCenter.getInstance(account).postNotificationName(NotificationCenter.voiceTranscriptionUpdate, messageObject, null, null, (Boolean) true, (Boolean) true);
                 });
             } else {
-                if (!hasTgPremium && (NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub() || PrefsHelper.INSTANCE.alwaysShowSpeech2Text())) {
-                    if (NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub()) {
+                if (!hasTgPremium && (NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub(context) || PrefsHelper.INSTANCE.alwaysShowSpeech2Text(context))) {
+                    if (NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub(context)) {
                         callNgSpeech2Text(context, messageId, peer, messageObject, account, start, dialogId, minDuration);
                     } else {
                         context.startActivity(new Intent(context, NicegramPremiumActivity.class));
@@ -870,7 +871,7 @@ public class TranscribeButton {
 
     private static Handler bulletinHandler = new Handler(Looper.getMainLooper());
     private static void launchPremiumBulletin(Context context) {
-        if (!NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub() && !PrefsHelper.INSTANCE.getSpeech2TextBulletinSeen(context)) {
+        if (!NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub(context) && !PrefsHelper.INSTANCE.getSpeech2TextBulletinSeen(context)) {
             bulletinHandler.removeCallbacksAndMessages(null);
             bulletinHandler.postDelayed(() -> {
                 BulletinFactory bulletinFactory = BulletinFactory.global();

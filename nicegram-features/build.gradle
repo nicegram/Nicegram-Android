@@ -3,6 +3,7 @@ plugins {
     id 'kotlin-android'
     id 'kotlin-kapt'
     id 'dagger.hilt.android.plugin'
+    id 'com.google.devtools.ksp'
 }
 apply plugin: 'kotlin-android'
 
@@ -75,6 +76,9 @@ dependencies {
 
     implementation 'com.google.dagger:hilt-android:2.48'
     kapt 'com.google.dagger:hilt-compiler:2.48'
+
+    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.9.63'
+    ksp 'io.github.raamcosta.compose-destinations:ksp:1.9.63'
 
     implementation project(":assistant-core")
 }

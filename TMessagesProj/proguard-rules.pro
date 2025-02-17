@@ -128,6 +128,7 @@
     *;
 }
 
+-keep class androidx.recyclerview.** { *; }
 -keep class com.appvillis.core_network.data.** { *; }
 -keep class com.appvillis.feature_nuhub.data.NuTagsRepositoryImpl$NuTagJson { *; }
 -keep class com.appvillis.feature_nicegram_assistant.data.SpecialOffersRepositoryImpl$SpecialOfferJson { *; }
@@ -140,12 +141,14 @@
 -keep class com.appvillis.feature_nicegram_client.data.NgClientRemoteConfigRepoImpl$OnboardingConfigJson { *; }
 -keep class com.appvillis.rep_placements.data.PlacementsRepoImpl { *; }
 -keep class com.appvillis.rep_placements.data.PlacementsRepoImpl$* { *; }
-#-keep class com.appvillis.feature_ai_chat.data.FirebaseRemoteConfigRepo$.** { *; }
-#-keep class com.appvillis.feature_ai_chat.data.FirebaseRemoteConfigRepo.** { *; }
-#-keep class com.appvillis.feature_ai_chat.data.FirebaseRemoteConfigRepo
-#-keep class com.appvillis.feature_ai_chat.domain.RemoteConfigRepo$.** { *; }
-#-keep class com.appvillis.feature_ai_chat.domain.RemoteConfigRepo.** { *; }
-#-keep class com.appvillis.feature_ai_chat.domain.RemoteConfigRepo
+-keep class com.appvillis.feature_pump_ads.data.SettingsRepositoryImpl { *; }
+-keep class com.appvillis.feature_pump_ads.data.SettingsRepositoryImpl* { *; }
+-keep class com.appvillis.feature_pump_ads.data.PumpAdsRemoteConfigImpl { *; }
+-keep class com.appvillis.feature_pump_ads.data.PumpAdsRemoteConfigImpl$* { *; }
+-keep class com.appvillis.feature_pump_ads.data.CurrentAdRepositoryImpl* { *; }
+-keep class com.appvillis.feature_pump_ads.data.CurrentAdRepositoryImpl* { *; }
+-keep class com.appvillis.feature_attention_economy.data.AttConfigRepositoryImpl { *; }
+-keep class com.appvillis.feature_attention_economy.data.AttConfigRepositoryImpl$* { *; }
 
 -keep class com.appvillis.feature_ai_chat.data.** { *; }
 -keep class com.appvillis.feature_avatar_generator.data.** { *; }

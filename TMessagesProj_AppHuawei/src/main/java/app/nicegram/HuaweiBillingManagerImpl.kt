@@ -1,5 +1,6 @@
 package app.nicegram
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
@@ -293,7 +294,7 @@ class HuaweiBillingManagerImpl(
 
     class InAppPurchaseJson(val subIsvalid: Boolean, val productId: String, val kind: Int, val purchaseToken: String)
 
-    override fun launchPayment(fragment: Fragment, storeInfo: InApp.StoreInfo) {
+    override fun launchPayment(activity: Activity, storeInfo: InApp.StoreInfo) {
         appCoroutineScope.launch {
             _billingStateFlow.emit(BillingManager.BillingState.Loading)
         }
@@ -302,7 +303,7 @@ class HuaweiBillingManagerImpl(
         req.productId = storeInfo.id
         req.priceType = (storeInfo as HuaweiStoreInfo).productInfo.priceType
         req.developerPayload = "test payload"
-        val task = Iap.getIapClient(fragment.requireActivity()).createPurchaseIntent(req)
+        val task = Iap.getIapClient(activity).createPurchaseIntent(req)
         task.addOnSuccessListener { result ->
             Log.d("BILLING_TEST", "createPurchaseIntent $result")
             // Obtain the order creation result.
@@ -310,8 +311,8 @@ class HuaweiBillingManagerImpl(
             if (status.hasResolution()) {
                 try {
                     // Open the checkout screen returned.
-                    (fragment.requireActivity() as? BillingManager.BillingResultActivity)?.addResultListener(this)
-                    status.startResolutionForResult(fragment.requireActivity(), PURCHASE_REQUEST_CODE)
+                    (activity as? BillingManager.BillingResultActivity)?.addResultListener(this)
+                    status.startResolutionForResult(activity, PURCHASE_REQUEST_CODE)
                 } catch (exp: IntentSender.SendIntentException) {
                     exp.printStackTrace()
                 }

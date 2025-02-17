@@ -19,8 +19,6 @@ class NicegramDeepLinksHelper @Inject constructor(
     private val getWalletAvailabilityUseCase: GetWalletAvailabilityUseCase
 ) {
     companion object {
-        var instance: NicegramDeepLinksHelper? = null
-
         private val ignoredDomains = listOf(
             "github.com",
             "nicegram.app",

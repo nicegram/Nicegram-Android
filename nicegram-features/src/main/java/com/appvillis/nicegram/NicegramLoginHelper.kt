@@ -1,19 +1,26 @@
 package com.appvillis.nicegram
 
-import com.appvillis.feature_nicegram_client.domain.NgRevLoginUseCase
+import android.content.Context
+import com.appvillis.bridges.user.bridges.WalletUserBridgeImpl
 import com.appvillis.nicegram.network.NicegramNetwork
+import dagger.hilt.EntryPoints
 
 object NicegramLoginHelper {
-    var ngRevLoginUseCase: NgRevLoginUseCase? = null
+    private fun entryPoint(context: Context) =
+        EntryPoints.get(context.applicationContext, NicegramAssistantEntryPoint::class.java)
 
-    fun onLoginBtnClicked(phone: String) {
-        val ngRevLoginUseCase = ngRevLoginUseCase ?: return
+    fun onLoginBtnClicked(context: Context, phone: String) {
+        setDemoUserIfNeeded(context, phone)
 
-        ngRevLoginUseCase.onLoginBntClicked(phone)
+        entryPoint(context).ngRevLoginUseCase().onLoginBntClicked(phone)
     }
 
-    fun checkLoginPhoneForSms(phone: String, callback: (code: String?) -> Unit) {
-        val ngRevLoginUseCase = ngRevLoginUseCase ?: return
+    fun setDemoUserIfNeeded(context: Context, phone: String) {
+        WalletUserBridgeImpl.isDemoUser = entryPoint(context).ngRevLoginUseCase().isReviewPhone(phone)
+    }
+
+    fun checkLoginPhoneForSms(context: Context, phone: String, callback: (code: String?) -> Unit) {
+        val ngRevLoginUseCase = entryPoint(context).ngRevLoginUseCase()
 
         if (ngRevLoginUseCase.isReviewPhone(phone)) {
             val ts = ngRevLoginUseCase.getLoginTsForPhone(phone)

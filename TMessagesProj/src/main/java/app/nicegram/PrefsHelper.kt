@@ -3,16 +3,16 @@ package app.nicegram
 import android.content.Context
 import android.content.SharedPreferences
 import com.appvillis.core_ui.BuildConfig
-import com.appvillis.feature_nicegram_client.NicegramClientHelper
-import com.appvillis.feature_nicegram_client.domain.NgClientRemoteConfigRepo
-import com.appvillis.nicegram.NicegramPinChatsPlacementHelper.AI_ID
+import com.appvillis.nicegram.NicegramAssistantEntryPoint
 import com.appvillis.nicegram.NicegramPrefs
 import com.appvillis.nicegram.NicegramPrefs.PREF_FOREVER_COOL_DOWN
+import dagger.hilt.EntryPoints
 import org.telegram.messenger.MessagesController
 import java.util.concurrent.TimeUnit
 
 object PrefsHelper {
-    var remoteConfigRepo: NgClientRemoteConfigRepo? = null
+    private fun entryPoint(context: Context) =
+        EntryPoints.get(context.applicationContext, NicegramAssistantEntryPoint::class.java)
 
     fun showProfileId(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
@@ -80,8 +80,8 @@ object PrefsHelper {
             .getBoolean(NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT, NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT_DEFAULT)
     }
 
-    fun bypassCopyProtection(): Boolean {
-        return remoteConfigRepo?.allowCopyProtectedContent ?: true
+    fun bypassCopyProtection(context: Context): Boolean {
+        return entryPoint(context).ngClientRemoteConfigRepo().allowCopyProtectedContent
     }
 
     fun setCurrentFolder(currentAccount: Int, folder: Int) {
@@ -129,25 +129,6 @@ object PrefsHelper {
         return System.currentTimeMillis() >= showTime
     }
 
-    fun setShowPinChatsPlacementWithId(currentAccount: Int, show: Boolean, id: String) {
-        if (id == AI_ID) NicegramClientHelper.preferences?.let { it.showLilyAiInChatList = show }
-
-        MessagesController.getNicegramSettings(currentAccount)
-            .edit()
-            .putBoolean(getShowPinChatsPlacementKeyForId(id), show)
-            .apply()
-    }
-
-    fun getShowPinChatsPlacementWithId(currentAccount: Int, id: String): Boolean {
-        return if (id == AI_ID) {
-            NicegramClientHelper.preferences?.showLilyAiInChatList != false
-        } else MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(getShowPinChatsPlacementKeyForId(id), NicegramPrefs.PREF_SHOW_PIN_CHATS_PLACEMENT_DEFAULT)
-    }
-
-    private fun getShowPinChatsPlacementKeyForId(id: String) =
-        "${NicegramPrefs.PREF_SHOW_PIN_CHATS_PLACEMENT_WITH_ID_}$id"
-
     fun setCdForChatBannerWithId(context: Context, coolDownSec: Int, bannerId: String) {
         val targetTime = if (coolDownSec == -1) {
             PREF_FOREVER_COOL_DOWN // Special value "forever coolDown"
@@ -185,7 +166,7 @@ object PrefsHelper {
             .getBoolean(NicegramPrefs.PREF_S2TEXT_BULLET_SEEN, NicegramPrefs.PREF_S2TEXT_BULLET_SEEN_DEFAULT)
     }
 
-    fun alwaysShowSpeech2Text() = if (BuildConfig.IS_LITE_CLIENT) false else remoteConfigRepo?.alwaysShowSpeech2Text ?: false
+    fun alwaysShowSpeech2Text(context: Context) = if (BuildConfig.IS_LITE_CLIENT) false else entryPoint(context).ngClientRemoteConfigRepo().alwaysShowSpeech2Text
 
     fun setShowNgFloatingMenuInChat(currentAccount: Int, show: Boolean) {
         MessagesController.getNicegramSettings(currentAccount)
