@@ -64,6 +64,7 @@ import android.os.Vibrator;
 import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.telephony.TelephonyManager;
+import android.text.Editable;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -72,6 +73,7 @@ import android.text.Spanned;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
@@ -130,6 +132,8 @@ import androidx.viewpager.widget.ViewPager;
 import com.appvillis.feature_ai_chat.domain.UseResultManager;
 import com.appvillis.feature_ai_chat.domain.TgPendingMessage;
 import com.appvillis.feature_ai_chat.domain.entity.AiCommand;
+import com.appvillis.feature_ai_shortcuts.AiShortcutsEntryPoint;
+import com.appvillis.feature_ai_shortcuts.presentation.AiShortcutsHelper;
 import com.appvillis.feature_nicegram_client.NicegramClientHelper;
 import com.appvillis.feature_nicegram_client.presentation.NgMenuButton;
 import com.appvillis.nicegram.AiChatBotHelper;
@@ -140,12 +144,13 @@ import com.appvillis.nicegram.NicegramForwardAsCopy;
 
 import app.nicegram.CustomArrayList;
 import app.nicegram.NicegramAnalyticsHelper;
+import app.nicegram.NicegramAttHelper;
 import app.nicegram.NicegramGroupCollectHelper;
 import app.nicegram.NicegramMetadataHelper;
 import com.appvillis.feature_nicegram_client.presentation.premium.NicegramPremiumActivity;
 import com.appvillis.nicegram.NicegramIcWalletHelper;
-import com.appvillis.nicegram_wallet.module_bridge.InChatResultManager;
 import com.appvillis.nicegram_wallet.wallet_inchat.external.TransactionTgMessageView;
+import com.appvillis.rep_user_actions.domain.entities.AttUserAction;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.zxing.common.detector.MathUtils;
 
@@ -310,9 +315,12 @@ import java.util.stream.Collectors;
 
 import app.nicegram.MentionAllHelper;
 import app.nicegram.NicegramPremiumSettingsActivity;
+import app.nicegram.NicegramUserActionsHelper;
 import app.nicegram.PrefsHelper;
 import app.nicegram.ui.AttVH;
 import app.nicegram.ui.NgWalletTransactionVH;
+import dagger.hilt.EntryPoints;
+import timber.log.Timber;
 
 @SuppressWarnings("unchecked")
 public class
@@ -397,7 +405,8 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
     private boolean bottomOverlayLinks;
     private LinkSpanDrawable.LinksTextView bottomOverlayLinksText;
     private TextView bottomOverlayText;
-    private TextView bottomOverlayStartButton;
+    private FrameLayout bottomOverlayStartButton;
+    private TextView bottomOverlayStartButtonText;
     private ImageView bottomOverlayImage;
     private RadialProgressView bottomOverlayProgress;
     private AnimatorSet bottomOverlayAnimation;
@@ -2462,6 +2471,8 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
         }
 
         if (chatId != 0) {
+           NicegramUserActionsHelper.INSTANCE.saveActionIfAllowed(chatId, AttUserAction.AttUserActionType.Open); // ng
+
             currentChat = getMessagesController().getChat(chatId);
             if (currentChat == null) {
                 final CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -3031,6 +3042,8 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
         super.onFragmentDestroy();
 
         AiChatBotHelper.INSTANCE.unregisterTopUpCallback(); // ng
+        AiShortcutsHelper helper = EntryPoints.get(ApplicationLoader.applicationContext, AiShortcutsEntryPoint.class).aiShortcutsUiHelper();
+        helper.clean(); // ng
 
         messages.dispose(); // ng
 
@@ -8096,7 +8109,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
         bottomOverlayChat.setClipChildren(false);
         contentView.addView(bottomOverlayChat, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 51, Gravity.BOTTOM));
 
-        bottomOverlayStartButton = new TextView(context) {
+        bottomOverlayStartButton = new FrameLayout(context) {
             CellFlickerDrawable cellFlickerDrawable;
 
             @Override
@@ -8121,12 +8134,15 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                 params.height = AndroidUtilities.dp(visibility == VISIBLE ? 51 + 8 * 2 : 51);
             }
         };
+        bottomOverlayStartButtonText = new TextView(context);
+        bottomOverlayStartButtonText.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+        bottomOverlayStartButton.addView(bottomOverlayStartButtonText);
         bottomOverlayStartButton.setBackground(Theme.AdaptiveRipple.filledRect(getThemedColor(Theme.key_featuredStickers_addButton), 8));
-        bottomOverlayStartButton.setTextColor(getThemedColor(Theme.key_featuredStickers_buttonText));
-        bottomOverlayStartButton.setText(LocaleController.getString(R.string.BotStart));
-        bottomOverlayStartButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-        bottomOverlayStartButton.setGravity(Gravity.CENTER);
-        bottomOverlayStartButton.setTypeface(AndroidUtilities.bold());
+        bottomOverlayStartButtonText.setTextColor(getThemedColor(Theme.key_featuredStickers_buttonText));
+        bottomOverlayStartButtonText.setText(LocaleController.getString(R.string.BotStart));
+        bottomOverlayStartButtonText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+        bottomOverlayStartButtonText.setGravity(Gravity.CENTER);
+        bottomOverlayStartButtonText.setTypeface(AndroidUtilities.bold());
         bottomOverlayStartButton.setVisibility(View.GONE);
         bottomOverlayStartButton.setOnClickListener(v -> bottomOverlayChatText.callOnClick());
         bottomOverlayChat.addView(bottomOverlayStartButton, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER, 8, 8, 8, 8));
@@ -8177,6 +8193,9 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
             if (getParentActivity() == null || pullingDownOffset != 0) {
                 return;
             }
+
+            NicegramAttHelper.INSTANCE.tryClaimSubscribe(currentChat, currentUser); // ng
+
             if (chatMode == MODE_SAVED) {
                 Bundle args = new Bundle();
                 long dialogId = getSavedDialogId();
@@ -8697,6 +8716,9 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                 return chatLayoutManager.findViewByPosition(position + chatAdapter.messagesStartRow);
             }
         });
+
+        initAiShortcuts(); // ng
+
         return fragmentView;
     }
 
@@ -25830,7 +25852,14 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                                 bottomOverlayChatText.setEnabled(true);
                             }
                         } else {
-                            bottomOverlayChatText.setText(LocaleController.getString(ChatObject.isChannelAndNotMegaGroup(currentChat) ? R.string.ChannelJoin : R.string.GroupJoin));
+                            if (NicegramAttHelper.INSTANCE.needToShowCoinForJoin(currentChat, null)) { // ng
+                                Drawable coin = getContext().getResources().getDrawable(R.drawable.att_coin_x3).mutate();
+                                int size = AndroidUtilities.dp(20);
+                                coin.setBounds(0, 0, size, size);
+                                bottomOverlayChatText.setTextInfo(coin, LocaleController.getString(ChatObject.isChannelAndNotMegaGroup(currentChat) ? R.string.ChannelJoin : R.string.GroupJoin));
+                            } else {
+                                bottomOverlayChatText.setText(LocaleController.getString(ChatObject.isChannelAndNotMegaGroup(currentChat) ? R.string.ChannelJoin : R.string.GroupJoin));
+                            }
                             bottomOverlayChatText.setEnabled(true);
                         }
                         showBottomOverlayProgress(false, false);
@@ -25904,6 +25933,14 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
 //                bottomOverlayStartButton.setText(LocaleController.getString(R.string.BotStart));
                 if (bottomOverlayStartButton != null) {
                     bottomOverlayStartButton.setVisibility(View.VISIBLE);
+                    if (NicegramAttHelper.INSTANCE.needToShowCoinForJoin(null, currentUser)) { // ng
+                        Drawable coin = getContext().getResources().getDrawable(R.drawable.att_coin_x3).mutate();
+                        int size = AndroidUtilities.dp(20);
+                        coin.setBounds(0, 0, size, size);
+
+                        bottomOverlayStartButtonText.setCompoundDrawablePadding(AndroidUtilities.dp(8));
+                        bottomOverlayStartButtonText.setCompoundDrawables(coin, null, null, null);
+                    }
                 }
                 bottomOverlayChatText.setVisibility(View.GONE);
                 chatActivityEnterView.hidePopup(false);
@@ -41182,6 +41219,32 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
         return getMessagesController().isChatNoForwards(currentChat) || message.messageOwner.noforwards;
     }
     // endregion
+
+    private void initAiShortcuts() {
+        AiShortcutsHelper helper = EntryPoints.get(ApplicationLoader.applicationContext, AiShortcutsEntryPoint.class).aiShortcutsUiHelper();
+        helper.initWithScope(chatActivityEnterView, getThemedColor(Theme.key_chat_messagePanelBackground), getThemedColor(Theme.key_chat_messagePanelText));
+        helper.setListener(s -> {
+            chatActivityEnterView.setFieldText(s);
+            return null;
+        });
+
+        chatActivityEnterView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                helper.onTextChange(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+    }
 
     private NgMenuButton ngMenuButton;
 

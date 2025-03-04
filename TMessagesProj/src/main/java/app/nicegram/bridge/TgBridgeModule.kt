@@ -3,6 +3,7 @@ package app.nicegram.bridge
 import android.graphics.Bitmap
 import android.graphics.Color
 import com.appvillis.core_network.domain.UserLocaleProvider
+import com.appvillis.feature_attention_economy.bridge.AttChatListPeersProvider
 import com.appvillis.feature_auth.domain.TelegramBotBridge
 import com.appvillis.feature_auth.domain.TelegramIdBridge
 import com.appvillis.nicegram_wallet.module_bridge.ContactMessageSender
@@ -92,4 +93,8 @@ object TgBridgeModule {
     @Provides
     @Singleton
     fun provideTelegramBotBridge(): TelegramBotBridge = TelegramBotBridgeImpl()
+
+    @Provides
+    @Singleton
+    fun provideAttChatListPeersProvider(): AttChatListPeersProvider = AttChatListPeersProviderImpl()
 }

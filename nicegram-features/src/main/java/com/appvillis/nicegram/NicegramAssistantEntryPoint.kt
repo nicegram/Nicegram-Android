@@ -8,6 +8,8 @@ import com.appvillis.feature_ai_chat.domain.UseResultManager
 import com.appvillis.feature_ai_chat.domain.usecases.GetBalanceTopUpRequestUseCase
 import com.appvillis.feature_ai_chat.domain.usecases.GetChatCommandsUseCase
 import com.appvillis.feature_analytics.domain.AnalyticsManager
+import com.appvillis.feature_attention_economy.domain.usecases.ClaimAdsUseCase
+import com.appvillis.feature_attention_economy.domain.usecases.GetOngoingActionsUseCase
 import com.appvillis.feature_avatar_generator.domain.usecases.AvatarsOnboardingUseCase
 import com.appvillis.feature_avatar_generator.domain.usecases.GetAvatarsUseCase
 import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase
@@ -35,6 +37,7 @@ import com.appvillis.rep_placements.domain.HidePlacementUseCase
 import com.appvillis.rep_user.domain.AppSessionControlUseCase
 import com.appvillis.rep_user.domain.GetUserStatusUseCase
 import com.appvillis.rep_user.domain.UserRepository
+import com.appvillis.rep_user_actions.domain.usecases.SaveUserActionUseCase
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -63,6 +66,9 @@ interface NicegramAssistantEntryPoint {
     fun getPumpAdsConfigUseCase(): GetPumpAdsConfigUseCase
     fun getPumpSettingsUseCase(): GetSettingsUseCase
     fun updatePumpSettingsUseCase(): UpdateSettingsUseCase
+    fun saveUserActionUseCase(): SaveUserActionUseCase
+    fun getOngoingActionsUseCase(): GetOngoingActionsUseCase
+    fun claimAdsUseCase(): ClaimAdsUseCase
     // end region
 
     // region special offer

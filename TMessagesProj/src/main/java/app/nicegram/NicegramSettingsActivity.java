@@ -12,6 +12,7 @@ import androidx.collection.MutableIntObjectMap;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.feature_ai_shortcuts.AiShortcutsEntryPoint;
 import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
 import com.appvillis.feature_nicegram_client.NicegramClientHelper;
 import com.appvillis.feature_nicegram_client.NicegramConsts;
@@ -43,6 +44,8 @@ import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PasscodeActivity;
 
 import java.util.ArrayList;
+
+import dagger.hilt.EntryPoints;
 
 public class NicegramSettingsActivity extends BaseFragment {
 
@@ -78,6 +81,7 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int shareStickersInfoRow;
     private int showHiddenChatsRow;
     private int showNgBtnInChatRow;
+    private int showAiShortcutsRow;
     private int rowCount = 0;
 
     abstract static class PinRow {
@@ -124,6 +128,7 @@ public class NicegramSettingsActivity extends BaseFragment {
         if (!NicegramDoubleBottom.INSTANCE.getLoggedToDbot()) doubleBottomRow = rowCount++;
         else doubleBottomRow = -1;
         showNgBtnInChatRow = rowCount++;
+        showAiShortcutsRow = rowCount++;
         showProfileIdRow = rowCount++;
         showRegDateRow = rowCount++;
         hideReactionsRow = rowCount++;
@@ -239,6 +244,9 @@ public class NicegramSettingsActivity extends BaseFragment {
             } else if (position == showNgBtnInChatRow) {
                 enabled = PrefsHelper.INSTANCE.getShowNgFloatingMenuInChat(currentAccount);
                 PrefsHelper.INSTANCE.setShowNgFloatingMenuInChat(currentAccount, !enabled);
+            } else if (position == showAiShortcutsRow) {
+                enabled = getAiShortcutsSettings().getShowInChat();
+                setAiShortcutsStatus(!enabled);
             } else if (position == showProfileIdRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
@@ -390,6 +398,8 @@ public class NicegramSettingsActivity extends BaseFragment {
                     SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                     if (position == showNgBtnInChatRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramShowNgBtnInChats"), PrefsHelper.INSTANCE.getShowNgFloatingMenuInChat(currentAccount), false);
+                    } else if(position == showAiShortcutsRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("AiShortcuts_ShowInChat"), getAiShortcutsSettings().getShowInChat(), false);
                     } else if (position == showProfileIdRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramShowProfileID"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_PROFILE_ID, NicegramPrefs.PREF_SHOW_PROFILE_ID_DEFAULT), false);
                     } else if (position == showRegDateRow) {
@@ -476,7 +486,7 @@ public class NicegramSettingsActivity extends BaseFragment {
                     position == hideReactionsNotificationRow || position == hideUnreadCounterRow ||
                     position == hideStoriesRow || position == animationsInChatList ||
                     position == fullscreenGrayscale || position == grayscaleInChatList ||
-                    position == grayscaleInChat
+                    position == grayscaleInChat || position == showAiShortcutsRow
             ) {
                 return 1;
             } else if (position == unblockGuideRow || position == quickRepliesRow) {
@@ -514,5 +524,13 @@ public class NicegramSettingsActivity extends BaseFragment {
         themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextCheckCell.class}, new String[]{"checkBox"}, null, null, null, Theme.key_switchTrackChecked));
 
         return themeDescriptions;
+    }
+
+    public com.appvillis.feature_ai_shortcuts.domain.entitites.Settings getAiShortcutsSettings() {
+        return EntryPoints.get(ApplicationLoader.applicationContext, AiShortcutsEntryPoint.class).getSettingsUseCase().getSettings();
+    }
+
+    public void setAiShortcutsStatus(boolean enabled) {
+        EntryPoints.get(ApplicationLoader.applicationContext, AiShortcutsEntryPoint.class).updateSettingsUseCase().invoke(getAiShortcutsSettings().copy(enabled));
     }
 }

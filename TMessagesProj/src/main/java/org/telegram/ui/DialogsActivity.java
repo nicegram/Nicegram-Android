@@ -106,9 +106,12 @@ import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.NicegramLoginHelper;
 import com.appvillis.nicegram.ReviewHelper;
+import com.appvillis.nicegram_wallet.module_bridge.NgWalletEntryPoint;
 import com.appvillis.rep_user.domain.UserRepository;
 
 import app.nicegram.NicegramWalletHelper;
+import app.nicegram.bridge.TgBridgeEntryPoint;
+import dagger.hilt.EntryPoints;
 import timber.log.Timber;
 
 import org.telegram.messenger.AccountInstance;
@@ -6975,6 +6978,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Override
     public void onResume() {
         super.onResume();
+
         if (dialogStoriesCell != null) {
             dialogStoriesCell.onResume();
         }

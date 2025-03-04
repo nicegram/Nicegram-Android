@@ -31,6 +31,8 @@ def modules = [
         'feature-chat-widgets',
         'feature-pump-ads',
         'feature-ai-agents',
+        'rep-user-actions',
+        'feature-ai-shortcuts'
 ]
 
 for (module in modules) {

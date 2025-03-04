@@ -237,6 +237,10 @@ public static final ** CREATOR;
 -keep class com.appvillis.nicegram_wallet.wallet_dapps_storage.data.FavoriteDAppsRepositoryImpl$FavoriteDApp { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl { *; }
 -keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl$* { *; }
+-keep class com.appvillis.feature_ai_chat.data.AiChatCommandsRepositoryImpl { *; }
+-keep class com.appvillis.feature_ai_chat.data.AiChatCommandsRepositoryImpl$* { *; }
+-keep class com.appvillis.feature_ai_shortcuts.data.SettingsRepositoryImpl { *; }
+-keep class com.appvillis.feature_ai_shortcuts.data.SettingsRepositoryImpl$* { *; }
 -keep class com.appvillis.core_network.NicegramEvmSwapApi$* { *; }
 -keep class com.appvillis.core_network.NicegramTonSwapApi$* { *; }
 -keep class com.appvillis.core_network.ApiService$* { *; }

@@ -133,6 +133,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.PrefsHelper;
+import app.nicegram.bridge.TgBridgeEntryPoint;
+import dagger.hilt.EntryPoints;
 import kotlin.Unit;
 
 public class MessagesController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
@@ -11113,6 +11115,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
         dialogs_dict.put(folderDialogId, dialogFolder);
         allDialogs.add(0, dialogFolder);
+
         return dialogFolder;
     }
 
@@ -12589,6 +12592,8 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                     }
                 }
+
+                EntryPoints.get(ApplicationLoader.applicationContext, TgBridgeEntryPoint.class).attChatListPeersProvider().updateUsernamesFlow(); // ng
             });
         });
     }

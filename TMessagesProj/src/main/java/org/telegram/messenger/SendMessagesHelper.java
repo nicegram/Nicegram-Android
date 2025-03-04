@@ -49,6 +49,7 @@ import androidx.collection.LongSparseArray;
 import androidx.core.view.inputmethod.InputContentInfoCompat;
 
 import com.appvillis.nicegram.RoundedVideoHelper;
+import com.appvillis.rep_user_actions.domain.entities.AttUserAction;
 
 import org.json.JSONObject;
 import org.telegram.messenger.audioinfo.AudioInfo;
@@ -103,6 +104,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import app.nicegram.NicegramUserActionsHelper;
 
 public class SendMessagesHelper extends BaseController implements NotificationCenter.NotificationCenterDelegate {
 
@@ -3153,6 +3156,11 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (messageObject == null || parentFragment == null) {
             return;
         }
+        // region ng
+        if (messageObject.getChatId() != 0 && addedReaction != null) {
+            NicegramUserActionsHelper.INSTANCE.saveActionIfAllowed(messageObject.getChatId(), AttUserAction.AttUserActionType.Reaction);
+        }
+        // endregion
         TLRPC.TL_messages_sendReaction req = new TLRPC.TL_messages_sendReaction();
         if (messageObject.messageOwner.isThreadMessage && messageObject.messageOwner.fwd_from != null) {
             req.peer = getMessagesController().getInputPeer(messageObject.getFromChatId());
@@ -3573,6 +3581,12 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     public void sendMessage(SendMessageParams sendMessageParams) {
+        // region ng
+        if (sendMessageParams.replyToMsg != null && sendMessageParams.replyToMsg.getChatId() != 0) {
+            NicegramUserActionsHelper.INSTANCE.saveActionIfAllowed(sendMessageParams.replyToMsg.getChatId(), AttUserAction.AttUserActionType.Comment);
+        }
+        // endregion
+
         String message = sendMessageParams.message;
         String caption = sendMessageParams.caption;
         TLRPC.MessageMedia location = sendMessageParams.location;
