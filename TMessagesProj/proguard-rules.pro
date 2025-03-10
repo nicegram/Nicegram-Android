@@ -239,6 +239,8 @@ public static final ** CREATOR;
 -keep class com.appvillis.nicegram_wallet.wallet_remote_cofig.data.WalletRemoteRepoImpl$* { *; }
 -keep class com.appvillis.feature_ai_chat.data.AiChatCommandsRepositoryImpl { *; }
 -keep class com.appvillis.feature_ai_chat.data.AiChatCommandsRepositoryImpl$* { *; }
+-keep class com.appvillis.feature_gods_eye.data.GodsEyeConfigRepositoryImpl { *; }
+-keep class com.appvillis.feature_gods_eye.data.GodsEyeConfigRepositoryImpl$* { *; }
 -keep class com.appvillis.feature_ai_shortcuts.data.SettingsRepositoryImpl { *; }
 -keep class com.appvillis.feature_ai_shortcuts.data.SettingsRepositoryImpl$* { *; }
 -keep class com.appvillis.core_network.NicegramEvmSwapApi$* { *; }

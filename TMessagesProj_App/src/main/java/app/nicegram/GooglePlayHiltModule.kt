@@ -6,6 +6,7 @@ import com.appvillis.core_markets.MarketFeatureFlagsProvider
 import com.appvillis.core_network.ApiService
 import com.appvillis.feature_nicegram_billing.data.BillingManagerImpl
 import com.appvillis.feature_nicegram_billing.domain.BillingManager
+import com.appvillis.rep_user.domain.RefreshUserInfoUseCase
 import com.appvillis.rep_user.domain.UserRepository
 import dagger.Module
 import dagger.Provides
@@ -26,9 +27,10 @@ object GooglePlayHiltModule {
         @ApplicationContext context: Context,
         apiService: ApiService,
         userRepository: UserRepository,
-        sharedPreferences: SharedPreferences
+        sharedPreferences: SharedPreferences,
+        refreshUserInfoUseCase: RefreshUserInfoUseCase
     ): BillingManager =
-        BillingManagerImpl(context, CoroutineScope(SupervisorJob() + Dispatchers.IO), apiService, userRepository, sharedPreferences)
+        BillingManagerImpl(context, CoroutineScope(SupervisorJob() + Dispatchers.IO), apiService, userRepository, refreshUserInfoUseCase, sharedPreferences)
 
     @Provides
     @Singleton

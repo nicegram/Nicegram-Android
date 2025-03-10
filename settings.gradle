@@ -32,7 +32,8 @@ def modules = [
         'feature-pump-ads',
         'feature-ai-agents',
         'rep-user-actions',
-        'feature-ai-shortcuts'
+        'feature-ai-shortcuts',
+        'feature-gods-eye',
 ]
 
 for (module in modules) {
