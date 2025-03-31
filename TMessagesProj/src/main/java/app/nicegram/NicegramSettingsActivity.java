@@ -60,7 +60,6 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int nicegramSectionRow;
 
     private int maxAccountsRow;
-    private int showProfileIdRow;
     private int showRegDateRow;
     private int startWithRearCameraRow;
     private int downloadVideosToGallery;
@@ -81,6 +80,7 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int shareStickersInfoRow;
     private int showHiddenChatsRow;
     private int showNgBtnInChatRow;
+    private int showKeywordsForFolderRow;
     private int showAiShortcutsRow;
     private int rowCount = 0;
 
@@ -128,8 +128,8 @@ public class NicegramSettingsActivity extends BaseFragment {
         if (!NicegramDoubleBottom.INSTANCE.getLoggedToDbot()) doubleBottomRow = rowCount++;
         else doubleBottomRow = -1;
         showNgBtnInChatRow = rowCount++;
+        showKeywordsForFolderRow = rowCount++;
         showAiShortcutsRow = rowCount++;
-        showProfileIdRow = rowCount++;
         showRegDateRow = rowCount++;
         hideReactionsRow = rowCount++;
         hideStoriesRow = rowCount++;
@@ -244,15 +244,13 @@ public class NicegramSettingsActivity extends BaseFragment {
             } else if (position == showNgBtnInChatRow) {
                 enabled = PrefsHelper.INSTANCE.getShowNgFloatingMenuInChat(currentAccount);
                 PrefsHelper.INSTANCE.setShowNgFloatingMenuInChat(currentAccount, !enabled);
+            } else if (position == showKeywordsForFolderRow) {
+                enabled = PrefsHelper.INSTANCE.getShowFoldersForKeywords(currentAccount);
+                PrefsHelper.INSTANCE.setShowFoldersForKeywords(currentAccount, !enabled);
+                getNotificationCenter().postNotificationName(NotificationCenter.ngDialogFiltersUpdated);
             } else if (position == showAiShortcutsRow) {
                 enabled = getAiShortcutsSettings().getShowInChat();
                 setAiShortcutsStatus(!enabled);
-            } else if (position == showProfileIdRow) {
-                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_SHOW_PROFILE_ID, NicegramPrefs.PREF_SHOW_PROFILE_ID_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_SHOW_PROFILE_ID, !enabled);
-                editor.apply();
             } else if (position == showRegDateRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
@@ -398,10 +396,10 @@ public class NicegramSettingsActivity extends BaseFragment {
                     SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                     if (position == showNgBtnInChatRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramShowNgBtnInChats"), PrefsHelper.INSTANCE.getShowNgFloatingMenuInChat(currentAccount), false);
+                    } else if (position == showKeywordsForFolderRow) {
+                        checkCell.setTextAndCheck(LocaleController.getString("NgKeywords_ShowKeywords"), PrefsHelper.INSTANCE.getShowFoldersForKeywords(currentAccount), false);
                     } else if(position == showAiShortcutsRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("AiShortcuts_ShowInChat"), getAiShortcutsSettings().getShowInChat(), false);
-                    } else if (position == showProfileIdRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("NicegramShowProfileID"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_PROFILE_ID, NicegramPrefs.PREF_SHOW_PROFILE_ID_DEFAULT), false);
                     } else if (position == showRegDateRow) {
                         checkCell.setTextAndCheck(LocaleController.getString("NicegramShowRegistrationDate"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT), false);
                     } else if (position == doubleBottomRow) {
@@ -476,12 +474,12 @@ public class NicegramSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == pinSectionHeaderRow) {
                 return 0;
-            } else if (position == showRegDateRow || position == showProfileIdRow ||
+            } else if (position == showRegDateRow ||
                     position == startWithRearCameraRow || position == downloadVideosToGallery ||
                     position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow ||
                     position == maxAccountsRow || position == shareChannelsInfoRow ||
                     position == shareBotsInfoRow || position == shareStickersInfoRow ||
-                    position == showNgBtnInChatRow || position == showHiddenChatsRow ||
+                    position == showNgBtnInChatRow || position == showKeywordsForFolderRow || position == showHiddenChatsRow ||
                     pinSectionRowsMap.contains(position) || position == hideMentionNotificationRow ||
                     position == hideReactionsNotificationRow || position == hideUnreadCounterRow ||
                     position == hideStoriesRow || position == animationsInChatList ||

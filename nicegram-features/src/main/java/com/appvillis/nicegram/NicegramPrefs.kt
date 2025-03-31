@@ -18,6 +18,7 @@ object NicegramPrefs {
     const val PREF_S2TEXT_OPEN_AI_ENABLED = "Speech2TextOpenAiEnabled"
     const val PREF_S2TEXT_BULLET_SEEN = "Speech2TextBulletSeen"
     const val PREF_SHOW_FLOATING_NG_MENU_IN_CHAT = "ShowFloatingNgMenuInChat"
+    const val PREF_SHOW_FOLDERS_FOR_KEYWORDS = "ShowFoldersForKeywords"
 
     const val PREF_MENTION_ALL_ENABLED_DEFAULT = true
     const val PREF_SHOW_REG_DATE_DEFAULT = true
@@ -37,4 +38,5 @@ object NicegramPrefs {
     const val PREF_S2TEXT_BULLET_SEEN_DEFAULT = false
     const val PREF_FOREVER_COOL_DOWN = -1L
     const val PREF_SHOW_FLOATING_NG_MENU_IN_CHAT_DEFAULT = true
+    const val PREF_SHOW_FOLDERS_FOR_KEYWORDS_DEFAULT = true
 }

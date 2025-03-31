@@ -3,10 +3,12 @@ package app.nicegram
 import android.content.Context
 import android.content.SharedPreferences
 import com.appvillis.core_ui.BuildConfig
+import com.appvillis.nicegram.AnalyticsHelper.logEvent
 import com.appvillis.nicegram.NicegramAssistantEntryPoint
 import com.appvillis.nicegram.NicegramPrefs
 import com.appvillis.nicegram.NicegramPrefs.PREF_FOREVER_COOL_DOWN
 import dagger.hilt.EntryPoints
+import org.telegram.messenger.ApplicationLoader
 import org.telegram.messenger.MessagesController
 import java.util.concurrent.TimeUnit
 
@@ -180,6 +182,23 @@ object PrefsHelper {
             .getBoolean(
                 NicegramPrefs.PREF_SHOW_FLOATING_NG_MENU_IN_CHAT,
                 NicegramPrefs.PREF_SHOW_FLOATING_NG_MENU_IN_CHAT_DEFAULT
+            )
+    }
+
+    fun setShowFoldersForKeywords(currentAccount: Int, show: Boolean) {
+        if (!show) logEvent(ApplicationLoader.applicationContext, "keywords_folder_disabled", null)
+
+        MessagesController.getNicegramSettings(currentAccount)
+            .edit()
+            .putBoolean(NicegramPrefs.PREF_SHOW_FOLDERS_FOR_KEYWORDS, show)
+            .apply()
+    }
+
+    fun getShowFoldersForKeywords(currentAccount: Int): Boolean {
+        return MessagesController.getNicegramSettings(currentAccount)
+            .getBoolean(
+                NicegramPrefs.PREF_SHOW_FOLDERS_FOR_KEYWORDS,
+                NicegramPrefs.PREF_SHOW_FOLDERS_FOR_KEYWORDS_DEFAULT
             )
     }
 

@@ -34,6 +34,7 @@ def modules = [
         'rep-user-actions',
         'feature-ai-shortcuts',
         'feature-gods-eye',
+        'feature-keywords',
 ]
 
 for (module in modules) {

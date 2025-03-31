@@ -6,6 +6,8 @@ import com.appvillis.core_network.domain.UserLocaleProvider
 import com.appvillis.feature_attention_economy.bridge.AttChatListPeersProvider
 import com.appvillis.feature_auth.domain.TelegramBotBridge
 import com.appvillis.feature_auth.domain.TelegramIdBridge
+import com.appvillis.feature_keywords.domain.KeywordsSearchRetriever
+import com.appvillis.feature_keywords.domain.TgImagesLoader
 import com.appvillis.nicegram_wallet.module_bridge.ContactMessageSender
 import com.appvillis.nicegram_wallet.module_bridge.QrCodeRenderer
 import com.appvillis.nicegram_wallet.wallet_contacts.domain.ContactsRetriever
@@ -97,4 +99,12 @@ object TgBridgeModule {
     @Provides
     @Singleton
     fun provideAttChatListPeersProvider(): AttChatListPeersProvider = AttChatListPeersProviderImpl()
+
+    @Provides
+    @Singleton
+    fun provideKeywordsSearchRetriever(): KeywordsSearchRetriever = KeywordsSearchRetrieverImpl()
+
+    @Provides
+    @Singleton
+    fun provideTgImagesLoader(): TgImagesLoader = TgImagesLoaderImpl()
 }

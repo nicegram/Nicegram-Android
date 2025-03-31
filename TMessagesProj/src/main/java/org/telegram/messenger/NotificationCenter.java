@@ -213,6 +213,7 @@ public class NotificationCenter {
     public static final int themeUploadError = totalEvents++;
 
     public static final int dialogFiltersUpdated = totalEvents++;
+    public static final int ngDialogFiltersUpdated = totalEvents++;
     public static final int filterSettingsUpdated = totalEvents++;
     public static final int suggestedFiltersLoaded = totalEvents++;
 
@@ -265,6 +266,9 @@ public class NotificationCenter {
     public static final int botDownloadsUpdate = totalEvents++;
     public static final int channelSuggestedBotsUpdate = totalEvents++;
     public static final int channelConnectedBotsUpdate = totalEvents++;
+    public static final int adminedChannelsLoaded = totalEvents++;
+    public static final int messagesFeeUpdated = totalEvents++;
+    public static final int commonChatsLoaded = totalEvents++;
 
     //global
     public static final int pushMessagesUpdated = totalEvents++;

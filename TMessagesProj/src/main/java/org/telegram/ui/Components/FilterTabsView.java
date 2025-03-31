@@ -47,9 +47,13 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.assistant_core.MainActivity;
+import com.appvillis.feature_keywords.domain.KeywordsConsts;
 import com.appvillis.feature_nicegram_client.NicegramClientHelper;
+import com.appvillis.nicegram.AnalyticsHelper;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
@@ -543,7 +547,7 @@ public class FilterTabsView extends FrameLayout {
             lastTabWidth = tabWidth;
             lastWidth = getMeasuredWidth();
 
-            if (currentTab.isLocked || progressToLocked != 0) {
+            if ((currentTab.isLocked || progressToLocked != 0) && currentTab.id != KeywordsConsts.FOLDER_FOR_KEYWORDS_ID) {
                 if (lockDrawable == null) {
                     lockDrawable = ContextCompat.getDrawable(getContext(), R.drawable.other_lockedfolders);
                 }
@@ -1083,6 +1087,11 @@ public class FilterTabsView extends FrameLayout {
                 return;
             }
             TabView tabView = (TabView) view;
+            if (tabView.currentTab.id == KeywordsConsts.FOLDER_FOR_KEYWORDS_ID) {
+                AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, "keywords_folder_open", null);
+                MainActivity.Companion.launchRoute(context, R.id.action_global_keywordsFolderListFragmentPop);
+                return;
+            }
             if (isEditing) {
                 if (position != 0) {
                     int side = AndroidUtilities.dp(6);
@@ -1162,6 +1171,11 @@ public class FilterTabsView extends FrameLayout {
         if (tabs.isEmpty()) {
             return;
         }
+        if (tabs.get(0).id == KeywordsConsts.FOLDER_FOR_KEYWORDS_ID && tabs.size() == 1) return;
+        if (tabs.get(0).id == KeywordsConsts.FOLDER_FOR_KEYWORDS_ID && tabs.size() > 1) {
+            scrollToTab(tabs.get(1), 1);
+            return;
+        }
         scrollToTab(tabs.get(0), 0);
     }
 
@@ -1216,7 +1230,7 @@ public class FilterTabsView extends FrameLayout {
 
     public void addTab(int id, int stableId, String text, ArrayList<TLRPC.MessageEntity> entities, boolean noanimate, boolean isDefault, boolean isLocked) {
         int position = tabs.size();
-        if (position == 0 && selectedTabId == -1) {
+        if ((position == 0 && selectedTabId == -1 && id != KeywordsConsts.FOLDER_FOR_KEYWORDS_ID) || (position == 1 && selectedTabId == -1)) {
             selectedTabId = id;
         }
         positionToId.put(position, id);
@@ -1851,6 +1865,8 @@ public class FilterTabsView extends FrameLayout {
         if (tabs.isEmpty()) {
             return true;
         }
+        if (tabs.get(0).id == KeywordsConsts.FOLDER_FOR_KEYWORDS_ID && tabs.size() > 1) return selectedTabId == tabs.get(1).id;
+        if (tabs.get(0).id == KeywordsConsts.FOLDER_FOR_KEYWORDS_ID && tabs.size() == 1) return true;
         return selectedTabId == tabs.get(0).id;
     }
 

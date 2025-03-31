@@ -28,6 +28,9 @@ import android.util.SparseIntArray;
 import androidx.annotation.UiThread;
 import androidx.collection.LongSparseArray;
 
+import com.appvillis.feature_keywords.KeywordsEntryPoint;
+import com.appvillis.feature_keywords.domain.KeywordsMessagesProcessor;
+
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.SQLite.SQLiteDatabase;
@@ -36,10 +39,10 @@ import org.telegram.SQLite.SQLitePreparedStatement;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.RequestDelegate;
-import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.Vector;
+import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.Theme;
@@ -65,6 +68,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+
+import dagger.hilt.EntryPoints;
 
 public class MessagesStorage extends BaseController {
 
@@ -6841,7 +6846,7 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public void updateUserInfoPremiumBlocked(long userId, boolean contact_require_premium) {
+    public void updateUserInfoContactBlocked(long userId, TL_account.RequirementToContact value) {
         storageQueue.postRunnable(() -> {
             SQLiteCursor cursor = null;
             SQLitePreparedStatement state = null;
@@ -6859,10 +6864,12 @@ public class MessagesStorage extends BaseController {
                 }
                 cursor.dispose();
                 cursor = null;
-                if (!exist || userFull == null || userFull.contact_require_premium == contact_require_premium) {
+                if (!exist || userFull == null) {
                     return;
                 }
-                userFull.contact_require_premium = contact_require_premium;
+                if (!UserObject.applyRequirementToContact(userFull, value)) {
+                    return;
+                }
                 state = database.executeFast("REPLACE INTO user_settings VALUES(?, ?, ?)");
                 NativeByteBuffer data = new NativeByteBuffer(userFull.getObjectSize());
                 userFull.serializeToStream(data);
@@ -11337,6 +11344,22 @@ public class MessagesStorage extends BaseController {
                 ArrayList<TLRPC.Message> createNewTopics = null;
                 ArrayList<TLRPC.Message> changedSavedMessages = null;
 
+                KeywordsMessagesProcessor keywordsProcessor = EntryPoints.get(ApplicationLoader.applicationContext, KeywordsEntryPoint.class).keywordsMessagesProcessor();
+                for (TLRPC.Message msg : messages) {
+                    if (msg.out) continue;
+
+                    long dialogId = MessageObject.getDialogId(msg);
+                    String name = null;
+                    if (DialogObject.isUserDialog(dialogId)) {
+                        TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
+                        if (!user.self) name = ContactsController.formatName(user);
+                    } else if (DialogObject.isChatDialog(dialogId)) {
+                        TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
+                        name = chat.title;
+                    }
+
+                    if (name != null) keywordsProcessor.addMessageToFolderIfNeeded(String.valueOf(msg.id), msg.message, name, dialogId, msg.date * 1000L);
+                }
                 state_messages = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
                 state_messages_topic = database.executeFast("REPLACE INTO messages_topics VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)");
                 state_media = null;
@@ -12548,6 +12571,41 @@ public class MessagesStorage extends BaseController {
                 }
             } catch (Exception e) {
                 checkSQLException(e);
+            }
+        });
+    }
+
+    public void markMessageAsSendErrorWithParams(TLRPC.Message msg, long errorAllowedPriceStars, long errorNewPriceStars) {
+        final long selfId = getUserConfig().getClientUserId();
+        storageQueue.postRunnable(() -> {
+            SQLiteCursor cursor = null;
+            try {
+                final long messageId = msg.id;
+                final long dialogId = MessageObject.getDialogId(msg);
+                for (int i = 0; i < 2; ++i) {
+                    final String table = i == 0 ? "messages_v2" : "messages_topics";
+
+                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT data FROM messages_v2 WHERE mid = %d AND uid = %d LIMIT 1", messageId, dialogId));
+                    if (cursor.next()) {
+                        NativeByteBuffer data = cursor.byteBufferValue(0);
+                        if (data != null) {
+                            TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
+                            message.readAttachPath(data, selfId);
+                            data.reuse();
+
+
+                        }
+                    }
+
+                    database.executeFast(String.format(Locale.US, "UPDATE "+table+" SET send_state = 2 WHERE mid = %d AND uid = %d", messageId, dialogId)).stepThis().dispose();
+                    database.executeFast(String.format(Locale.US, "UPDATE "+table+" SET send_state = 2 WHERE mid = %d AND uid = %d", messageId, dialogId)).stepThis().dispose();
+                }
+            } catch (Exception e) {
+                checkSQLException(e);
+            } finally {
+                if (cursor != null) {
+                    cursor.dispose();
+                }
             }
         });
     }

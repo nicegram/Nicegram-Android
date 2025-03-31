@@ -46,6 +46,8 @@ import android.widget.ImageView;
 
 import androidx.core.graphics.ColorUtils;
 
+import com.appvillis.core_resources.widgets.ToastViewHelper;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
@@ -1029,6 +1031,7 @@ public class ActionBar extends FrameLayout {
     }
 
     public void onSearchFieldVisibilityChanged(boolean visible) {
+        ToastViewHelper.INSTANCE.clearToasts();
         isSearchFieldVisible = visible;
         if (searchVisibleAnimator != null) {
             searchVisibleAnimator.cancel();

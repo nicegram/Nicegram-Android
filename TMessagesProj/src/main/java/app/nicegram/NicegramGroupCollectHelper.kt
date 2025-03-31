@@ -497,6 +497,7 @@ object NicegramGroupCollectHelper {
                 currentChat.scam,
                 currentChat.date.toLong(),
                 currentChat.username,
+                usernames = currentChat.getActiveUsernames(),
                 currentChat.gigagroup,
                 lang,
                 pplCount,
@@ -585,6 +586,7 @@ object NicegramGroupCollectHelper {
             scam = firstChat.scam,
             date = firstChat.date.toLong(),
             username = firstChat.username,
+            usernames = firstChat.getActiveUsernames(),
             gigagroup = firstChat.gigagroup,
             lastMessageLang = lang,
             participantsCount = pplCount,
@@ -631,5 +633,9 @@ object NicegramGroupCollectHelper {
         } catch (e: Exception) {
             messagesText.random()
         }
+    }
+
+    private fun TLRPC.Chat.getActiveUsernames() : List<String> {
+        return this.usernames.filter { it.active }.map { it.username }
     }
 }

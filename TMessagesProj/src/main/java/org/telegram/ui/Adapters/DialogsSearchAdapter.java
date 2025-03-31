@@ -29,13 +29,22 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.core_resources.CoreUiEntryPoint;
+import com.appvillis.core_resources.domain.TgResourceProvider;
+import com.appvillis.core_resources.widgets.ToastViewHelper;
+import com.appvillis.feature_keywords.domain.entities.KeywordsMessage;
+import com.appvillis.feature_keywords.presentation.ui.EnableTrackingToastView;
+
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.SQLite.SQLitePreparedStatement;
+import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
@@ -72,7 +81,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
+import dagger.hilt.EntryPoints;
+import timber.log.Timber;
 
 public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
 
@@ -644,6 +657,51 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                                 message.unread = value < message.id;
                             }
                         }
+                        List<KeywordsMessage> keywordMessages = new ArrayList<>();
+                        for (MessageObject msg : searchResultMessages) {
+                            if (msg.isOut() || msg.isSaved) continue;
+
+                            long dialogId = msg.getDialogId();
+                            String name = null;
+                            if (DialogObject.isUserDialog(dialogId)) {
+                                TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
+                                name = ContactsController.formatName(user);
+                            } else if (DialogObject.isChatDialog(dialogId)) {
+                                TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
+                                name = chat.title;
+                            }
+
+                            if (name != null) {
+                                String text;
+                                if (!TextUtils.isEmpty(msg.caption)) {
+                                    text = msg.caption.toString();
+                                } else {
+                                    text = msg.messageText.toString();
+                                }
+
+                                if (text.toLowerCase().contains(query.toLowerCase())) {
+                                    keywordMessages.add(new KeywordsMessage(
+                                            String.valueOf(msg.getId()),
+                                            text,
+                                            name,
+                                            msg.getDialogId(),
+                                            msg.messageOwner.date * 1000L,
+                                            ""
+                                    ));
+                                }
+                            }
+                        }
+                        TgResourceProvider tgResourceProvider = EntryPoints.get(ApplicationLoader.applicationContext, CoreUiEntryPoint.class).tgResourceProvider();
+                        EnableTrackingToastView toastView = new EnableTrackingToastView(dialogsActivity.getParentActivity(), query, keywordMessages, tgResourceProvider.getTheme());
+                        toastView.setElevation(Float.MAX_VALUE);
+                        ToastViewHelper.INSTANCE.clearToasts();
+                        ToastViewHelper.INSTANCE.showViewToast(
+                                toastView,
+                                dialogsActivity.getParentActivity().findViewById(android.R.id.content),
+                                false,
+                                false,
+                                AndroidUtilities.dp(12f)
+                        );
                         searchWas = true;
                         messagesSearchEndReached = res.messages.size() != 20;
                         if (searchId > 0) {
