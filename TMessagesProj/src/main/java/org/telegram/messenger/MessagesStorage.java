@@ -70,6 +70,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import dagger.hilt.EntryPoints;
+import timber.log.Timber;
 
 public class MessagesStorage extends BaseController {
 
@@ -11344,21 +11345,25 @@ public class MessagesStorage extends BaseController {
                 ArrayList<TLRPC.Message> createNewTopics = null;
                 ArrayList<TLRPC.Message> changedSavedMessages = null;
 
-                KeywordsMessagesProcessor keywordsProcessor = EntryPoints.get(ApplicationLoader.applicationContext, KeywordsEntryPoint.class).keywordsMessagesProcessor();
-                for (TLRPC.Message msg : messages) {
-                    if (msg.out) continue;
+                try {
+                    KeywordsMessagesProcessor keywordsProcessor = EntryPoints.get(ApplicationLoader.applicationContext, KeywordsEntryPoint.class).keywordsMessagesProcessor();
+                    for (TLRPC.Message msg : messages) {
+                        if (msg.out) continue;
 
-                    long dialogId = MessageObject.getDialogId(msg);
-                    String name = null;
-                    if (DialogObject.isUserDialog(dialogId)) {
-                        TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
-                        if (!user.self) name = ContactsController.formatName(user);
-                    } else if (DialogObject.isChatDialog(dialogId)) {
-                        TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-                        name = chat.title;
+                        long dialogId = MessageObject.getDialogId(msg);
+                        String name = null;
+                        if (DialogObject.isUserDialog(dialogId)) {
+                            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
+                            if (user != null && !user.self) name = ContactsController.formatName(user);
+                        } else if (DialogObject.isChatDialog(dialogId)) {
+                            TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
+                            name = chat.title;
+                        }
+
+                        if (name != null) keywordsProcessor.addMessageToFolderIfNeeded(String.valueOf(msg.id), msg.message, name, dialogId, msg.date * 1000L);
                     }
-
-                    if (name != null) keywordsProcessor.addMessageToFolderIfNeeded(String.valueOf(msg.id), msg.message, name, dialogId, msg.date * 1000L);
+                } catch (Exception e) {
+                    Timber.e(e);
                 }
                 state_messages = database.executeFast("REPLACE INTO messages_v2 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)");
                 state_messages_topic = database.executeFast("REPLACE INTO messages_topics VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)");
