@@ -3,11 +3,12 @@ package app.nicegram.bridge
 import android.graphics.Bitmap
 import android.graphics.Color
 import com.appvillis.core_network.domain.UserLocaleProvider
+import com.appvillis.core_resources.domain.TgImagesLoader
 import com.appvillis.feature_attention_economy.bridge.AttChatListPeersProvider
 import com.appvillis.feature_auth.domain.TelegramBotBridge
 import com.appvillis.feature_auth.domain.TelegramIdBridge
 import com.appvillis.feature_keywords.domain.KeywordsSearchRetriever
-import com.appvillis.feature_keywords.domain.TgImagesLoader
+import com.appvillis.feature_user_activities.domain.UserCommonGroupsMessagesRetriever
 import com.appvillis.nicegram_wallet.module_bridge.ContactMessageSender
 import com.appvillis.nicegram_wallet.module_bridge.QrCodeRenderer
 import com.appvillis.nicegram_wallet.wallet_contacts.domain.ContactsRetriever
@@ -107,4 +108,9 @@ object TgBridgeModule {
     @Provides
     @Singleton
     fun provideTgImagesLoader(): TgImagesLoader = TgImagesLoaderImpl()
+
+    @Provides
+    @Singleton
+    fun provideUserCommonGroupsMessagesRetriever(): UserCommonGroupsMessagesRetriever =
+        UserCommonGroupsMessagesRetrieverImpl()
 }

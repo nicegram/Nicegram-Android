@@ -67,6 +67,11 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.core_resources.CoreUiEntryPoint;
+import com.appvillis.core_resources.domain.TgImagesLoader;
+import com.appvillis.core_resources.domain.TgResourceProvider;
+import com.appvillis.feature_user_activities.presentation.UserActivitiesView;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ApplicationLoader;
@@ -149,9 +154,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
 
+import dagger.hilt.EntryPoints;
+
 @SuppressWarnings("unchecked")
 public class SharedMediaLayout extends FrameLayout implements NotificationCenter.NotificationCenterDelegate, DialogCell.DialogCellDelegate {
 
+    public static final int NG_TAB_ACTIVITIES = 100;
     public static final int TAB_PHOTOVIDEO = 0;
     public static final int TAB_FILES = 1;
     public static final int TAB_VOICE = 2;
@@ -629,6 +637,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     private MediaSearchAdapter documentsSearchAdapter;
     private MediaSearchAdapter audioSearchAdapter;
     private MediaSearchAdapter linksSearchAdapter;
+    private RecyclerView.Adapter activitiesAdapter;
     private GroupUsersSearchAdapter groupUsersSearchAdapter;
     private MediaPage[] mediaPages = new MediaPage[2];
     private ActionBarMenuItem deleteItem;
@@ -1478,17 +1487,27 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             this.initialTab = TAB_BOT_PREVIEWS;
         } else if (userInfo != null && userInfo.bot_info != null && userInfo.bot_info.has_preview_medias) {
             this.initialTab = TAB_STORIES;
+            if (user != null && !user.self && !user.bot) { // ng
+                this.initialTab = NG_TAB_ACTIVITIES;
+            }
         } else if (userInfo != null && userInfo.stories_pinned_available || chatInfo != null && chatInfo.stories_pinned_available || isStoriesView()) {
             this.initialTab = getInitialTab();
+            if (user != null && !user.self && !user.bot) { // ng
+                this.initialTab = NG_TAB_ACTIVITIES;
+            }
         } else if (userInfo != null && userInfo.stargifts_count > 0 || chatInfo != null && chatInfo.stargifts_count > 0) {
             this.initialTab = TAB_GIFTS;
         } else if (initialTab != -1 && topicId == 0) {
             this.initialTab = initialTab;
         } else {
-            for (int a = 0; a < hasMedia.length; a++) {
-                if (hasMedia[a] == -1 || hasMedia[a] > 0) {
-                    this.initialTab = a;
-                    break;
+            if (user != null && !user.self && !user.bot) { // ng
+                this.initialTab = NG_TAB_ACTIVITIES;
+            } else {
+                for (int a = 0; a < hasMedia.length; a++) {
+                    if (hasMedia[a] == -1 || hasMedia[a] > 0) {
+                        this.initialTab = a;
+                        break;
+                    }
                 }
             }
         }
@@ -2207,6 +2226,33 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         documentsSearchAdapter = new MediaSearchAdapter(context, 1);
         audioSearchAdapter = new MediaSearchAdapter(context, 4);
         linksSearchAdapter = new MediaSearchAdapter(context, 3);
+        activitiesAdapter = new RecyclerView.Adapter() {
+            class ActivitiesVH extends RecyclerView.ViewHolder {
+                UserActivitiesView userActivitiesView;
+                public ActivitiesVH(UserActivitiesView itemView) {
+                    super(itemView);
+                    userActivitiesView = itemView;
+                }
+            }
+            @NonNull
+            @Override
+            public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                CoreUiEntryPoint entryPoint = EntryPoints.get(ApplicationLoader.applicationContext, CoreUiEntryPoint.class);
+                TgResourceProvider.ThemeProxy themeProxy = entryPoint.tgResourceProvider().getTheme();
+                TgImagesLoader imagesLoader = entryPoint.tgImagesLoader();
+                return new ActivitiesVH(new UserActivitiesView(context, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId, user != null ? user.id : 0, themeProxy, imagesLoader));
+            }
+
+            @Override
+            public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+
+            }
+
+            @Override
+            public int getItemCount() {
+                return 1;
+            }
+        };
         groupUsersSearchAdapter = new GroupUsersSearchAdapter(context);
         commonGroupsAdapter = new CommonGroupsAdapter(context);
         channelRecommendationsAdapter = new ChannelRecommendationsAdapter(context);
@@ -3214,6 +3260,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                         return FlickerLoadingView.DIALOG_TYPE;
                     } else if (mediaPage.selectedType == TAB_STORIES || mediaPage.selectedType == TAB_ARCHIVED_STORIES) {
                         return FlickerLoadingView.STORIES_TYPE;
+                    } else if (mediaPage.selectedType == NG_TAB_ACTIVITIES) {
+                        return FlickerLoadingView.LINKS_TYPE;
                     }
                     return FlickerLoadingView.DIALOG_TYPE;
                 }
@@ -4072,6 +4120,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     Runnable jumpToRunnable;
 
     private void checkLoadMoreScroll(MediaPage mediaPage, RecyclerListView recyclerView, LinearLayoutManager layoutManager) {
+        if (mediaPage.selectedType == NG_TAB_ACTIVITIES) return;
         if (photoVideoChangeColumnsAnimation || jumpToRunnable != null) {
             return;
         }
@@ -4264,7 +4313,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             type != TAB_SAVED_DIALOGS &&
             type != TAB_RECOMMENDED_CHANNELS &&
             type != TAB_BOT_PREVIEWS &&
-            type != TAB_GIFTS
+            type != TAB_GIFTS &&
+            type != NG_TAB_ACTIVITIES
         );
     }
 
@@ -6039,7 +6089,12 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         boolean hasBotPreviews = user != null && user.bot && !user.bot_can_edit && (userInfo != null && userInfo.bot_info != null && userInfo.bot_info.has_preview_medias) && !hasEditBotPreviews;
         boolean hasStories = (DialogObject.isUserDialog(dialog_id) || DialogObject.isChatDialog(dialog_id)) && !DialogObject.isEncryptedDialog(dialog_id) && (userInfo != null && userInfo.stories_pinned_available || info != null && info.stories_pinned_available || isStoriesView()) && includeStories();
         boolean hasGifts = giftsContainer != null && (userInfo != null && userInfo.stargifts_count > 0 || info != null && info.stargifts_count > 0);
+        boolean hasActivities = user != null && !user.self && !user.bot;
         int changed = 0;
+
+        if (hasActivities != scrollSlidingTextTabStrip.hasTab(NG_TAB_ACTIVITIES)) {
+            changed++;
+        }
         if ((hasStories || hasBotPreviews) != scrollSlidingTextTabStrip.hasTab(TAB_STORIES)) {
             changed++;
         }
@@ -6065,6 +6120,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 changed++;
             }
             if (!DialogObject.isEncryptedDialog(dialog_id)) {
+                if (!hasActivities && scrollSlidingTextTabStrip.hasTab(NG_TAB_ACTIVITIES)) {
+                    changed++;
+                }
                 if ((hasMedia[3] <= 0) == scrollSlidingTextTabStrip.hasTab(TAB_LINKS)) {
                     changed++;
                 }
@@ -6136,6 +6194,11 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             if (changed > 3) {
                 idToView = null;
             }
+
+            if (hasActivities && !scrollSlidingTextTabStrip.hasTab(NG_TAB_ACTIVITIES)) {
+                scrollSlidingTextTabStrip.addTextTab(NG_TAB_ACTIVITIES, LocaleController.getString(R.string.Ng_UserActivities_Activities), idToView);
+            }
+
             if (isSearchingStories()) {
                 if (!scrollSlidingTextTabStrip.hasTab(TAB_STORIES)) {
                     scrollSlidingTextTabStrip.addTextTab(TAB_STORIES, getString(R.string.ProfileStories), idToView);
@@ -6347,6 +6410,13 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                                 mediaPages[a].listView.setAdapter(savedMessagesSearchAdapter);
                             }
                         }
+                    } else if (mediaPages[a].selectedType == NG_TAB_ACTIVITIES) {
+                        if (activitiesAdapter != null) {
+                            if (currentAdapter != activitiesAdapter) {
+                                recycleAdapter(currentAdapter);
+                                mediaPages[a].listView.setAdapter(activitiesAdapter);
+                            }
+                        }
                     }
                 }
             } else {
@@ -6381,6 +6451,12 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                             mediaPages[a].listView.setAdapter(savedMessagesSearchAdapter);
                         }
                         savedMessagesSearchAdapter.notifyDataSetChanged();
+                    } else if (mediaPages[a].selectedType == NG_TAB_ACTIVITIES) {
+                        if (currentAdapter != activitiesAdapter) {
+                            recycleAdapter(currentAdapter);
+                            mediaPages[a].listView.setAdapter(activitiesAdapter);
+                        }
+                        activitiesAdapter.notifyDataSetChanged();
                     }
                 }
             }
@@ -6509,6 +6585,11 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     AndroidUtilities.removeFromParent(giftsContainer);
                     mediaPages[a].addView(giftsContainer);
                 }
+            } else if (mediaPages[a].selectedType == NG_TAB_ACTIVITIES) {
+                if (currentAdapter != activitiesAdapter) {
+                    recycleAdapter(currentAdapter);
+                    mediaPages[a].listView.setAdapter(activitiesAdapter);
+                }
             }
             if (mediaPages[a].selectedType == TAB_SAVED_DIALOGS) {
                 mediaPages[a].listView.setItemAnimator(mediaPages[a].itemAnimator);
@@ -6589,6 +6670,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             } else if (mediaPages[a].selectedType == TAB_BOT_PREVIEWS) {
 
             } else if (mediaPages[a].selectedType == TAB_GIFTS) {
+
+            } else if(mediaPages[a].selectedType == NG_TAB_ACTIVITIES) {
 
             } else {
                 if (!sharedMediaData[mediaPages[a].selectedType].loading && !sharedMediaData[mediaPages[a].selectedType].endReached[0] && sharedMediaData[mediaPages[a].selectedType].messages.isEmpty()) {
