@@ -10,6 +10,7 @@ package org.telegram.ui.Adapters;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
@@ -662,6 +663,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                                 message.unread = value < message.id;
                             }
                         }
+
                         List<KeywordsMessage> keywordMessages = new ArrayList<>();
                         for (MessageObject msg : searchResultMessages) {
                             if (msg.isOut() || msg.isSaved) continue;
@@ -697,16 +699,19 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                             }
                         }
                         TgResourceProvider tgResourceProvider = EntryPoints.get(ApplicationLoader.applicationContext, CoreUiEntryPoint.class).tgResourceProvider();
-                        EnableTrackingToastView toastView = new EnableTrackingToastView(dialogsActivity.getParentActivity(), query, keywordMessages, tgResourceProvider.getTheme());
-                        toastView.setElevation(Float.MAX_VALUE);
-                        ToastViewHelper.INSTANCE.clearToasts();
-                        ToastViewHelper.INSTANCE.showViewToast(
-                                toastView,
-                                dialogsActivity.getParentActivity().findViewById(android.R.id.content),
-                                false,
-                                false,
-                                AndroidUtilities.dp(12f)
-                        );
+                        Activity activity = dialogsActivity.getParentActivity();
+                        if (activity != null) {
+                            EnableTrackingToastView toastView = new EnableTrackingToastView(activity, query, keywordMessages, tgResourceProvider.getTheme());
+                            toastView.setElevation(Float.MAX_VALUE);
+                            ToastViewHelper.INSTANCE.clearToasts();
+                            ToastViewHelper.INSTANCE.showViewToast(
+                                    toastView,
+                                    dialogsActivity.getParentActivity().findViewById(android.R.id.content),
+                                    false,
+                                    false,
+                                    AndroidUtilities.dp(12f)
+                            );
+                        }
                         searchWas = true;
                         messagesSearchEndReached = res.messages.size() != 20;
                         if (searchId > 0) {

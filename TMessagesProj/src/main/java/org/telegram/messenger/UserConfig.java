@@ -16,6 +16,7 @@ import android.util.LongSparseArray;
 
 import app.nicegram.NicegramDoubleBottom;
 
+import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
@@ -618,5 +619,14 @@ public class UserConfig extends BaseController {
             }
         }
         return user != null;
+    }
+
+    public static int getProductionAccount() {
+        for (int i = -1; i < MAX_ACCOUNT_COUNT; ++i) {
+            final int account = i < 0 ? selectedAccount : i;
+            if (getInstance(account).isClientActivated() && !ConnectionsManager.getInstance(account).isTestBackend())
+                return account;
+        }
+        return selectedAccount;
     }
 }
