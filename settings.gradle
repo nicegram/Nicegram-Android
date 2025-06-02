@@ -36,6 +36,8 @@ def modules = [
         'feature-gods-eye',
         'feature-keywords',
         'feature-user-activities',
+        'feature-account-export',
+        'feature-ai-chat-analysis',
 ]
 
 for (module in modules) {

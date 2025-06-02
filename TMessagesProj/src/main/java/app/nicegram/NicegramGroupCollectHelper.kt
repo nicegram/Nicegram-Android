@@ -6,9 +6,16 @@ import android.graphics.drawable.Drawable
 import android.util.Base64
 import app.nicegram.ui.AttVH
 import co.touchlab.stately.concurrency.AtomicBoolean
+import com.appvillis.core_network.data.body.ChannelInfoRequest
+import com.appvillis.core_network.data.body.ChannelInfoRequest.MessageInformation
+import com.appvillis.core_network.data.serialized.MediaWrapper
+import com.appvillis.core_network.data.serialized.PhotoSizeWrapper
+import com.appvillis.core_network.data.serialized.ReactionWrapper
+import com.appvillis.core_network.data.serialized.VideoSizeWrapper
 import com.appvillis.feature_nicegram_client.NicegramClientHelper
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase.Geo
+import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase.GroupCollectInfoData
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase.InviteLink
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase.Restriction
 import com.appvillis.nicegram.NicegramAssistantEntryPoint
@@ -29,10 +36,12 @@ import org.telegram.tgnet.TLObject
 import org.telegram.tgnet.TLRPC
 import org.telegram.tgnet.TLRPC.Chat
 import org.telegram.tgnet.TLRPC.ChatFull
+import org.telegram.tgnet.TLRPC.Message
 import org.telegram.tgnet.TLRPC.TL_channel
 import org.telegram.tgnet.TLRPC.TL_channelLocation
 import org.telegram.tgnet.TLRPC.TL_chat
 import org.telegram.tgnet.TLRPC.TL_chatInviteExported
+import org.telegram.tgnet.TLRPC.TL_chatPhoto
 import org.telegram.tgnet.TLRPC.TL_error
 import org.telegram.tgnet.TLRPC.TL_messages_exportedChatInvites
 import org.telegram.tgnet.TLRPC.TL_messages_getExportedChatInvites
@@ -43,7 +52,8 @@ import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 
 object NicegramGroupCollectHelper {
-    private fun entryPoint() = EntryPoints.get(ApplicationLoader.applicationContext, NicegramAssistantEntryPoint::class.java)
+    private fun entryPoint() =
+        EntryPoints.get(ApplicationLoader.applicationContext, NicegramAssistantEntryPoint::class.java)
 
     fun tryToCollectChannelInfo(
         currentAccount: Int,
@@ -79,10 +89,10 @@ object NicegramGroupCollectHelper {
         if (!collectGroupInfoUseCase.canCollectGroup(currentChat.id)) {
             return
         }
+        messagesController.getChannelRecommendations(-currentChat.id)
         var msgForLangDetect: String? = null
-        for (message in messages) { // searching for message with length of 16 or more to detect channel lang
-            if (message is AttVH.AttMessageObject) continue
-
+        val filteredMessages = messages.filterNot { it is AttVH.AttMessageObject }
+        for (message in filteredMessages) { // searching for message with length of 16 or more to detect channel lang
             if (!message.isOut) {
                 val textToTranslate = getTranslationTextCallback(message)
                 if (textToTranslate != null && textToTranslate.length >= 16) {
@@ -91,10 +101,8 @@ object NicegramGroupCollectHelper {
                 }
             }
         }
-        if (msgForLangDetect == null && messages.isNotEmpty()) {
-            for (message in messages) {
-                if (message is AttVH.AttMessageObject) continue
-
+        if (msgForLangDetect == null && filteredMessages.isNotEmpty()) {
+            for (message in filteredMessages) {
                 if (!message.isOut) {
                     val textToTranslate = getTranslationTextCallback(message)
                     if (textToTranslate != null) {
@@ -114,7 +122,8 @@ object NicegramGroupCollectHelper {
                     userConfig,
                     chatInfo,
                     avatarDrawable,
-                    getTypeKey(currentChat)
+                    getTypeKey(currentChat),
+                    messages,
                 )
             }) { e: Exception? ->
                 getInviteLinksAndCollect(
@@ -125,7 +134,8 @@ object NicegramGroupCollectHelper {
                     userConfig,
                     chatInfo,
                     avatarDrawable,
-                    getTypeKey(currentChat)
+                    getTypeKey(currentChat),
+                    messages,
                 )
             }
         }
@@ -136,7 +146,9 @@ object NicegramGroupCollectHelper {
             val tlrpcChatFull: TLRPC.TL_messages_chatFull,
             val lang: String?,
             val type: String,
-            val avatarBase64: String?
+            val avatarBase64: String?,
+            val similarChannels: List<Chat>,
+            val messages: List<Message>?,
         ) : MoreChatFull()
 
         class Error(
@@ -171,7 +183,9 @@ object NicegramGroupCollectHelper {
                                     lang = info.lang,
                                     type = info.type,
                                     avatarBase64 = info.avatarBase64,
-                                    token = token
+                                    token = token,
+                                    channelRecommendations = info.similarChannels,
+                                    messages = info.messages,
                                 )
                             }
 
@@ -298,8 +312,8 @@ object NicegramGroupCollectHelper {
         val firstChat = chatFull.chats.first()
         val type = getTypeKey(firstChat)
 
-        getMessagesHistory(currentAccount, firstChat, onSuccess = { lastMsgLanguage ->
-            addChannelInfoWithAvatar(
+        getMessagesHistory(currentAccount, firstChat, onSuccess = { lastMsgLanguage, messages ->
+            handleChannelRecommendations(
                 currentAccount,
                 firstChat,
                 chatFull,
@@ -307,11 +321,12 @@ object NicegramGroupCollectHelper {
                 type,
                 channelInfoList,
                 requestSet,
-                username
+                username,
+                messages = messages,
             )
-        }, onError = { error ->
+        }, onError = { error, messages ->
             error.logError()
-            addChannelInfoWithAvatar(
+            handleChannelRecommendations(
                 currentAccount,
                 firstChat,
                 chatFull,
@@ -319,7 +334,49 @@ object NicegramGroupCollectHelper {
                 type,
                 channelInfoList,
                 requestSet,
-                username
+                username,
+                messages = messages,
+            )
+        })
+    }
+
+    private fun handleChannelRecommendations(
+        currentAccount: Int,
+        chat: TLRPC.Chat,
+        chatFull: TLRPC.TL_messages_chatFull,
+        lang: String?,
+        type: String,
+        channelInfoList: MutableList<MoreChatFull>,
+        requestSet: MutableSet<String>,
+        username: String,
+        messages: List<TLRPC.Message>?,
+    ) {
+        getSimilarChannels(currentAccount, chat, onSuccess = { channelRecommendations ->
+            addChannelInfoWithAvatar(
+                currentAccount,
+                chat,
+                chatFull,
+                lang,
+                type,
+                channelInfoList,
+                requestSet,
+                username,
+                channelRecommendations,
+                messages = messages,
+            )
+        }, onError = { error ->
+            error.logError()
+            addChannelInfoWithAvatar(
+                currentAccount,
+                chat,
+                chatFull,
+                lang,
+                type,
+                channelInfoList,
+                requestSet,
+                username,
+                channelRecommendations = emptyList(),
+                messages = messages,
             )
         })
     }
@@ -332,14 +389,34 @@ object NicegramGroupCollectHelper {
         type: String,
         channelInfoList: MutableList<MoreChatFull>,
         requestSet: MutableSet<String>,
-        username: String
+        username: String,
+        channelRecommendations: List<Chat>,
+        messages: List<Message>?,
     ) {
         getAvatarFile(currentAccount, chat, onSuccess = { avatarBase64 ->
-            channelInfoList.add(MoreChatFull.Data(chatFull, lang = lang, type = type, avatarBase64 = avatarBase64))
+            channelInfoList.add(
+                MoreChatFull.Data(
+                    chatFull,
+                    lang = lang,
+                    type = type,
+                    avatarBase64 = avatarBase64,
+                    similarChannels = channelRecommendations,
+                    messages = messages
+                )
+            )
             requestSet.remove(username)
         }, onError = { error ->
             error.logError()
-            channelInfoList.add(MoreChatFull.Data(chatFull, lang = lang, type = type, avatarBase64 = null))
+            channelInfoList.add(
+                MoreChatFull.Data(
+                    chatFull,
+                    lang = lang,
+                    type = type,
+                    avatarBase64 = null,
+                    similarChannels = channelRecommendations,
+                    messages = messages
+                )
+            )
             requestSet.remove(username)
         })
     }
@@ -347,31 +424,32 @@ object NicegramGroupCollectHelper {
     private fun getMessagesHistory(
         currentAccount: Int,
         chat: TLRPC.Chat,
-        onSuccess: (lastMsgLanguage: String?) -> Unit,
-        onError: (Error) -> Unit
+        onSuccess: (lastMsgLanguage: String?, messages: List<Message>) -> Unit,
+        onError: (Error, messages: List<Message>?) -> Unit
     ) {
         val messagesReq = TLRPC.TL_messages_getHistory().apply {
             peer = TLRPC.TL_inputPeerChannel().apply {
                 channel_id = chat.id
                 access_hash = chat.access_hash
             }
-            limit = 3
+            limit = 10
         }
 
         ConnectionsManager.getInstance(currentAccount)
             .sendRequest(messagesReq) { response: TLObject?, error: TL_error? ->
                 if (error != null) {
-                    onError(Error.ServerError(error.code, error.text))
+                    onError(Error.ServerError(error.code, error.text), null)
                 } else if (response is TLRPC.messages_Messages) {
-                    val messageForTranslate = getSuitableTextForTranslate(response.messages)
+                    val messages = response.messages
+                    val messageForTranslate = getSuitableTextForTranslate(messages)
                     LanguageDetector.detectLanguage(messageForTranslate,
                         { str ->
-                            onSuccess(str)
+                            onSuccess(str, messages)
                         }, {
-                            onError(Error.InternalError("Error while detect language"))
+                            onError(Error.InternalError("Error while detect language"), messages)
                         })
 
-                } else onError(Error.InternalError("Error getting messages history"))
+                } else onError(Error.InternalError("Error getting messages history"), null)
             }
     }
 
@@ -403,7 +481,7 @@ object NicegramGroupCollectHelper {
                 cdn_supported = true
                 location = imLocation
                 offset = 0
-                limit = 1024 * 1024
+                limit = 256 * 256
             }
             ConnectionsManager.getInstance(currentAccount)
                 .sendRequest(avatarReq, { response: TLObject?, error: TL_error? ->
@@ -419,6 +497,33 @@ object NicegramGroupCollectHelper {
         }
     }
 
+    private fun getSimilarChannels(
+        currentAccount: Int,
+        chat: TLRPC.Chat,
+        onSuccess: (similarChannels: List<Chat>) -> Unit,
+        onError: (Error) -> Unit
+    ) {
+        try {
+            val channelRecomReq = TLRPC.TL_channels_getChannelRecommendations().apply {
+                channel = TLRPC.TL_inputChannel().apply {
+                    channel_id = chat.id
+                    access_hash = chat.access_hash
+                }
+            }
+            ConnectionsManager.getInstance(currentAccount)
+                .sendRequest(channelRecomReq) { response: TLObject?, error: TL_error? ->
+                    if (error != null) {
+                        onError(Error.ServerError(error.code, error.text))
+                    } else if (response is TLRPC.messages_Chats) {
+                        val chats = response.chats
+                        onSuccess(chats)
+                    } else onError(Error.InternalError("Error getting channel recommendation"))
+                }
+        } catch (e: Exception) {
+            onError(Error.InternalError(e.message ?: "Internal Error"))
+        }
+    }
+
     private fun getInviteLinksAndCollect(
         lang: String?,
         currentChat: Chat,
@@ -428,6 +533,7 @@ object NicegramGroupCollectHelper {
         chatInfo: ChatFull?,
         avatarDrawable: Drawable?,
         type: String,
+        messages: List<MessageObject>,
     ) {
         val req = TL_messages_getExportedChatInvites()
         req.peer = messagesController.getInputPeer(-currentChat.id)
@@ -444,8 +550,23 @@ object NicegramGroupCollectHelper {
                         }
                     }
                 }
+                val similarChannels: List<Chat> = try {
+                    messagesController.getChannelRecommendations(-currentChat.id).chats as List<Chat>
+                } catch (e: Exception) {
+                    Timber.e(e)
+                    emptyList()
+                }
                 try {
-                    collectChannelInfo(lang, invites, currentChat, chatInfo, avatarDrawable, type)
+                    collectChannelInfo(
+                        lang,
+                        invites,
+                        currentChat,
+                        chatInfo,
+                        avatarDrawable,
+                        type,
+                        similarChannels,
+                        messages
+                    )
                 } catch (e: Exception) {
                     Timber.e(e)
                 }
@@ -460,6 +581,8 @@ object NicegramGroupCollectHelper {
         chatInfo: ChatFull?,
         avatarDrawable: Drawable?,
         type: String,
+        similarChannels: List<Chat>,
+        messages: List<MessageObject>,
     ) {
         var geo: Geo? = null
         if (chatInfo != null && chatInfo.location is TL_channelLocation) {
@@ -504,6 +627,9 @@ object NicegramGroupCollectHelper {
                 geo,
                 type = type,
                 token = null,
+                similarChannels = similarChannels.mapToSimilarInfoRequestData(),
+                messages = messages.take(10).mapToMessageInformation(),
+                chatPhoto = currentChat.photo.toChatPhoto(),
             )
         )
     }
@@ -564,6 +690,8 @@ object NicegramGroupCollectHelper {
         type: String,
         avatarBase64: String?,
         token: String?,
+        channelRecommendations: List<Chat>,
+        messages: List<Message>?,
     ): CollectGroupInfoUseCase.GroupCollectInfoData.CollectInfoData {
         val chatFull = this.full_chat
         val chats = this.chats
@@ -593,6 +721,9 @@ object NicegramGroupCollectHelper {
             geoLocation = getGeo(chatFull),
             type = type,
             token = token,
+            similarChannels = channelRecommendations.mapToSimilarInfoRequestData(),
+            messages = messages?.mapNotNull { it.toModel() },
+            chatPhoto = firstChat.photo.toChatPhoto(),
         )
     }
 
@@ -635,7 +766,323 @@ object NicegramGroupCollectHelper {
         }
     }
 
-    private fun TLRPC.Chat.getActiveUsernames() : List<String> {
+    private fun TLRPC.Chat.getActiveUsernames(): List<String> {
         return this.usernames.filter { it.active }.map { it.username }
+    }
+
+    private fun TLRPC.ChatPhoto.toChatPhoto(): ChannelInfoRequest.ChatPhoto {
+        return when (this) {
+            is TL_chatPhoto -> ChannelInfoRequest.ChatPhoto.Photo(has_video, stripped_thumb, photo_id, dc_id)
+            else -> ChannelInfoRequest.ChatPhoto.PhotoEmpty
+        }
+    }
+
+    private fun List<Chat>.mapToSimilarInfoRequestData(): List<GroupCollectInfoData.CollectInfoData> {
+        return this.mapNotNull { chat ->
+            try {
+                GroupCollectInfoData.CollectInfoData(
+                    groupId = chat.id,
+                    inviteLinks = emptyList(),
+                    iconBase64 = null,
+                    restrictions = chat.restriction_reason.map { it.mapToData() },
+                    verified = chat.verified,
+                    about = null,
+                    hasGeo = chat.has_geo,
+                    title = chat.title,
+                    fake = chat.fake,
+                    scam = chat.scam,
+                    date = chat.date.toLong(),
+                    username = chat.username,
+                    usernames = chat.getActiveUsernames(),
+                    gigagroup = chat.gigagroup,
+                    lastMessageLang = null,
+                    participantsCount = chat.participants_count,
+                    geoLocation = null,
+                    type = getTypeKey(chat),
+                    token = null,
+                    chatPhoto = chat.photo.toChatPhoto(),
+                )
+            } catch (e: Exception) {
+                Timber.e(e)
+                null
+            }
+        }
+    }
+
+    private fun List<MessageObject>.mapToMessageInformation(): List<MessageInformation> {
+        return this.mapNotNull { messageObj ->
+            try {
+                val message = messageObj.messageOwner
+
+                val id = message.id
+                val text = message.message ?: ""
+                val date = message.date
+                val viewsCount = message.views
+                val commentsCount = message.replies?.replies ?: 0
+
+                val authorId = when (val fromId = message.from_id) {
+                    is TLRPC.TL_peerUser -> fromId.user_id
+                    is TLRPC.TL_peerChat -> fromId.chat_id
+                    is TLRPC.TL_peerChannel -> fromId.channel_id
+                    else -> 0L
+                }
+
+                val peerId = when (val toId = message.peer_id) {
+                    is TLRPC.TL_peerUser -> toId.user_id
+                    is TLRPC.TL_peerChat -> toId.chat_id
+                    is TLRPC.TL_peerChannel -> toId.channel_id
+                    else -> 0L
+                }
+
+                val reactions: List<MessageInformation.Reaction> = message.reactions?.results?.mapNotNull { result ->
+                    when (result) {
+                        is TLRPC.TL_reactionCount -> {
+                            when (val reaction = result.reaction) {
+                                is TLRPC.TL_reactionEmoji -> MessageInformation.Reaction.Emoji(
+                                    emoticon = reaction.emoticon,
+                                    count = result.count
+                                )
+
+                                is TLRPC.TL_reactionCustomEmoji -> MessageInformation.Reaction.CustomEmoji(
+                                    documentId = reaction.document_id,
+                                    count = result.count
+                                )
+
+                                is TLRPC.TL_reactionPaid -> MessageInformation.Reaction.Paid(
+                                    count = result.count
+                                )
+
+                                else -> null
+                            }
+                        }
+
+                        else -> null
+                    }
+                } ?: emptyList()
+
+                var messageMedia: MessageInformation.Media? = null
+
+                when (val media = message.media) {
+                    is TLRPC.TL_messageMediaPhoto -> {
+                        val photo = media.photo
+                        if (photo is TLRPC.TL_photo) {
+                            messageMedia =
+                                MessageInformation.Media.Photo(
+                                    id = photo.id,
+                                    accessHash = photo.access_hash,
+                                    dcId = photo.dc_id,
+                                    fileReference = photo.file_reference,
+                                    hasStickers = photo.has_stickers,
+                                    date = photo.date,
+                                    sizes = photo.sizes.wrapPhotoSize(),
+                                    videoSizes = photo.video_sizes.wrapVideoSize(),
+                                )
+                        }
+                    }
+
+                    is TLRPC.TL_messageMediaDocument -> {
+                        val document = media.document
+                        if (document is TLRPC.TL_document) {
+                            document.attributes?.forEach { attr ->
+                                when (attr) {
+                                    is TLRPC.TL_documentAttributeAudio -> {
+                                        messageMedia =
+                                            MessageInformation.Media.Audio(
+                                                duration = attr.duration,
+                                                title = attr.title
+                                            )
+                                    }
+
+                                    is TLRPC.TL_documentAttributeVideo -> {
+                                        messageMedia =
+                                            MessageInformation.Media.Video(
+                                                duration = attr.duration
+                                            )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                MessageInformation(
+                    id = id,
+                    message = text,
+                    commentsCount = commentsCount,
+                    viewsCount = viewsCount,
+                    date = date,
+                    authorId = authorId,
+                    peerId = peerId,
+                    groupedId = message.grouped_id,
+                    reactions = reactions.map { ReactionWrapper.from(it) },
+                    media = messageMedia?.let { MediaWrapper.from(it) },
+                )
+            } catch (e: Exception) {
+                Timber.e(e)
+                null
+            }
+        }
+    }
+
+    private fun Message.toModel(): MessageInformation? {
+        return when (this) {
+            is TLRPC.TL_message -> {
+                val commentsCount = this.replies?.replies ?: 0
+
+                val authorId = when (val fromId = this.from_id) {
+                    is TLRPC.TL_peerChannel -> fromId.channel_id
+                    is TLRPC.TL_peerChat -> fromId.chat_id
+                    is TLRPC.TL_peerUser -> fromId.user_id
+                    else -> 0L
+                }
+
+                val peerId = when (val peerId = this.peer_id) {
+                    is TLRPC.TL_peerChannel -> peerId.channel_id
+                    is TLRPC.TL_peerChat -> peerId.chat_id
+                    is TLRPC.TL_peerUser -> peerId.user_id
+                    else -> 0L
+                }
+
+                val reactions: List<MessageInformation.Reaction> = this.reactions?.results?.mapNotNull { result ->
+                    when (val reaction = result.reaction) {
+                        is TLRPC.TL_reactionCustomEmoji -> MessageInformation.Reaction.CustomEmoji(
+                            documentId = reaction.document_id,
+                            count = result.count
+                        )
+
+                        is TLRPC.TL_reactionEmoji -> MessageInformation.Reaction.Emoji(
+                            emoticon = reaction.emoticon,
+                            count = result.count
+                        )
+
+                        is TLRPC.TL_reactionPaid -> MessageInformation.Reaction.Paid(
+                            count = result.count
+                        )
+
+                        else -> null
+                    }
+                } ?: emptyList()
+
+                var messageMedia: MessageInformation.Media? = null
+
+                when (val media = this.media) {
+                    is TLRPC.TL_messageMediaDocument -> {
+                        media.document.attributes.forEach { attr ->
+                            when (attr) {
+                                is TLRPC.TL_documentAttributeAudio -> {
+                                    messageMedia =
+                                        MessageInformation.Media.Audio(
+                                            duration = attr.duration,
+                                            title = attr.title
+                                        )
+                                }
+
+                                is TLRPC.TL_documentAttributeVideo -> {
+                                    messageMedia = MessageInformation.Media.Video(duration = attr.duration)
+                                }
+                            }
+                        }
+                    }
+
+                    is TLRPC.TL_messageMediaPhoto -> {
+                        messageMedia =
+                            MessageInformation.Media.Photo(
+                                id = media.photo.id,
+                                accessHash = media.photo.access_hash,
+                                dcId = media.photo.dc_id,
+                                fileReference = media.photo.file_reference,
+                                hasStickers = media.photo.has_stickers,
+                                date = media.photo.date,
+                                sizes = media.photo.sizes.wrapPhotoSize(),
+                                videoSizes = media.photo.video_sizes.wrapVideoSize(),
+                            )
+                    }
+                }
+
+                return MessageInformation(
+                    id = this.id,
+                    message = this.message,
+                    commentsCount = commentsCount,
+                    viewsCount = this.views,
+                    date = this.date,
+                    authorId = authorId,
+                    peerId = peerId,
+                    groupedId = this.grouped_id,
+                    reactions = reactions.map { ReactionWrapper.from(it) },
+                    media = messageMedia?.let { MediaWrapper.from(it) }
+                )
+            }
+
+            else -> null
+        }
+    }
+
+    private fun ArrayList<TLRPC.PhotoSize>.wrapPhotoSize(): ArrayList<PhotoSizeWrapper> {
+        return this.mapNotNull { tlPhotoSize ->
+            val photoSize: MessageInformation.PhotoSize? = when (tlPhotoSize) {
+                is TLRPC.TL_photoSizeEmpty -> MessageInformation.PhotoSize.PhotoSizeEmpty(tlPhotoSize.type)
+                is TLRPC.TL_photoSize -> MessageInformation.PhotoSize.PhotoSize(
+                    type = tlPhotoSize.type,
+                    w = tlPhotoSize.w,
+                    h = tlPhotoSize.h,
+                    size = tlPhotoSize.size
+                )
+
+                is TLRPC.TL_photoCachedSize -> MessageInformation.PhotoSize.PhotoCachedSize(
+                    type = tlPhotoSize.type,
+                    w = tlPhotoSize.w,
+                    h = tlPhotoSize.h,
+                    bytes = tlPhotoSize.bytes
+                )
+
+                is TLRPC.TL_photoStrippedSize -> MessageInformation.PhotoSize.PhotoStrippedSize(
+                    type = tlPhotoSize.type,
+                    bytes = tlPhotoSize.bytes,
+                )
+
+                is TLRPC.TL_photoSizeProgressive -> MessageInformation.PhotoSize.PhotoSizeProgressive(
+                    type = tlPhotoSize.type,
+                    w = tlPhotoSize.w,
+                    h = tlPhotoSize.h,
+                    sizes = tlPhotoSize.size
+                )
+
+                is TLRPC.TL_photoPathSize -> MessageInformation.PhotoSize.PhotoPathSize(
+                    type = tlPhotoSize.type,
+                    bytes = tlPhotoSize.bytes
+                )
+
+                else -> null
+            }
+
+            photoSize?.let { PhotoSizeWrapper.from(it) }
+        }.toCollection(ArrayList())
+    }
+
+    private fun ArrayList<TLRPC.VideoSize>.wrapVideoSize(): ArrayList<VideoSizeWrapper> {
+        return this.mapNotNull { tlVideoSize ->
+            val videoSize: MessageInformation.VideoSize? = when (tlVideoSize) {
+                is TLRPC.TL_videoSize -> MessageInformation.VideoSize.VideoSize(
+                    type = tlVideoSize.type,
+                    w = tlVideoSize.w,
+                    h = tlVideoSize.h,
+                    size = tlVideoSize.size
+                )
+
+                is TLRPC.TL_videoSizeEmojiMarkup -> MessageInformation.VideoSize.VideoSizeEmojiMarkup(
+                    emojiId = tlVideoSize.emoji_id,
+                    backgroundsColors = tlVideoSize.background_colors
+                )
+
+                is TLRPC.TL_videoSizeStickerMarkup -> MessageInformation.VideoSize.VideoSizeStickerMarkup(
+                    stickerId = tlVideoSize.sticker_id,
+                    backgroundsColors = tlVideoSize.background_colors
+                )
+
+                else -> null
+            }
+
+            videoSize?.let { VideoSizeWrapper.from(it) }
+        }.toCollection(ArrayList())
     }
 }

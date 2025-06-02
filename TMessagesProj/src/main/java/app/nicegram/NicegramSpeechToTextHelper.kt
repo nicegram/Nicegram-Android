@@ -17,7 +17,7 @@ import org.telegram.messenger.ApplicationLoader
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.util.*
+import java.util.Locale
 
 object NicegramSpeechToTextHelper {
     private fun entryPoint() =

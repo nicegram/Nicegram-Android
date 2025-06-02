@@ -150,6 +150,10 @@
 -keep class com.appvillis.feature_pump_ads.data.CurrentAdRepositoryImpl* { *; }
 -keep class com.appvillis.feature_attention_economy.data.AttConfigRepositoryImpl { *; }
 -keep class com.appvillis.feature_attention_economy.data.AttConfigRepositoryImpl$* { *; }
+-keep class com.appvillis.feature_ai_chat_analysis.data.AiChatAnalysisRemoteRepoImpl { *; }
+-keep class com.appvillis.feature_ai_chat_analysis.data.AiChatAnalysisRemoteRepoImpl$* { *; }
+-keep class com.appvillis.feature_ai_chat_analysis.domain.entities.SourceData$* { *; }
+-keep class com.appvillis.feature_ai_chat_analysis.domain.entities.SourceData { *; }
 
 -keep class com.appvillis.feature_ai_chat.data.** { *; }
 -keep class com.appvillis.feature_avatar_generator.data.** { *; }

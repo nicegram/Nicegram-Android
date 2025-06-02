@@ -250,6 +250,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import app.nicegram.AccountsExportHelper;
 import app.nicegram.AppIconNicegramBulletinLayout;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramIntroActivity;
@@ -6548,6 +6549,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         if (ApplicationLoader.applicationLoaderInstance != null) {
             doNotPause = ApplicationLoader.applicationLoaderInstance.onPause();
         }
+        if (NicegramWalletHelper.INSTANCE.isWalletPopupShowing()) doNotPause = true;
         ConnectionsManager.getInstance(currentAccount).setAppPaused(!doNotPause, false);
         if (PhotoViewer.hasInstance() && PhotoViewer.getInstance().isVisible()) {
             PhotoViewer.getInstance().onPause();
@@ -8994,7 +8996,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         } else if (url.equals("ncg://attention-economy")) {
             MainActivity.Companion.launchAtt(this);
         } else if (url.equals("ncg://wallet/inchat")) {
-            InChatMainActivity.Companion.launch(this, new WalletContact("", "", "", ""), null);
+            InChatMainActivity.Companion.launch(this, WalletContact.Companion.getPREVIEW(), null);
             WalletContact.Companion.setCloseInChatAfterWallet(true); // todo remove next release
         } else if (url.equals("ncg://aiAgents")) {
             MainActivity.Companion.launchAiMarketplace(this);
@@ -9022,6 +9024,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     // ng
     private void initNg() {
+        AccountsExportHelper.INSTANCE.registerResultCallbacks(this);
+
         AttOverlayManager.INSTANCE.setNavigator(new AttOverlayManager.AttOverlayNavigator() {
             @Override
             public void openAtt() {

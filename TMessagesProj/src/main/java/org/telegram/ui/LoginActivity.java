@@ -98,9 +98,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
+import androidx.fragment.app.FragmentActivity;
 
 import com.appvillis.core_network.data.HeaderInterceptor;
 import com.appvillis.core_resources.widgets.EsimBannerView;
+import com.appvillis.feature_account_export.ExportAccountsBottomSheetFragment;
 import com.appvillis.nicegram.NicegramLoginHelper;
 import com.appvillis.nicegram.NicegramThemeApplyHelper;
 import com.appvillis.nicegram.presentation.NicegramTutorialSmsDialog;
@@ -224,9 +226,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicReference;
 
+import app.nicegram.AccountsExportHelper;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramTestPhoneHelper;
 import app.nicegram.RebirthHelper;
+import app.nicegram.ui.ImportAccountLoginView;
 import timber.log.Timber;
 
 @SuppressLint("HardwareIds")
@@ -2061,6 +2065,19 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 String url = "https://esimplus.onelink.me/WxwP/wxkmptvq";
                 getContext().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
             });
+
+            ImportAccountLoginView importAccountsView = new ImportAccountLoginView(context, () -> {
+                AccountsExportHelper.INSTANCE.pickFileAndImport((accounts, uri) -> {
+                    ExportAccountsBottomSheetFragment frag = ExportAccountsBottomSheetFragment.Companion.create(accounts, true, selectedAccounts -> {
+                        AccountsExportHelper.INSTANCE.importAccounts((FragmentActivity)getParentActivity(), uri, selectedAccounts);
+                        return null;
+                    });
+                    frag.show(((FragmentActivity)getParentActivity()).getSupportFragmentManager(),  "export_accounts");
+                    return null;
+                });
+                return null;
+            });
+            addView(importAccountsView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.START));
             // endregion ng esim banner
             countryButton = new TextViewSwitcher(context);
             countryButton.setFactory(() -> {
@@ -2096,7 +2113,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             countryOutlineView.setFocusable(true);
             countryOutlineView.setContentDescription(getString(R.string.Country));
             countryOutlineView.setOnFocusChangeListener((v, hasFocus) -> countryOutlineView.animateSelection(hasFocus ? 1 : 0));
-            addView(countryOutlineView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 58, 16, 24, 16, 14));
+            addView(countryOutlineView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 58, 16, 12, 16, 14));
             countryOutlineView.setOnClickListener(view -> {
                 CountrySelectActivity fragment = new CountrySelectActivity(true, countriesArray);
                 fragment.setCountrySelectActivityDelegate((country) -> {
@@ -2600,6 +2617,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         for (int i = 0; i < help_countriesList.countries.size(); i++) {
                             TLRPC.TL_help_country c = help_countriesList.countries.get(i);
                             for (int k = 0; k < c.country_codes.size(); k++) {
+                                if (ApplicationLoader.isHuaweiStoreBuild()) {
+                                    if (c.iso2.toLowerCase().equals("tw") || c.iso2.toLowerCase().equals("hk") || c.iso2.toLowerCase().equals("mo")) continue;
+                                }
                                 TLRPC.TL_help_countryCode countryCode = c.country_codes.get(k);
                                 if (countryCode != null) {
                                     CountrySelectActivity.Country countryWithCode = new CountrySelectActivity.Country();

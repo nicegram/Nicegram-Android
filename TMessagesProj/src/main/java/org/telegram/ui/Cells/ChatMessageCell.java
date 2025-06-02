@@ -10254,7 +10254,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             quoteHighlight = null;
         }
         if (transcribeButton != null) {
-            transcribeButton.setOpen(currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.voiceTranscriptionOpen && currentMessageObject.messageOwner.voiceTranscriptionFinal && TranscribeButton.isVideoTranscriptionOpen(currentMessageObject), !messageIdChanged);
+            transcribeButton.setOpen(currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.voiceTranscriptionOpen && /* currentMessageObject.messageOwner.voiceTranscriptionFinal */ (currentMessageObject.messageOwner.voiceTranscriptionFinal || currentMessageObject.messageOwner.voiceTranscription != null) /* ng show error */ /* ng show error */ && TranscribeButton.isVideoTranscriptionOpen(currentMessageObject), !messageIdChanged);
             transcribeButton.setLoading(TranscribeButton.isTranscribing(currentMessageObject), !messageIdChanged);
             transcribeButton.setLock(TranscribeButton.showTranscribeLock(currentMessageObject), !messageIdChanged);
         }
@@ -12837,7 +12837,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             wasTranscriptionOpen = true;
                         }
                     };
-                    transcribeButton.setOpen(currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.voiceTranscriptionOpen && currentMessageObject.messageOwner.voiceTranscriptionFinal && TranscribeButton.isVideoTranscriptionOpen(currentMessageObject), false);
+                    transcribeButton.setOpen(currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.voiceTranscriptionOpen && /* currentMessageObject.messageOwner.voiceTranscriptionFinal */ (currentMessageObject.messageOwner.voiceTranscriptionFinal || currentMessageObject.messageOwner.voiceTranscription != null) /* ng show error */ && TranscribeButton.isVideoTranscriptionOpen(currentMessageObject), false);
                     transcribeButton.setLoading(TranscribeButton.isTranscribing(currentMessageObject), false);
                     transcribeButton.setLock(TranscribeButton.showTranscribeLock(currentMessageObject), false);
                 }

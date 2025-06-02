@@ -1089,7 +1089,7 @@ public class FilterTabsView extends FrameLayout {
             TabView tabView = (TabView) view;
             if (tabView.currentTab.id == KeywordsConsts.FOLDER_FOR_KEYWORDS_ID) {
                 AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, "keywords_folder_open", null);
-                MainActivity.Companion.launchRoute(context, R.id.action_global_keywordsFolderListFragmentPop);
+                MainActivity.Companion.launchRoute(context, R.id.action_global_keywordsFolderListFragmentPop, null);
                 return;
             }
             if (isEditing) {

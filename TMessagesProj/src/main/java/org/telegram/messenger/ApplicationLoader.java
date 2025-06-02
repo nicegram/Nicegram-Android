@@ -37,6 +37,7 @@ import androidx.annotation.NonNull;
 import androidx.multidex.MultiDex;
 
 import com.appvillis.assistant_core.app.AppInit;
+import com.appvillis.core_resources.MarketConsts;
 import com.appvillis.core_resources.domain.TgResourceProvider;
 import com.appvillis.feature_nicegram_assistant.QrCodeHelper;
 import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter;
@@ -313,8 +314,9 @@ public class ApplicationLoader extends Application {
         } catch (Throwable ignore) {
 
         }
-
         super.onCreate();
+
+        MarketConsts.INSTANCE.setHuawei(isHuaweiBuild());
 
         if (BuildConfig.DEBUG) {
             Timber.plant((Timber.Tree) new AppInit.DebugTree());

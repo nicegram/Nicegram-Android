@@ -6324,7 +6324,9 @@ public class MessageObject {
                         (isVoice() || isRoundVideo() && TranscribeButton.isVideoTranscriptionOpen(this)) &&
                         messageOwner.voiceTranscriptionOpen &&
                         messageOwner.voiceTranscription != null &&
-                        (messageOwner.voiceTranscriptionFinal || TranscribeButton.isTranscribing(this))
+                        (messageOwner.voiceTranscriptionFinal || TranscribeButton.isTranscribing(this)
+                        || (!messageOwner.voiceTranscriptionFinal && TextUtils.isEmpty(messageOwner.voiceTranscription)) // ng translate, show error
+                        )
         );
     }
 

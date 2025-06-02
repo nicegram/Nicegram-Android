@@ -20,29 +20,19 @@ object NicegramIcWalletHelper {
         id: String,
         firstName: String?,
         lastName: String?,
+        avatarSymbols: String,
         username: String?,
-        img: String
+        img: String,
     ) {
         InChatMainActivity.launch(
-            activity, WalletContact(
+            activity, WalletContact.create(
                 id,
-                nameString(firstName, lastName),
-                usernameString(username),
-                img
+                firstName = firstName,
+                lastName = lastName,
+                username = username,
+                avatarSymbols = avatarSymbols,
+                img = img,
             )
         )
     }
-
-    fun nameString(firstName: String?, lastName: String?): String {
-        return if (firstName.isNullOrEmpty() && lastName.isNullOrEmpty()) ""
-        else if (firstName.isNullOrEmpty() && !lastName.isNullOrEmpty()) lastName
-        else if (lastName.isNullOrEmpty() && !firstName.isNullOrEmpty()) firstName
-        else "$firstName $lastName"
-    }
-
-    fun usernameString(username: String?): String {
-        return if (username.isNullOrEmpty()) ""
-        else "@${username}"
-    }
-
 }

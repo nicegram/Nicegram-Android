@@ -2,6 +2,7 @@ package app.nicegram.bridge
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import com.appvillis.bridges.user.bridges.TgAuthBridge
 import com.appvillis.core_network.domain.UserLocaleProvider
 import com.appvillis.core_resources.domain.TgImagesLoader
 import com.appvillis.feature_attention_economy.bridge.AttChatListPeersProvider
@@ -113,4 +114,8 @@ object TgBridgeModule {
     @Singleton
     fun provideUserCommonGroupsMessagesRetriever(): UserCommonGroupsMessagesRetriever =
         UserCommonGroupsMessagesRetrieverImpl()
+
+    @Provides
+    @Singleton
+    fun provideTgAuthBridge(): TgAuthBridge = TgAuthBridgeImpl()
 }

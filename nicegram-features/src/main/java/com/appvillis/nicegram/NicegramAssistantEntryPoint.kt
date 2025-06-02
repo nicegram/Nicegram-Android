@@ -30,6 +30,7 @@ import com.appvillis.nicegram_wallet.wallet_scanqr.QrResultEmitter
 import com.appvillis.nicegram_wallet.wallet_security.domain.VerificationManager
 import com.appvillis.nicegram_wallet.wallet_storage.domain.GetCurrentWalletUseCase
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager
+import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.WalletPopupActivityLauncher
 import com.appvillis.rep_placements.domain.GetChatPlacementsUseCase
 import com.appvillis.rep_placements.domain.GetPinChatsPlacementsUseCase
 import com.appvillis.rep_placements.domain.GetPinPlacementsStatusUseCase
@@ -94,6 +95,7 @@ interface NicegramAssistantEntryPoint {
     fun inChatResultManager(): InChatResultManager
     fun tgBrowserBridgeFactory(): TgBrowserBridgeFactory
     fun browserResponseManager(): BrowserResponseManager
+    fun walletPopupActivityLauncher(): WalletPopupActivityLauncher
     // end region
 
     // region ai

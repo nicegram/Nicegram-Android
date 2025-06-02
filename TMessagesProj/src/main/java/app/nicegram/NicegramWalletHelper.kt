@@ -15,6 +15,13 @@ object NicegramWalletHelper {
 
     fun getTcDeeplinkManager() = entryPoint().tcDeeplinkManager()
 
+    fun isWalletPopupShowing(): Boolean {
+        val ep = entryPoint()
+        val walletPopupActivityLauncher = ep.walletPopupActivityLauncher()
+
+        return walletPopupActivityLauncher.isWalletPopupShowing()
+    }
+
     fun isLoggedInAndHasWallet(): Boolean {
         val ep = entryPoint()
         val getUserStatusUseCase = ep.getUserStatusUseCase()
@@ -22,7 +29,6 @@ object NicegramWalletHelper {
 
         return getUserStatusUseCase.isUserLoggedIn && getCurrentWalletUseCase.currentWallet != null
     }
-
 
     fun launchWalletIfPossible(context: Context) {
         val ep = entryPoint()

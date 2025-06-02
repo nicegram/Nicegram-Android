@@ -11652,10 +11652,16 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 case NG_VIEW_TYPE_WALLET_INFO:
                     ContactWalletWidgetView contactWalletView = (ContactWalletWidgetView) holder.itemView;
                     TLRPC.User userContact = getMessagesController().getUser(userId);
-                    WalletContact walletContact = new WalletContact(
+
+                    StringBuilder strBuilder = new StringBuilder();
+                    AvatarDrawable.getAvatarSymbols(userContact.first_name, userContact.last_name, null, strBuilder);
+                    String avatarSymbols = strBuilder.toString();
+                    WalletContact walletContact = WalletContact.Companion.create(
                             String.valueOf(userContact.id),
-                            NicegramIcWalletHelper.INSTANCE.nameString(userContact.first_name, userContact.last_name),
-                            NicegramIcWalletHelper.INSTANCE.usernameString(userContact.username),
+                            userContact.first_name,
+                            userContact.last_name,
+                            avatarSymbols,
+                            userContact.username,
                             userContact.photo != null ? getFileLoader().getPathToAttach(userContact.photo.photo_small, true).toString() : ""
                     );
                     contactWalletView.setData(walletContact, Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider), getThemedColor(Theme.key_switch2TrackChecked), new ContactWalletWidgetView.Events() {

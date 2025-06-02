@@ -2,16 +2,19 @@ package app.nicegram;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.text.SpannableStringBuilder;
+import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.collection.MutableIntObjectMap;
+import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.feature_account_export.ExportAccountsBottomSheetFragment;
+import com.appvillis.feature_account_export.domain.Account;
 import com.appvillis.feature_ai_shortcuts.AiShortcutsEntryPoint;
 import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
 import com.appvillis.feature_nicegram_client.NicegramClientHelper;
@@ -44,6 +47,7 @@ import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PasscodeActivity;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import dagger.hilt.EntryPoints;
 
@@ -59,7 +63,12 @@ public class NicegramSettingsActivity extends BaseFragment {
 
     private int nicegramSectionRow;
 
+    private int accountSectionRow;
+    private int accountSectionHeaderRow;
     private int maxAccountsRow;
+    private int importAccountRow;
+    private int exportAccountsRow;
+    private int otherSectionRow;
     private int showRegDateRow;
     private int startWithRearCameraRow;
     private int downloadVideosToGallery;
@@ -120,7 +129,12 @@ public class NicegramSettingsActivity extends BaseFragment {
 
         nicegramSectionRow = rowCount++;
         unblockGuideRow = rowCount++;
+        accountSectionRow = rowCount++;
+        accountSectionHeaderRow = rowCount++;
         maxAccountsRow = rowCount++;
+        importAccountRow = rowCount++;
+        exportAccountsRow = rowCount++;
+        otherSectionRow = rowCount++;
         startWithRearCameraRow = rowCount++;
         downloadVideosToGallery = rowCount++;
         hidePhoneNumberRow = rowCount++;
@@ -291,6 +305,48 @@ public class NicegramSettingsActivity extends BaseFragment {
                 }
             } else if (position == quickRepliesRow) {
                 presentFragment(new QuickRepliesNgFragment());
+            } else if (position == importAccountRow) {
+                AccountsExportHelper.INSTANCE.pickFileAndImport((accounts, uri) -> {
+                    ExportAccountsBottomSheetFragment frag = ExportAccountsBottomSheetFragment.Companion.create(accounts, true, selectedAccounts -> {
+                        AccountsExportHelper.INSTANCE.importAccounts((FragmentActivity)this.getParentActivity(), uri, selectedAccounts);
+                        return null;
+                    });
+                    frag.show(((FragmentActivity)this.getParentActivity()).getSupportFragmentManager(),  "export_accounts");
+                    return null;
+                });
+            } else if (position == exportAccountsRow) {
+                List<Account> accounts = new ArrayList<>();
+                for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+                    UserConfig conf = UserConfig.getInstance(a);
+                    if (UserConfig.getInstance(a).isClientActivated()) {
+                        long id = conf.getCurrentUser().id;
+                        String username = conf.getCurrentUser().username;
+                        String firstName = conf.getCurrentUser().first_name;
+                        String lastName = conf.getCurrentUser().last_name;
+                        String resultName = username;
+                        if (username == null || username.isEmpty()) {
+                            if (lastName == null) resultName = firstName.trim();
+                            else if (firstName == null) resultName = lastName.trim();
+                            else resultName = firstName + " " + lastName;
+                        } else {
+                            resultName = "@" + resultName;
+                        }
+                        accounts.add(new Account(a, String.valueOf(id),resultName, Build.MANUFACTURER + " " + Build.MODEL + ", " + "Android " + Build.VERSION.RELEASE));
+                    }
+                }
+                ExportAccountsBottomSheetFragment frag = ExportAccountsBottomSheetFragment.Companion.create(accounts, false, selectedAccounts -> {
+                    List<Integer> accountNs = new ArrayList<>(selectedAccounts.size());
+
+                    for (Account account : selectedAccounts) {
+                        if (account != null) {
+                            accountNs.add(account.getN());
+                        }
+                    }
+
+                    AccountsExportHelper.INSTANCE.exportAccounts(accountNs);
+                    return null;
+                });
+                frag.show(((FragmentActivity)this.getParentActivity()).getSupportFragmentManager(),  "export_accounts");
             } else if (position == maxAccountsRow) {
                 enabled = PrefsHelper.INSTANCE.getMaxAccountCount(context) == NicegramPrefs.PREF_MAX_ACCOUNTS_MAX;
                 if (!enabled) {
@@ -347,7 +403,7 @@ public class NicegramSettingsActivity extends BaseFragment {
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return !(position == nicegramSectionRow);
+            return !(position == nicegramSectionRow || position == otherSectionRow || position == accountSectionRow);
         }
 
         @Override
@@ -384,10 +440,10 @@ public class NicegramSettingsActivity extends BaseFragment {
             switch (holder.getItemViewType()) {
                 case 0: {
                     HeaderCell headerCell = (HeaderCell) holder.itemView;
-                    if (position == nicegramSectionRow) {
-                        headerCell.setText("Nicegram");
-                    } else if (position == pinSectionHeaderRow) {
+                    if (position == pinSectionHeaderRow) {
                         headerCell.setText(LocaleController.getString("Nicegram_PinSection"));
+                    } else if (position == accountSectionHeaderRow) {
+                        headerCell.setText(LocaleController.getString("Ng_AccountsExport_Accounts"));
                     }
                     break;
                 }
@@ -459,6 +515,10 @@ public class NicegramSettingsActivity extends BaseFragment {
                         textCell.setText(LocaleController.getString("NicegramUnblockGuide"), false);
                     } else if (position == quickRepliesRow) {
                         textCell.setText(LocaleController.getString("QuickReplies"), false);
+                    } else if (position == importAccountRow) {
+                        textCell.setText(LocaleController.getString("Ng_AccountsExport_ImportFromFile"), false);
+                    } else if (position == exportAccountsRow) {
+                        textCell.setText(LocaleController.getString("Ng_AccountsExport_ExportAsFile"), false);
                     }
                     break;
                 }
@@ -472,7 +532,7 @@ public class NicegramSettingsActivity extends BaseFragment {
 
         @Override
         public int getItemViewType(int position) {
-            if (position == pinSectionHeaderRow) {
+            if (position == pinSectionHeaderRow || position == accountSectionHeaderRow) {
                 return 0;
             } else if (position == showRegDateRow ||
                     position == startWithRearCameraRow || position == downloadVideosToGallery ||
@@ -487,9 +547,9 @@ public class NicegramSettingsActivity extends BaseFragment {
                     position == grayscaleInChat || position == showAiShortcutsRow
             ) {
                 return 1;
-            } else if (position == unblockGuideRow || position == quickRepliesRow) {
+            } else if (position == unblockGuideRow || position == quickRepliesRow || position == importAccountRow || position == exportAccountsRow) {
                 return 2;
-            } else if (position == nicegramSectionRow) {
+            } else if (position == nicegramSectionRow || position == otherSectionRow || position == accountSectionRow) {
                 return 3;
             } else {
                 return 0;

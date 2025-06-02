@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import com.appvillis.core_network.ApiService
 import com.appvillis.core_network.data.body.HuaweiSubscriptionRequestBody
 import com.appvillis.core_network.data.body.HuaweiTopUpRequestBody
+import com.appvillis.feature_nicegram_billing.NicegramConsts
 import com.appvillis.feature_nicegram_billing.R
 import com.appvillis.feature_nicegram_billing.domain.BillingManager
 import com.appvillis.feature_nicegram_billing.domain.InApp
@@ -56,18 +57,18 @@ class HuaweiBillingManagerImpl(
 
     private val gson = Gson()
 
-    private var _subIds = listOf<String>()
+    private var _subIds = listOf(NicegramConsts.NICEGRAM_PREMIUM_SUB_ID, NicegramConsts.NICEGRAM_PREMIUM_PLUS_SUB_ID)
 
     private val _eventBillingIsReady = MutableStateFlow<Boolean>(false)
     override val eventBillingIsReady: StateFlow<Boolean> get() = _eventBillingIsReady
 
 
-    override val userHasActiveSub: Boolean
-        get() = currentSubPurchaseToken != null
+    private val _userActiveSub = MutableStateFlow(BillingManager.SubLevel.None)
+    override val userActiveSub: StateFlow<BillingManager.SubLevel>
+        get() = _userActiveSub
 
-    private val _userSubState = MutableStateFlow(this.userHasActiveSub)
-    override val userSubState: StateFlow<Boolean>
-        get() = _userSubState
+    override val hasAnyPremium: Boolean
+        get() = _userActiveSub.value != BillingManager.SubLevel.None
 
     private val _billingStateFlow = MutableSharedFlow<BillingManager.BillingState>()
     override val billingStateFlow: Flow<BillingManager.BillingState>
@@ -395,7 +396,16 @@ class HuaweiBillingManagerImpl(
                 Timber.d("BILLING_TEST _currentSubPurchaseToken set to ${purchaseDataParsed.purchaseToken}")
 
                 _currentSubPurchaseToken = purchaseDataParsed.purchaseToken
-                _userSubState.value = this.userHasActiveSub
+
+                val sku = purchaseDataParsed.productId
+
+                _userActiveSub.value =
+                    when (sku) {
+                        NicegramConsts.NICEGRAM_PREMIUM_PLUS_SUB_ID -> BillingManager.SubLevel.PremiumPlus
+                        NicegramConsts.NICEGRAM_PREMIUM_SUB_ID -> BillingManager.SubLevel.Premium
+                        else -> BillingManager.SubLevel.None
+                    }
+
                 if (emitSuccess) {
                     appCoroutineScope.launch {
                         _billingStateFlow.emit(
@@ -419,16 +429,12 @@ class HuaweiBillingManagerImpl(
         }
     }
 
-    override fun onPaymentScreenResume() {
-        queryAllPurchases()
+    override suspend fun sendSubToServer(id: String) {
+        // do not need, will be sent at query purchases
     }
 
-    override fun setSubsIds(ids: List<String>) {
-        _subIds = ids
-
-        Iap.getIapClient(context).isEnvReady.addOnSuccessListener {
-            queryAllPurchases()
-        }
+    override fun onPaymentScreenResume() {
+        queryAllPurchases()
     }
 
     private fun savePurchaseTokenAsSent(token: String) {
@@ -454,10 +460,6 @@ class HuaweiBillingManagerImpl(
             Timber.e(e)
             listOf()
         }
-    }
-
-    override suspend fun sendSubToServer() {
-        // do not need, will be sent at query purchases
     }
 
     class HuaweiStoreInfo(val productInfo: ProductInfo) : InApp.StoreInfo {

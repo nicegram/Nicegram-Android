@@ -115,10 +115,9 @@ import com.appvillis.nicegram.ReviewHelper;
 import com.appvillis.rep_user.domain.UserRepository;
 import com.appvillis.core_resources.widgets.BubbleHintWidget;
 
+import app.nicegram.AiAnalysisHelper;
 import app.nicegram.NicegramWalletHelper;
 import dagger.hilt.EntryPoints;
-import kotlin.Unit;
-import kotlin.jvm.functions.Function0;
 import timber.log.Timber;
 
 import org.telegram.messenger.AccountInstance;
@@ -8790,6 +8789,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             });
         }
 
+        // region ng
+        ActionBarMenuSubItem aiAnalysisItem = new ActionBarMenuSubItem(getParentActivity(), true, false);
+        aiAnalysisItem.setTextAndIcon(LocaleController.getString(R.string.AiAnalysis_AiChatAnalysis), R.drawable.ai_chat_analysis_white);
+        aiAnalysisItem.setMinimumWidth(160);
+        aiAnalysisItem.setOnClickListener(e -> {
+            MessageObject threadObj = chatActivity[0].getThreadMessage();
+            AiAnalysisHelper.INSTANCE.onChatAnalysisClick(true, getParentActivity(), currentAccount, chatActivity[0].isTopic, threadObj == null ? 0 : threadObj.getId(), chatActivity[0].currentChat, chatActivity[0].currentUser, chatActivity[0].messages);
+            finishPreviewFragment();
+        });
+        previewMenu[0].addView(aiAnalysisItem);
+        // endregion
+
         ActionBarMenuSubItem markAsUnreadItem = new ActionBarMenuSubItem(getParentActivity(), true, false);
         if (cell.getHasUnread()) {
             markAsUnreadItem.setTextAndIcon(LocaleController.getString(R.string.MarkAsRead), R.drawable.msg_markread);
@@ -12918,7 +12929,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         bubble.show(tabView, contentView, () -> {
                             AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, "keywords_folder_open", null);
 
-                            MainActivity.Companion.launchRoute(getContext(), R.id.action_global_keywordsFolderListFragmentPop);
+                            MainActivity.Companion.launchRoute(getContext(), R.id.action_global_keywordsFolderListFragmentPop, null);
                             return null;
                         });
                     }

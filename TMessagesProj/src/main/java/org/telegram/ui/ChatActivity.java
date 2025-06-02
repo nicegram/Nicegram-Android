@@ -144,6 +144,7 @@ import com.appvillis.nicegram.BuildConfig;
 import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.NicegramForwardAsCopy;
 
+import app.nicegram.AiAnalysisHelper;
 import app.nicegram.CustomArrayList;
 import app.nicegram.NicegramAnalyticsHelper;
 import app.nicegram.NicegramAttHelper;
@@ -41916,8 +41917,11 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
 
         ngMenuButton = new NgMenuButton(getContext(), null, getThemedColor(Theme.key_chat_goDownButton), getThemedColor(Theme.key_chat_goDownButtonIcon));
 
-        contentView.addView(ngMenuButton, LayoutHelper.createFrame(124, 124, Gravity.BOTTOM | Gravity.END, 0f, 0f, 8f, 0));
+        contentView.addView(ngMenuButton, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 246, Gravity.BOTTOM | Gravity.END, 0f, 0f, 8f, 0));
         ngMenuButton.setNgInChatOverlayView(ngMenuOverlayView);
+        ngMenuButton.onAiAnalysisClick(() -> {
+            AiAnalysisHelper.INSTANCE.onChatAnalysisClick(false, getParentActivity(), currentAccount, isTopic, threadMessageId, currentChat, currentUser, messages);
+        });
         ngMenuButton.onAiBotClick(() -> {
             AnalyticsHelper.INSTANCE.logEvent(getContext(), "chatbot_open_from_chat", null);
             AiChatBotHelper.INSTANCE.launchAiBot(getParentActivity(), true);
@@ -41949,20 +41953,30 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
         ngMenuButton.onWalletBotClick(() -> {
             FileLoader fileLoader = AccountInstance.getInstance(currentAccount).getFileLoader();
             if (currentUser != null) {
+                StringBuilder strBuilder = new StringBuilder();
+                AvatarDrawable.getAvatarSymbols(currentUser.first_name, currentUser.last_name, null, strBuilder);
+                String avatarSymbols = strBuilder.toString();
+
                 NicegramIcWalletHelper.INSTANCE.launchInChatWidget(
                         getParentActivity(),
                         String.valueOf(currentUser.id),
                         currentUser.first_name,
                         currentUser.last_name,
+                        avatarSymbols,
                         currentUser.username,
                         currentUser.photo != null ? fileLoader.getPathToAttach(currentUser.photo.photo_small, true).toString() : ""
                 );
             } else if (currentChat != null) {
+                StringBuilder strBuilder = new StringBuilder();
+                AvatarDrawable.getAvatarSymbols(currentChat.username, null, null, strBuilder);
+                String avatarSymbols = strBuilder.toString();
+
                 NicegramIcWalletHelper.INSTANCE.launchInChatWidget(
                         getParentActivity(),
                         String.valueOf(currentChat.id),
                         currentChat.title,
                         null,
+                        avatarSymbols,
                         currentChat.username,
                         currentChat.photo != null ? fileLoader.getPathToAttach(currentChat.photo.photo_small, true).toString() : ""
                 );

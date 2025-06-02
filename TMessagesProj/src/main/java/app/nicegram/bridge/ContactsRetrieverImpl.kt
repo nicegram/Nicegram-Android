@@ -10,9 +10,11 @@ import org.telegram.messenger.MediaDataController
 import org.telegram.messenger.MessagesController
 import org.telegram.messenger.UserConfig
 import org.telegram.tgnet.TLRPC
+import org.telegram.ui.Components.AvatarDrawable
 import java.io.File
 
 class ContactsRetrieverImpl : ContactsRetriever {
+
     override suspend fun getContacts(): List<WalletContact> {
         Log.d("ContactsRetriever", "retrieving contacts...")
         val currentAccount = UserConfig.selectedAccount
@@ -35,7 +37,18 @@ class ContactsRetrieverImpl : ContactsRetriever {
 
                 }
                 val img = attachPath?.toString() ?: ""
-                WalletContact(it.id.toString(), nameString(it.first_name, it.last_name), usernameString(it.username), img)
+                val strBuilder = StringBuilder()
+                AvatarDrawable.getAvatarSymbols(it.first_name, it.last_name, null, strBuilder)
+                val avatarSymbols = strBuilder.toString()
+
+                WalletContact.create(
+                    id = it.id.toString(),
+                    firstName = it.first_name,
+                    lastName = it.last_name,
+                    username = it.username,
+                    img = img,
+                    avatarSymbols = avatarSymbols
+                )
             }
 
         Log.d("ContactsRetriever", "result: ${result.size}")
@@ -48,16 +61,4 @@ class ContactsRetrieverImpl : ContactsRetriever {
         return this.sortedWith(compareBy(nullsLast()) { orderById[it.user_id] })
     }
 
-
-    private fun nameString(firstName: String?, lastName: String?): String {
-        return if (firstName.isNullOrEmpty() && lastName.isNullOrEmpty()) ""
-        else if (firstName.isNullOrEmpty() && !lastName.isNullOrEmpty()) lastName
-        else if (lastName.isNullOrEmpty() && !firstName.isNullOrEmpty()) firstName
-        else "$firstName $lastName"
-    }
-
-    private fun usernameString(username: String?): String {
-        return if (username.isNullOrEmpty()) ""
-        else "@${username}"
-    }
 }

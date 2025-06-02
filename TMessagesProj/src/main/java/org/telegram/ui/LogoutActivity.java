@@ -20,8 +20,13 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.appvillis.feature_account_export.ExportAccountsEntryPoint;
+import com.appvillis.feature_account_export.LogoutConfirmBottomSheetFragment;
+import com.appvillis.feature_account_export.domain.ExportedAccountsRepository;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DownloadController;
@@ -46,6 +51,8 @@ import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
+
+import dagger.hilt.EntryPoints;
 
 public class LogoutActivity extends BaseFragment {
 
@@ -162,7 +169,25 @@ public class LogoutActivity extends BaseFragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setMessage(LocaleController.getString(R.string.AreYouSureLogout));
         builder.setTitle(LocaleController.getString(R.string.LogOut));
-        builder.setPositiveButton(LocaleController.getString(R.string.LogOut), (dialogInterface, i) -> MessagesController.getInstance(currentAccount).performLogout(1));
+        builder.setPositiveButton(LocaleController.getString(R.string.LogOut), (dialogInterface, i) -> {
+            ExportedAccountsRepository rep = EntryPoints.get(context.getApplicationContext(), ExportAccountsEntryPoint.class).exportedAccountsRepository();
+            String id = String.valueOf(UserConfig.getInstance(currentAccount).clientUserId);
+            if (rep.getAccounts().contains(id)) {
+                LogoutConfirmBottomSheetFragment frag = LogoutConfirmBottomSheetFragment.Companion.create(() -> {
+                    rep.removeAccountAsExported(id);
+                    MessagesController.getInstance(currentAccount).performLogout(0);
+                    return null;
+                }, () -> {
+                    rep.removeAccountAsExported(id);
+                    MessagesController.getInstance(currentAccount).performLogout(1);
+                    return null;
+                });
+                frag.show(((FragmentActivity) context).getSupportFragmentManager(), "logout_confirm");
+            } else {
+                rep.removeAccountAsExported(id);
+                MessagesController.getInstance(currentAccount).performLogout(1);
+            }
+        });
         builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
         AlertDialog alertDialog = builder.create();
         TextView button = (TextView) alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);

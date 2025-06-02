@@ -8329,7 +8329,7 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public Runnable getMessagesInternal(long dialogId, long mergeDialogId, int count, int max_id, int offset_date, int minDate, int classGuid, int load_type, int mode, long threadMessageId, int loadIndex, boolean processMessages, boolean isTopic, Timer loaderLogger) {
+    public Runnable getMessagesInternal(long dialogId, long mergeDialogId, int count, int max_id, int offset_date, int minDate, int classGuid, int load_type, int mode, long threadMessageId, int loadIndex, boolean processMessages, boolean isTopic, Timer loaderLogger, GetMessagesValueCallback returnCallback) {
         TLRPC.TL_messages_messages res = new TLRPC.TL_messages_messages();
         long currentUserId = getUserConfig().clientUserId;
         int count_unread = 0;
@@ -9283,8 +9283,16 @@ public class MessagesStorage extends BaseController {
             };
         } else {*/
         int finalMessagesCount = scheduled ? res.messages.size() : messagesCount;
+        if (returnCallback != null) {
+            returnCallback.onResult(res);
+            return () -> {};
+        }
         return () -> getMessagesController().processLoadedMessages(res, finalMessagesCount, dialogId, mergeDialogId, countQueryFinal, maxIdOverrideFinal, offset_date, true, classGuid, minUnreadIdFinal, lastMessageIdFinal, countUnreadFinal, maxUnreadDateFinal, load_type, isEndFinal, mode, threadMessageId, loadIndex, queryFromServerFinal, mentionsUnreadFinal, processMessages, isTopic, loaderLogger);
         //}
+    }
+
+    public interface GetMessagesValueCallback {
+        void onResult(TLRPC.TL_messages_messages res);
     }
 
     public void getAnimatedEmoji(String join, ArrayList<TLRPC.Document> documents) {
@@ -9319,7 +9327,7 @@ public class MessagesStorage extends BaseController {
         storageQueue.postRunnable(() -> {
             Timer.done(t1);
             Timer.Task t2 = Timer.start(loaderLogger, "MessagesStorage.getMessages");
-            Runnable processMessagesRunnable = getMessagesInternal(dialogId, mergeDialogId, count, max_id, offset_date, minDate, classGuid, load_type, mode, replyMessageId, loadIndex, processMessages, isTopic, loaderLogger);
+            Runnable processMessagesRunnable = getMessagesInternal(dialogId, mergeDialogId, count, max_id, offset_date, minDate, classGuid, load_type, mode, replyMessageId, loadIndex, processMessages, isTopic, loaderLogger, null);
             Timer.done(t2);
             Timer.Task t3 = Timer.start(loaderLogger, "MessagesStorage.getMessages: stageQueue.postRunnable");
             Utilities.stageQueue.postRunnable(() -> {
