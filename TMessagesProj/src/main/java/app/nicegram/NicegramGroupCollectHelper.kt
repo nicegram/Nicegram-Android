@@ -4,14 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Base64
-import app.nicegram.ui.AttVH
 import co.touchlab.stately.concurrency.AtomicBoolean
 import com.appvillis.core_network.data.body.ChannelInfoRequest
-import com.appvillis.core_network.data.body.ChannelInfoRequest.MessageInformation
-import com.appvillis.core_network.data.serialized.MediaWrapper
-import com.appvillis.core_network.data.serialized.PhotoSizeWrapper
-import com.appvillis.core_network.data.serialized.ReactionWrapper
-import com.appvillis.core_network.data.serialized.VideoSizeWrapper
 import com.appvillis.feature_nicegram_client.NicegramClientHelper
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase.Geo
@@ -91,7 +85,7 @@ object NicegramGroupCollectHelper {
         }
         messagesController.getChannelRecommendations(-currentChat.id)
         var msgForLangDetect: String? = null
-        val filteredMessages = messages.filterNot { it is AttVH.AttMessageObject }
+        val filteredMessages = messages.filter { it.messageOwner != null && it.messageOwner.id != 0 && it.messageOwner.from_id != null } // filtered system and Ad's messages
         for (message in filteredMessages) { // searching for message with length of 16 or more to detect channel lang
             if (!message.isOut) {
                 val textToTranslate = getTranslationTextCallback(message)
@@ -123,7 +117,7 @@ object NicegramGroupCollectHelper {
                     chatInfo,
                     avatarDrawable,
                     getTypeKey(currentChat),
-                    messages,
+                    filteredMessages,
                 )
             }) { e: Exception? ->
                 getInviteLinksAndCollect(
@@ -135,7 +129,7 @@ object NicegramGroupCollectHelper {
                     chatInfo,
                     avatarDrawable,
                     getTypeKey(currentChat),
-                    messages,
+                    filteredMessages,
                 )
             }
         }
@@ -432,7 +426,7 @@ object NicegramGroupCollectHelper {
                 channel_id = chat.id
                 access_hash = chat.access_hash
             }
-            limit = 10
+            limit = 50      // Request 50, BUT then take only the 10 most relevant ones (taking groupId into account).
         }
 
         ConnectionsManager.getInstance(currentAccount)
@@ -628,7 +622,7 @@ object NicegramGroupCollectHelper {
                 type = type,
                 token = null,
                 similarChannels = similarChannels.mapToSimilarInfoRequestData(),
-                messages = messages.take(10).mapToMessageInformation(),
+                messages = messages.mapToMessageInformation(),
                 chatPhoto = currentChat.photo.toChatPhoto(),
             )
         )
@@ -722,7 +716,7 @@ object NicegramGroupCollectHelper {
             type = type,
             token = token,
             similarChannels = channelRecommendations.mapToSimilarInfoRequestData(),
-            messages = messages?.mapNotNull { it.toModel() },
+            messages = messages?.mapToMessageInformation(chats, users),
             chatPhoto = firstChat.photo.toChatPhoto(),
         )
     }
@@ -809,280 +803,4 @@ object NicegramGroupCollectHelper {
         }
     }
 
-    private fun List<MessageObject>.mapToMessageInformation(): List<MessageInformation> {
-        return this.mapNotNull { messageObj ->
-            try {
-                val message = messageObj.messageOwner
-
-                val id = message.id
-                val text = message.message ?: ""
-                val date = message.date
-                val viewsCount = message.views
-                val commentsCount = message.replies?.replies ?: 0
-
-                val authorId = when (val fromId = message.from_id) {
-                    is TLRPC.TL_peerUser -> fromId.user_id
-                    is TLRPC.TL_peerChat -> fromId.chat_id
-                    is TLRPC.TL_peerChannel -> fromId.channel_id
-                    else -> 0L
-                }
-
-                val peerId = when (val toId = message.peer_id) {
-                    is TLRPC.TL_peerUser -> toId.user_id
-                    is TLRPC.TL_peerChat -> toId.chat_id
-                    is TLRPC.TL_peerChannel -> toId.channel_id
-                    else -> 0L
-                }
-
-                val reactions: List<MessageInformation.Reaction> = message.reactions?.results?.mapNotNull { result ->
-                    when (result) {
-                        is TLRPC.TL_reactionCount -> {
-                            when (val reaction = result.reaction) {
-                                is TLRPC.TL_reactionEmoji -> MessageInformation.Reaction.Emoji(
-                                    emoticon = reaction.emoticon,
-                                    count = result.count
-                                )
-
-                                is TLRPC.TL_reactionCustomEmoji -> MessageInformation.Reaction.CustomEmoji(
-                                    documentId = reaction.document_id,
-                                    count = result.count
-                                )
-
-                                is TLRPC.TL_reactionPaid -> MessageInformation.Reaction.Paid(
-                                    count = result.count
-                                )
-
-                                else -> null
-                            }
-                        }
-
-                        else -> null
-                    }
-                } ?: emptyList()
-
-                var messageMedia: MessageInformation.Media? = null
-
-                when (val media = message.media) {
-                    is TLRPC.TL_messageMediaPhoto -> {
-                        val photo = media.photo
-                        if (photo is TLRPC.TL_photo) {
-                            messageMedia =
-                                MessageInformation.Media.Photo(
-                                    id = photo.id,
-                                    accessHash = photo.access_hash,
-                                    dcId = photo.dc_id,
-                                    fileReference = photo.file_reference,
-                                    hasStickers = photo.has_stickers,
-                                    date = photo.date,
-                                    sizes = photo.sizes.wrapPhotoSize(),
-                                    videoSizes = photo.video_sizes.wrapVideoSize(),
-                                )
-                        }
-                    }
-
-                    is TLRPC.TL_messageMediaDocument -> {
-                        val document = media.document
-                        if (document is TLRPC.TL_document) {
-                            document.attributes?.forEach { attr ->
-                                when (attr) {
-                                    is TLRPC.TL_documentAttributeAudio -> {
-                                        messageMedia =
-                                            MessageInformation.Media.Audio(
-                                                duration = attr.duration,
-                                                title = attr.title
-                                            )
-                                    }
-
-                                    is TLRPC.TL_documentAttributeVideo -> {
-                                        messageMedia =
-                                            MessageInformation.Media.Video(
-                                                duration = attr.duration
-                                            )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                MessageInformation(
-                    id = id,
-                    message = text,
-                    commentsCount = commentsCount,
-                    viewsCount = viewsCount,
-                    date = date,
-                    authorId = authorId,
-                    peerId = peerId,
-                    groupedId = message.grouped_id,
-                    reactions = reactions.map { ReactionWrapper.from(it) },
-                    media = messageMedia?.let { MediaWrapper.from(it) },
-                )
-            } catch (e: Exception) {
-                Timber.e(e)
-                null
-            }
-        }
-    }
-
-    private fun Message.toModel(): MessageInformation? {
-        return when (this) {
-            is TLRPC.TL_message -> {
-                val commentsCount = this.replies?.replies ?: 0
-
-                val authorId = when (val fromId = this.from_id) {
-                    is TLRPC.TL_peerChannel -> fromId.channel_id
-                    is TLRPC.TL_peerChat -> fromId.chat_id
-                    is TLRPC.TL_peerUser -> fromId.user_id
-                    else -> 0L
-                }
-
-                val peerId = when (val peerId = this.peer_id) {
-                    is TLRPC.TL_peerChannel -> peerId.channel_id
-                    is TLRPC.TL_peerChat -> peerId.chat_id
-                    is TLRPC.TL_peerUser -> peerId.user_id
-                    else -> 0L
-                }
-
-                val reactions: List<MessageInformation.Reaction> = this.reactions?.results?.mapNotNull { result ->
-                    when (val reaction = result.reaction) {
-                        is TLRPC.TL_reactionCustomEmoji -> MessageInformation.Reaction.CustomEmoji(
-                            documentId = reaction.document_id,
-                            count = result.count
-                        )
-
-                        is TLRPC.TL_reactionEmoji -> MessageInformation.Reaction.Emoji(
-                            emoticon = reaction.emoticon,
-                            count = result.count
-                        )
-
-                        is TLRPC.TL_reactionPaid -> MessageInformation.Reaction.Paid(
-                            count = result.count
-                        )
-
-                        else -> null
-                    }
-                } ?: emptyList()
-
-                var messageMedia: MessageInformation.Media? = null
-
-                when (val media = this.media) {
-                    is TLRPC.TL_messageMediaDocument -> {
-                        media.document.attributes.forEach { attr ->
-                            when (attr) {
-                                is TLRPC.TL_documentAttributeAudio -> {
-                                    messageMedia =
-                                        MessageInformation.Media.Audio(
-                                            duration = attr.duration,
-                                            title = attr.title
-                                        )
-                                }
-
-                                is TLRPC.TL_documentAttributeVideo -> {
-                                    messageMedia = MessageInformation.Media.Video(duration = attr.duration)
-                                }
-                            }
-                        }
-                    }
-
-                    is TLRPC.TL_messageMediaPhoto -> {
-                        messageMedia =
-                            MessageInformation.Media.Photo(
-                                id = media.photo.id,
-                                accessHash = media.photo.access_hash,
-                                dcId = media.photo.dc_id,
-                                fileReference = media.photo.file_reference,
-                                hasStickers = media.photo.has_stickers,
-                                date = media.photo.date,
-                                sizes = media.photo.sizes.wrapPhotoSize(),
-                                videoSizes = media.photo.video_sizes.wrapVideoSize(),
-                            )
-                    }
-                }
-
-                return MessageInformation(
-                    id = this.id,
-                    message = this.message,
-                    commentsCount = commentsCount,
-                    viewsCount = this.views,
-                    date = this.date,
-                    authorId = authorId,
-                    peerId = peerId,
-                    groupedId = this.grouped_id,
-                    reactions = reactions.map { ReactionWrapper.from(it) },
-                    media = messageMedia?.let { MediaWrapper.from(it) }
-                )
-            }
-
-            else -> null
-        }
-    }
-
-    private fun ArrayList<TLRPC.PhotoSize>.wrapPhotoSize(): ArrayList<PhotoSizeWrapper> {
-        return this.mapNotNull { tlPhotoSize ->
-            val photoSize: MessageInformation.PhotoSize? = when (tlPhotoSize) {
-                is TLRPC.TL_photoSizeEmpty -> MessageInformation.PhotoSize.PhotoSizeEmpty(tlPhotoSize.type)
-                is TLRPC.TL_photoSize -> MessageInformation.PhotoSize.PhotoSize(
-                    type = tlPhotoSize.type,
-                    w = tlPhotoSize.w,
-                    h = tlPhotoSize.h,
-                    size = tlPhotoSize.size
-                )
-
-                is TLRPC.TL_photoCachedSize -> MessageInformation.PhotoSize.PhotoCachedSize(
-                    type = tlPhotoSize.type,
-                    w = tlPhotoSize.w,
-                    h = tlPhotoSize.h,
-                    bytes = tlPhotoSize.bytes
-                )
-
-                is TLRPC.TL_photoStrippedSize -> MessageInformation.PhotoSize.PhotoStrippedSize(
-                    type = tlPhotoSize.type,
-                    bytes = tlPhotoSize.bytes,
-                )
-
-                is TLRPC.TL_photoSizeProgressive -> MessageInformation.PhotoSize.PhotoSizeProgressive(
-                    type = tlPhotoSize.type,
-                    w = tlPhotoSize.w,
-                    h = tlPhotoSize.h,
-                    sizes = tlPhotoSize.size
-                )
-
-                is TLRPC.TL_photoPathSize -> MessageInformation.PhotoSize.PhotoPathSize(
-                    type = tlPhotoSize.type,
-                    bytes = tlPhotoSize.bytes
-                )
-
-                else -> null
-            }
-
-            photoSize?.let { PhotoSizeWrapper.from(it) }
-        }.toCollection(ArrayList())
-    }
-
-    private fun ArrayList<TLRPC.VideoSize>.wrapVideoSize(): ArrayList<VideoSizeWrapper> {
-        return this.mapNotNull { tlVideoSize ->
-            val videoSize: MessageInformation.VideoSize? = when (tlVideoSize) {
-                is TLRPC.TL_videoSize -> MessageInformation.VideoSize.VideoSize(
-                    type = tlVideoSize.type,
-                    w = tlVideoSize.w,
-                    h = tlVideoSize.h,
-                    size = tlVideoSize.size
-                )
-
-                is TLRPC.TL_videoSizeEmojiMarkup -> MessageInformation.VideoSize.VideoSizeEmojiMarkup(
-                    emojiId = tlVideoSize.emoji_id,
-                    backgroundsColors = tlVideoSize.background_colors
-                )
-
-                is TLRPC.TL_videoSizeStickerMarkup -> MessageInformation.VideoSize.VideoSizeStickerMarkup(
-                    stickerId = tlVideoSize.sticker_id,
-                    backgroundsColors = tlVideoSize.background_colors
-                )
-
-                else -> null
-            }
-
-            videoSize?.let { VideoSizeWrapper.from(it) }
-        }.toCollection(ArrayList())
-    }
 }
