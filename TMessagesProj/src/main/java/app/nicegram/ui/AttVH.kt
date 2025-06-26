@@ -46,5 +46,9 @@ class AttVH(val view: AttBannerChatView) : RecyclerListView.Holder(view) {
         override fun getDialogId(): Long {
             return -1
         }
+
+        override fun getTopicId(): Long {
+            return 0
+        }
     }
 }

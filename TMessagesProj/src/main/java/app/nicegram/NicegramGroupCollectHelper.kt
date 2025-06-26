@@ -85,7 +85,8 @@ object NicegramGroupCollectHelper {
         }
         messagesController.getChannelRecommendations(-currentChat.id)
         var msgForLangDetect: String? = null
-        val filteredMessages = messages.filter { it.messageOwner != null && it.messageOwner.id != 0 && it.messageOwner.from_id != null } // filtered system and Ad's messages
+        val filteredMessages =
+            messages.filter { it.messageOwner != null && it.messageOwner.id != 0 && it.messageOwner.from_id != null } // filtered system and Ad's messages
         for (message in filteredMessages) { // searching for message with length of 16 or more to detect channel lang
             if (!message.isOut) {
                 val textToTranslate = getTranslationTextCallback(message)
@@ -164,38 +165,32 @@ object NicegramGroupCollectHelper {
 
         entryPoint().appScope().launch(Dispatchers.IO) {
             try {
-                val usernameWithToken = collectGroupInfoUseCase.getGroupsUsernameForCollect()
-                val channelInfoList = collectChannelsInfo(currentAccount, usernameWithToken.keys.toList())
+                val usernamesForParsing = collectGroupInfoUseCase.getGroupsUsernameForCollect()
+                val usernames = usernamesForParsing.usernames
+                val channelInfoList = collectChannelsInfo(currentAccount, usernames)
 
-                collectGroupInfoUseCase.collectGroupsInfo(
-                    channelInfoList.map { info ->
-                        when (info) {
-                            is MoreChatFull.Data -> {
-                                val token = usernameWithToken[info.tlrpcChatFull.chats.first().username]
-
-                                info.tlrpcChatFull.mapToInfo(
-                                    lang = info.lang,
-                                    type = info.type,
-                                    avatarBase64 = info.avatarBase64,
-                                    token = token,
-                                    channelRecommendations = info.similarChannels,
-                                    messages = info.messages,
-                                )
-                            }
-
-                            is MoreChatFull.Error -> {
-                                val token = usernameWithToken[info.username]
-
-                                CollectGroupInfoUseCase.GroupCollectInfoData.CollectInfoErrorData(
-                                    username = info.username,
-                                    error = info.error,
-                                    token = token
-                                )
-                            }
+                val groupInfo = channelInfoList.map { info ->
+                    when (info) {
+                        is MoreChatFull.Data -> {
+                            info.tlrpcChatFull.mapToInfo(
+                                lang = info.lang,
+                                type = info.type,
+                                avatarBase64 = info.avatarBase64,
+                                channelRecommendations = info.similarChannels,
+                                messages = info.messages,
+                            )
                         }
 
+                        is MoreChatFull.Error -> {
+                            CollectGroupInfoUseCase.GroupCollectInfoData.CollectInfoErrorData(
+                                username = info.username,
+                                error = info.error,
+                            )
+                        }
                     }
-                )
+
+                }
+                collectGroupInfoUseCase.collectGroupsInfo(groupInfo, usernamesForParsing.requestId)
             } catch (e: Exception) {
                 Timber.e(e)
             } finally {
@@ -620,7 +615,6 @@ object NicegramGroupCollectHelper {
                 pplCount,
                 geo,
                 type = type,
-                token = null,
                 similarChannels = similarChannels.mapToSimilarInfoRequestData(),
                 messages = messages.mapToMessageInformation(),
                 chatPhoto = currentChat.photo.toChatPhoto(),
@@ -683,7 +677,6 @@ object NicegramGroupCollectHelper {
         lang: String?,
         type: String,
         avatarBase64: String?,
-        token: String?,
         channelRecommendations: List<Chat>,
         messages: List<Message>?,
     ): CollectGroupInfoUseCase.GroupCollectInfoData.CollectInfoData {
@@ -714,7 +707,6 @@ object NicegramGroupCollectHelper {
             participantsCount = pplCount,
             geoLocation = getGeo(chatFull),
             type = type,
-            token = token,
             similarChannels = channelRecommendations.mapToSimilarInfoRequestData(),
             messages = messages?.mapToMessageInformation(chats, users),
             chatPhoto = firstChat.photo.toChatPhoto(),
@@ -793,7 +785,6 @@ object NicegramGroupCollectHelper {
                     participantsCount = chat.participants_count,
                     geoLocation = null,
                     type = getTypeKey(chat),
-                    token = null,
                     chatPhoto = chat.photo.toChatPhoto(),
                 )
             } catch (e: Exception) {
