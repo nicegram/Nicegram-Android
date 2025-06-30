@@ -3868,7 +3868,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                     super.onPageStarted(view, url, favicon);
                     injectedJS = false;
 
-                    NgWalletInjectHelper.INSTANCE.onPageStarted(view);
+                    NgWalletInjectHelper.INSTANCE.onPageStarted(view, true);
                 }
 
                 @Override

@@ -743,12 +743,14 @@ object NicegramGroupCollectHelper {
         }
     }
 
-    private fun getSuitableTextForTranslate(message: List<TLRPC.Message>): String {
-        val messagesText: List<String> = message.map { it.message }
-        return try {
-            messagesText.first { message -> message.length > 16 }
-        } catch (e: Exception) {
-            messagesText.random()
+    private fun getSuitableTextForTranslate(messages: List<TLRPC.Message>): String {
+        val messagesText = messages.mapNotNull { it.message?.takeIf { msg -> msg.isNotBlank() } }
+        val suitableMessages = messagesText.filter { it.length > 16 }
+
+        return when {
+            suitableMessages.isNotEmpty() -> suitableMessages.first()
+            messagesText.isNotEmpty() -> messagesText.random()
+            else -> ""
         }
     }
 
