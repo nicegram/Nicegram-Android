@@ -12,68 +12,92 @@ private const val GET_MESSAGE_COUNT_DEFAULT = 10
 // region Public API
 
 /**
- * Converts a list of [MessageObject] into a list of [MessageInformation],
- * taking `grouped_id` as the grouping unit.
+ * Groups a list of [MessageObject]s by their `grouped_id` (or `id` if `grouped_id == 0`),
+ * limits the number of groups to [getCount], and returns a list of pairs where each pair contains:
+ * - a [MessageObject]
+ * - a [Boolean] flag indicating whether the photo for this message should be loaded.
+ *
+ * The `shouldLoadPhoto` flag is set to `true` only for the first message in each group
+ * that contains media of type [TLRPC.TL_messageMediaPhoto]. All other messages receive `false`.
+ *
+ * Groups are sorted by the date of their first message in descending order,
+ * and only the [getCount] most recent groups are included.
+ * Messages within each group are also sorted by date in descending order.
+ * The final result list is sorted by message date in descending order.
  *
  * @param getCount The maximum number of message groups to include. Defaults to [GET_MESSAGE_COUNT_DEFAULT].
- * @return A list of [MessageInformation] sorted by message date descending.
+ *
+ * @return A list of [Pair]<[MessageObject], [Boolean]>, where the Boolean indicates whether the photo should be loaded.
  */
-internal fun List<MessageObject>.mapToMessageInformation(
+internal fun List<MessageObject>.groupAndLimitMessageObjects(
     getCount: Int = GET_MESSAGE_COUNT_DEFAULT
-): List<MessageInformation> {
-    val groupedMap = this.groupBy { messageObj ->
-        val groupedId = messageObj.messageOwner.grouped_id
-        if (groupedId > 0L) groupedId else messageObj.messageOwner.id.toLong()
-    }
-
-    val limitedGroups = groupedMap.entries
+): List<Pair<MessageObject, Boolean>> {
+    return this
+        .groupBy { it.messageOwner.grouped_id.takeIf { id -> id > 0 } ?: it.messageOwner.id.toLong() }
+        .entries
         .sortedByDescending { it.value.firstOrNull()?.messageOwner?.date ?: 0 }
         .take(getCount)
+        .flatMap { group ->
+            val sortedGroup = group.value.sortedByDescending { it.messageOwner.date }
 
-    val limitedMessages = limitedGroups
-        .flatMap { it.value }
-        .sortedByDescending { it.messageOwner.date }
+            val firstPhotoMessageIndex =
+                sortedGroup.indexOfFirst { it.messageOwner.media is TLRPC.TL_messageMediaPhoto }
 
-    return limitedMessages.mapNotNull { it.toMessageInformation() }
+            sortedGroup.mapIndexed { index, messageObject ->
+                val shouldLoadPhoto = index == firstPhotoMessageIndex
+                messageObject to shouldLoadPhoto
+            }
+        }
+        .sortedByDescending { (messageObject, needLoaded) ->  messageObject.messageOwner.date }
 }
 
 /**
- * Converts a list of [TLRPC.Message] into a list of [MessageInformation],
- * using `grouped_id` as the grouping unit.
+ * Groups a list of [TLRPC.Message]s by their `grouped_id` (or `id` if `grouped_id == 0`),
+ * limits the number of groups to [getCount], and returns a list of pairs where each pair contains:
+ * - a [TLRPC.Message]
+ * - a [Boolean] flag indicating whether the photo for this message should be loaded.
  *
- * Each group is identified by the `grouped_id` field of the message. If the message
- * does not belong to a group (`grouped_id <= 0`), its own `id` is used as the group key.
+ * The `shouldLoadPhoto` flag is set to `true` only for the first message in each group
+ * that contains media of type [TLRPC.TL_messageMediaPhoto]. All other messages receive `false`.
+ *
+ * Groups are sorted by the date of their first message in descending order,
+ * and only the [getCount] most recent groups are included.
+ * Messages within each group are sorted by date in descending order.
+ * The final result list is also sorted by message date in descending order.
  *
  * @param getCount The maximum number of message groups to include. Defaults to [GET_MESSAGE_COUNT_DEFAULT].
- * @return A list of [MessageInformation] sorted by message date descending.
+ * @return A list of [Pair]<[TLRPC.Message], [Boolean]>, or null if the input list is null.
  */
-internal fun List<TLRPC.Message>?.mapToMessageInformation(
-    chats: List<TLRPC.Chat>,
-    users: List<TLRPC.User>,
-    getCount: Int = GET_MESSAGE_COUNT_DEFAULT,
-): List<MessageInformation>? {
+internal fun List<TLRPC.Message>?.groupAndLimitMessages(
+    getCount: Int = GET_MESSAGE_COUNT_DEFAULT
+): List<Pair<TLRPC.Message, Boolean>>? {
     if (this == null) return null
 
-    val groupedMap = this.groupBy { msg ->
-        if (msg.grouped_id != 0L) msg.grouped_id else msg.id.toLong()
-    }
-
-    val limitedGroups = groupedMap.entries
+    return this
+        .groupBy { msg -> msg.grouped_id.takeIf { it > 0 } ?: msg.id.toLong() }
+        .entries
         .sortedByDescending { it.value.firstOrNull()?.date ?: 0 }
         .take(getCount)
+        .flatMap { group ->
+            val sortedGroup = group.value.sortedByDescending { it.date }
 
-    val limitedMessages = limitedGroups
-        .flatMap { it.value }
-        .sortedByDescending { it.date }
+            val firstPhotoIndex = sortedGroup.indexOfFirst {
+                it.media is TLRPC.TL_messageMediaPhoto
+            }
 
-    return limitedMessages.mapNotNull { it.toModel(chats, users) }
+            sortedGroup.mapIndexed { index, message ->
+                val shouldLoadPhoto = index == firstPhotoIndex
+                message to shouldLoadPhoto
+            }
+        }
+        .sortedByDescending { (message, needLoaded) ->  message.date }
 }
 
 // endregion
 
 // region Mapping Extensions
 
-private fun MessageObject.toMessageInformation(): MessageInformation? = try {
+fun MessageObject.toMessageInformation(uploadId: Int?): MessageInformation? = try {
     val message = this.messageOwner
 
     MessageInformation(
@@ -86,16 +110,17 @@ private fun MessageObject.toMessageInformation(): MessageInformation? = try {
         peerId = message.peer_id.toPeerId(),
         groupedId = message.grouped_id,
         reactions = message.reactions?.results?.mapNotNull { it.toReaction() } ?: emptyList(),
-        media = message.media?.toMedia()?.let { MediaWrapper.from(it) }
+        media = message.media?.toMedia(uploadId)?.let { MediaWrapper.from(it) }
     )
 } catch (e: Exception) {
     Timber.e(e)
     null
 }
 
-private fun TLRPC.Message.toModel(
+fun TLRPC.Message.toModel(
     chats: List<TLRPC.Chat>,
-    users: List<TLRPC.User>
+    users: List<TLRPC.User>,
+    uploadId: Int?,
 ): MessageInformation? {
     if (this !is TLRPC.TL_message) return null
 
@@ -110,7 +135,7 @@ private fun TLRPC.Message.toModel(
             peerId = peer_id.toPeerId(),
             groupedId = grouped_id,
             reactions = reactions?.results?.mapNotNull { it.toReaction() } ?: emptyList(),
-            media = media?.toMedia()?.let { MediaWrapper.from(it) }
+            media = media?.toMedia(uploadId)?.let { MediaWrapper.from(it) }
         )
     } catch (e: Exception) {
         Timber.e(e)
@@ -226,19 +251,17 @@ private fun TLRPC.ReactionCount?.toReaction(): MessageInformation.Reaction? {
 
 // region Media Mapping
 
-private fun TLRPC.MessageMedia?.toMedia(): MessageInformation.Media? = when (this) {
+private fun TLRPC.MessageMedia?.toMedia(uploadId: Int?): MessageInformation.Media? = when (this) {
     is TLRPC.TL_messageMediaPhoto -> {
         val photo = this.photo
         if (photo is TLRPC.TL_photo) {
             MessageInformation.Media.Photo(
                 id = photo.id,
-                accessHash = photo.access_hash,
-                dcId = photo.dc_id,
-                fileReference = photo.file_reference,
                 hasStickers = photo.has_stickers,
                 date = photo.date,
                 sizes = photo.sizes.wrapPhotoSize(),
                 videoSizes = photo.video_sizes.wrapVideoSize(),
+                uploadId = uploadId
             )
         } else null
     }

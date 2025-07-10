@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat
+
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt' // nicegram
@@ -179,8 +181,25 @@ android {
 
     applicationVariants.all { variant ->
         variant.outputs.all { output ->
-            outputFileName = "app.apk"
             output.versionCodeOverride = defaultConfig.versionCode * 10 + variant.productFlavors.get(0).abiVersionCode
+
+            def buildTypeName = variant.buildType.name
+            def apkFileName
+
+            if (buildTypeName == "debug") {
+                def versionName = variant.versionName
+                def versionCode = output.versionCodeOverride
+
+                def dateFormat = new SimpleDateFormat("dd.MM.yyyy")
+                def buildDate = dateFormat.format(new Date())
+
+                def buildLabel = (buildTypeName == "debug") ? "debug" : "rc"
+                apkFileName = "nice_${buildLabel}_${versionName}_${versionCode}_${buildDate}.apk"
+            } else {
+                apkFileName = "app.apk"
+            }
+
+            outputFileName = apkFileName
         }
     }
 

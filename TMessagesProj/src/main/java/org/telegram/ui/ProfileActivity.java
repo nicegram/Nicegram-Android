@@ -132,6 +132,7 @@ import com.appvillis.feature_gods_eye.GodsEyeEntryPoint;
 import com.appvillis.feature_gods_eye.domain.usecases.GetGodsEyeConfigUseCase;
 import com.appvillis.feature_gods_eye.presentation.GodsEyeHelper;
 import com.appvillis.feature_gods_eye.presentation.ui.UserIdView;
+import com.appvillis.feature_nicegram_client.NicegramClientHelper;
 import com.appvillis.nicegram.AnalyticsHelper;
 import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.NicegramIcWalletHelper;
@@ -11837,7 +11838,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     UserIdView userIdView = (UserIdView) holder.itemView;
                     String id;
                     if (chatInfo != null) {
-                        id = ChatObject.isChannel(currentChat) ? ("-100" + chatInfo.id) : Long.toString(chatInfo.id);
+                        id = ChatObject.isChannel(currentChat) ? String.valueOf(NicegramClientHelper.INSTANCE.preparedChatId(chatInfo.id)) : Long.toString(chatInfo.id);
                     } else {
                         id = userInfo == null ? "-" : Long.toString(userInfo.id);
                     }

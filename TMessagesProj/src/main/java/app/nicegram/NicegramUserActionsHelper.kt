@@ -1,5 +1,6 @@
 package app.nicegram
 
+import com.appvillis.feature_nicegram_client.NicegramClientHelper
 import com.appvillis.nicegram.NicegramAssistantEntryPoint
 import com.appvillis.rep_user_actions.domain.entities.AttUserAction
 import dagger.hilt.EntryPoints
@@ -17,7 +18,7 @@ object NicegramUserActionsHelper {
             entryPoint().saveUserActionUseCase().invoke(
                 AttUserAction(
                     id = UUID.randomUUID().toString(),
-                    chatId = "-100$chatId".toLongOrNull() ?: -1,
+                    chatId = NicegramClientHelper.preparedChatId(chatId),
                     timestamp = System.currentTimeMillis(),
                     type = action,
                     userId = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId

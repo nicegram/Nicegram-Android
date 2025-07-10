@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Base64
+import app.nicegram.bridge.TgBridgeEntryPoint
 import co.touchlab.stately.concurrency.AtomicBoolean
 import com.appvillis.core_network.data.body.ChannelInfoRequest
 import com.appvillis.feature_nicegram_client.NicegramClientHelper
@@ -48,6 +49,9 @@ import kotlin.random.Random
 object NicegramGroupCollectHelper {
     private fun entryPoint() =
         EntryPoints.get(ApplicationLoader.applicationContext, NicegramAssistantEntryPoint::class.java)
+
+    private fun tgBridgeEntryPoint() =
+        EntryPoints.get(ApplicationLoader.applicationContext, TgBridgeEntryPoint::class.java)
 
     fun tryToCollectChannelInfo(
         currentAccount: Int,
@@ -136,7 +140,7 @@ object NicegramGroupCollectHelper {
         }
     }
 
-    private sealed class MoreChatFull {
+    sealed class MoreChatFull {
         class Data(
             val tlrpcChatFull: TLRPC.TL_messages_chatFull,
             val lang: String?,
@@ -169,15 +173,26 @@ object NicegramGroupCollectHelper {
                 val usernames = usernamesForParsing.usernames
                 val channelInfoList = collectChannelsInfo(currentAccount, usernames)
 
+                val prepareMessagesUseCase = tgBridgeEntryPoint().prepareMessagesUseCase()
+                val dataList = channelInfoList.filterIsInstance<MoreChatFull.Data>()
+                val uploadedMap = prepareMessagesUseCase.preloadAndUploadAllMedia(dataList, currentAccount)
+
                 val groupInfo = channelInfoList.map { info ->
                     when (info) {
                         is MoreChatFull.Data -> {
+                            val messagesInfo = prepareMessagesUseCase.prepare(
+                                messages = info.messages,
+                                chats = info.tlrpcChatFull.chats,
+                                users = info.tlrpcChatFull.users,
+                                uploadedMap = uploadedMap,
+                            )
+
                             info.tlrpcChatFull.mapToInfo(
                                 lang = info.lang,
                                 type = info.type,
                                 avatarBase64 = info.avatarBase64,
                                 channelRecommendations = info.similarChannels,
-                                messages = info.messages,
+                                messagesInfo = messagesInfo
                             )
                         }
 
@@ -554,7 +569,7 @@ object NicegramGroupCollectHelper {
                         avatarDrawable,
                         type,
                         similarChannels,
-                        messages
+                        messages,
                     )
                 } catch (e: Exception) {
                     Timber.e(e)
@@ -595,31 +610,43 @@ object NicegramGroupCollectHelper {
 
         val pplCount = getPplCount(currentChat, chatInfo)
 
-        entryPoint().collectGroupInfoUseCase().collectInfo(
-            CollectGroupInfoUseCase.GroupCollectInfoData.CollectInfoData(
-                currentChat.id,
-                invites,
-                avatarBase64,
-                restrictions,
-                currentChat.verified,
-                if (chatInfo != null) chatInfo.about else "",
-                currentChat.has_geo,
-                currentChat.title,
-                currentChat.fake,
-                currentChat.scam,
-                currentChat.date.toLong(),
-                currentChat.username,
-                usernames = currentChat.getActiveUsernames(),
-                currentChat.gigagroup,
-                lang,
-                pplCount,
-                geo,
-                type = type,
-                similarChannels = similarChannels.mapToSimilarInfoRequestData(),
-                messages = messages.mapToMessageInformation(),
-                chatPhoto = currentChat.photo.toChatPhoto(),
-            )
-        )
+        entryPoint().appScope().launch(Dispatchers.IO) {
+            try {
+                val prepareMessagesUseCase = tgBridgeEntryPoint().prepareMessagesUseCase()
+                val prepareMessages = prepareMessagesUseCase.prepare(
+                    chatId = currentChat.id,
+                    messages = messages,
+                )
+
+                entryPoint().collectGroupInfoUseCase().collectInfo(
+                    GroupCollectInfoData.CollectInfoData(
+                        currentChat.id,
+                        invites,
+                        avatarBase64,
+                        restrictions,
+                        currentChat.verified,
+                        if (chatInfo != null) chatInfo.about else "",
+                        currentChat.has_geo,
+                        currentChat.title,
+                        currentChat.fake,
+                        currentChat.scam,
+                        currentChat.date.toLong(),
+                        currentChat.username,
+                        usernames = currentChat.getActiveUsernames(),
+                        currentChat.gigagroup,
+                        lang,
+                        pplCount,
+                        geo,
+                        type = type,
+                        similarChannels = similarChannels.mapToSimilarInfoRequestData(),
+                        messages = prepareMessages,
+                        chatPhoto = currentChat.photo.toChatPhoto(),
+                    )
+                )
+            } catch (e: Exception) {
+                Timber.e(e)
+            }
+        }
     }
 
     private fun tryCollectBotInfo(user: User, avatarDrawable: Drawable?, currentAccount: Int) {
@@ -632,19 +659,6 @@ object NicegramGroupCollectHelper {
         if (!collectGroupInfoUseCase.canCollectBot(user.id)) {
             return
         }
-    }
-
-    private fun resolveId(id: Long): Long {
-        if (id >= 0) {
-            return id
-        }
-
-        var resultId = -id
-        if (resultId > 1000000000000) {
-            resultId -= 1000000000000
-        }
-
-        return resultId
     }
 
     private fun getTypeKey(currentChat: Chat): String {
@@ -678,13 +692,12 @@ object NicegramGroupCollectHelper {
         type: String,
         avatarBase64: String?,
         channelRecommendations: List<Chat>,
-        messages: List<Message>?,
+        messagesInfo: List<ChannelInfoRequest.MessageInformation>?,
     ): CollectGroupInfoUseCase.GroupCollectInfoData.CollectInfoData {
         val chatFull = this.full_chat
         val chats = this.chats
-        val users = this.users
-
         val firstChat = chats.first()
+
         val inviteLinks: List<InviteLink> = chatFull.exported_invite?.let { listOf(it.mapToData()) } ?: emptyList()
         val pplCount = getPplCount(firstChat, chatFull)
 
@@ -708,7 +721,7 @@ object NicegramGroupCollectHelper {
             geoLocation = getGeo(chatFull),
             type = type,
             similarChannels = channelRecommendations.mapToSimilarInfoRequestData(),
-            messages = messages?.mapToMessageInformation(chats, users),
+            messages = messagesInfo,
             chatPhoto = firstChat.photo.toChatPhoto(),
         )
     }

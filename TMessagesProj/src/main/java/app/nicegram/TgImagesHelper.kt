@@ -1,6 +1,5 @@
 package app.nicegram
 
-import org.telegram.messenger.ContactsController
 import org.telegram.messenger.DialogObject
 import org.telegram.messenger.FileLoader
 import org.telegram.messenger.ImageLocation
@@ -8,6 +7,7 @@ import org.telegram.messenger.MessageObject
 import org.telegram.messenger.MessagesController
 import org.telegram.messenger.UserConfig
 import org.telegram.tgnet.TLRPC
+import org.telegram.tgnet.TLRPC.TL_messageMediaPhoto
 import timber.log.Timber
 import java.io.File
 
@@ -48,5 +48,35 @@ object TgImagesHelper {
         }
 
         return image
+    }
+
+    fun getFileForMessagePhoto(messageObject: MessageObject, withLoad: Boolean = true): File? {
+        val media = messageObject.messageOwner.media
+        if (media is TL_messageMediaPhoto) {
+            val photo: TLRPC.Photo? = media.photo
+            if (photo != null && photo.sizes.isNotEmpty()) {
+                val photoSize: TLRPC.PhotoSize? =
+                    FileLoader.getClosestPhotoSizeWithSize(photo.sizes, 800)  // type=x 800x800
+//                val photoSize: TLRPC.PhotoSize? = photo.sizes.find { it.type == "x" }
+                if (photoSize != null) {
+                    val currentAccount = UserConfig.selectedAccount
+                    val fileLoader = FileLoader.getInstance(currentAccount)
+
+                    val imageLocation = ImageLocation.getForPhoto(photoSize, photo)
+
+                    val file: File = fileLoader.getPathToAttach(photoSize, true)
+                    Timber.d("TelegramImage: image path=${file.absolutePath}")
+
+                    if (!file.exists() && withLoad) {
+                        fileLoader.loadFile(imageLocation, messageObject.messageOwner, "jpg", 1, 1)
+                        Timber.d("TelegramImage: image not found locally, started loading...")
+                    }
+
+                    return file
+                }
+            }
+        }
+
+        return null
     }
 }
