@@ -24,7 +24,7 @@ class MediaPreloaderUseCase @Inject constructor() {
                 val file = mediaUploader.ensureMediaUploaded(message)
                 if (file != null && file.exists()) {
                     PreloadedMedia(
-                        messageId = message.messageOwner.id.toLong(),
+                        messageId = message.messageOwner.id,
                         chatId = chatId,
                         file = file,
                         mimeType = "image/jpeg",
@@ -46,7 +46,7 @@ class MediaPreloaderUseCase @Inject constructor() {
                 val file = mediaUploader.ensureMediaUploaded(message, currentAccount)
                 if (file != null && file.exists()) {
                     PreloadedMedia(
-                        messageId = message.id.toLong(),
+                        messageId = message.id,
                         chatId = chatId,
                         file = file,
                         mimeType = "image/jpeg",

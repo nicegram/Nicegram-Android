@@ -28,10 +28,10 @@ object TelegramMediaUploader : MediaUploader {
         file
     }
 
-    private suspend fun waitForFile(file: File, timeoutMs: Long = 10_000): Boolean = withContext(Dispatchers.IO) {
+    private suspend fun waitForFile(file: File, timeoutMs: Long = 20_000, delayMs: Long = 1_000): Boolean = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis()
         while (!file.exists() && System.currentTimeMillis() - start < timeoutMs) {
-            delay(200)
+            delay(delayMs)
         }
         file.exists()
     }

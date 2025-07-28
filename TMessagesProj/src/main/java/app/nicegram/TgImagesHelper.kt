@@ -2,6 +2,7 @@ package app.nicegram
 
 import org.telegram.messenger.DialogObject
 import org.telegram.messenger.FileLoader
+import org.telegram.messenger.ImageLoader
 import org.telegram.messenger.ImageLocation
 import org.telegram.messenger.MessageObject
 import org.telegram.messenger.MessagesController
@@ -55,9 +56,8 @@ object TgImagesHelper {
         if (media is TL_messageMediaPhoto) {
             val photo: TLRPC.Photo? = media.photo
             if (photo != null && photo.sizes.isNotEmpty()) {
-                val photoSize: TLRPC.PhotoSize? =
-                    FileLoader.getClosestPhotoSizeWithSize(photo.sizes, 800)  // type=x 800x800
-//                val photoSize: TLRPC.PhotoSize? = photo.sizes.find { it.type == "x" }
+//                val photoSize: TLRPC.PhotoSize? = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, 800)  // type=x 800x800
+                val photoSize: TLRPC.PhotoSize? = photo.sizes.find { it.type == "x" }
                 if (photoSize != null) {
                     val currentAccount = UserConfig.selectedAccount
                     val fileLoader = FileLoader.getInstance(currentAccount)
@@ -66,9 +66,16 @@ object TgImagesHelper {
 
                     val file: File = fileLoader.getPathToAttach(photoSize, true)
                     Timber.d("TelegramImage: image path=${file.absolutePath}")
+                    Timber.d("TelegramImage: image attachFileName=${FileLoader.getAttachFileName(photoSize)}")
 
                     if (!file.exists() && withLoad) {
-                        fileLoader.loadFile(imageLocation, messageObject.messageOwner, "jpg", 1, 1)
+                        fileLoader.loadFile(
+                            imageLocation,
+                            messageObject.messageOwner,
+                            "jpg",
+                            FileLoader.PRIORITY_NORMAL,
+                            ImageLoader.CACHE_TYPE_CACHE
+                        )
                         Timber.d("TelegramImage: image not found locally, started loading...")
                     }
 

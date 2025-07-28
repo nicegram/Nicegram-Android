@@ -1,6 +1,7 @@
 package app.nicegram.domain.usecases
 
 import androidx.annotation.Keep
+import app.nicegram.domain.entitie.ChatIdWithMessageId
 import app.nicegram.domain.entitie.PreloadedMedia
 import com.appvillis.feature_nicegram_client.domain.etities.UploadInformation
 import kotlinx.coroutines.Dispatchers
@@ -21,11 +22,11 @@ class UploadToS3UseCase @Inject constructor() {
     suspend fun uploadAll(
         items: List<Pair<PreloadedMedia, UploadInformation>>,
         deleteAfterUpload: Boolean = true
-    ): Map<Long, Int> = coroutineScope {
+    ): Map<ChatIdWithMessageId, Int> = coroutineScope {
         items.map { (media, info) ->
             async {
                 val uploadId = upload(media, info, deleteAfterUpload)
-                media.messageId to uploadId
+                (media.chatId to media.messageId) to uploadId
             }
         }.awaitAll()
             .filter { it.second != null }

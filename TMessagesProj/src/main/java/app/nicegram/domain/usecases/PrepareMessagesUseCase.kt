@@ -2,6 +2,7 @@ package app.nicegram.domain.usecases
 
 import androidx.annotation.Keep
 import app.nicegram.NicegramGroupCollectHelper
+import app.nicegram.domain.entitie.ChatIdWithMessageId
 import app.nicegram.groupAndLimitMessageObjects
 import app.nicegram.groupAndLimitMessages
 import app.nicegram.toMessageInformation
@@ -25,32 +26,36 @@ class PrepareMessagesUseCase @Inject constructor(
     suspend fun prepare(chatId: Long, messages: List<MessageObject>): List<ChannelInfoRequest.MessageInformation> {
         val messagesWithFlags = messages.groupAndLimitMessageObjects(ngRemoteConfigRepo.messagesLimit)
         val needPreload = messagesWithFlags.filter { it.second }.map { it.first }
-        var uploadedMap: Map<Long, Int> = emptyMap()
+        var uploadedMap: Map<ChatIdWithMessageId, Int> = emptyMap()
 
         if (needPreload.isNotEmpty() && ngRemoteConfigRepo.collectMessageImages) {
             val preloadedMedia = mediaPreloaderUseCase.preloadMedia(chatId, needPreload)
+            if (preloadedMedia.isEmpty()) {
+                Timber.e("PrepareUseCase: Can't preload any images from tg")
+            } else {
 
-            val uploadBody = uploadInitiateUseCase.buildUploadInitiateBody(preloadedMedia)
-            val uploadResponse = when (val result = uploadInitiateUseCase.initiateUpload(uploadBody)) {
-                is OperationResult.ResultSuccess -> result.result
-                else -> {
-                    Timber.e("PrepareUseCase: Can't initiate upload to server")
-                    null
+                val uploadBody = uploadInitiateUseCase.buildUploadInitiateBody(preloadedMedia)
+                val uploadResponse = when (val result = uploadInitiateUseCase.initiateUpload(uploadBody)) {
+                    is OperationResult.ResultSuccess -> result.result
+                    else -> {
+                        Timber.e("PrepareUseCase: Can't initiate upload to server")
+                        null
+                    }
                 }
-            }
 
-            uploadResponse?.let { response ->
-                if (preloadedMedia.size != response.size) {
-                    Timber.e("PrepareUseCase: Mismatch between preloaded media and upload response")
-                } else {
-                    val mediaWithUploadInfo = preloadedMedia.zip(response)
-                    uploadedMap = uploadToS3UseCase.uploadAll(mediaWithUploadInfo, deleteAfterUpload = false)
+                uploadResponse?.let { response ->
+                    if (preloadedMedia.size != response.size) {
+                        Timber.e("PrepareUseCase: Mismatch between preloaded media and upload response")
+                    } else {
+                        val mediaWithUploadInfo = preloadedMedia.zip(response)
+                        uploadedMap = uploadToS3UseCase.uploadAll(mediaWithUploadInfo, deleteAfterUpload = false)
+                    }
                 }
             }
         }
 
         return messagesWithFlags.mapNotNull { (message, shouldLoadPhoto) ->
-            val uploadId = if (shouldLoadPhoto) uploadedMap[message.id.toLong()] else null
+            val uploadId = if (shouldLoadPhoto) uploadedMap[chatId to message.id] else null
 
             message.toMessageInformation(uploadId)
         }
@@ -59,7 +64,7 @@ class PrepareMessagesUseCase @Inject constructor(
     suspend fun preloadAndUploadAllMedia(
         chatDataList: List<NicegramGroupCollectHelper.MoreChatFull.Data>,
         currentAccount: Int
-    ): Map<Long, Int> {
+    ): Map<ChatIdWithMessageId, Int> {
         val allMessagesToPreload = mutableListOf<Pair<Long, List<TLRPC.Message>>>() // Pair(chatId, messages)
 
         chatDataList.forEach { data ->
@@ -96,15 +101,16 @@ class PrepareMessagesUseCase @Inject constructor(
 
     @Throws
     fun prepare(
+        chatId: Long,
         messages: List<TLRPC.Message>?,
         chats: List<TLRPC.Chat>,
         users: List<TLRPC.User>,
-        uploadedMap: Map<Long, Int>
+        uploadedMap: Map<ChatIdWithMessageId, Int>
     ): List<ChannelInfoRequest.MessageInformation>? {
         val messagesWithFlags = messages.groupAndLimitMessages(ngRemoteConfigRepo.messagesLimit) ?: return null
 
         return messagesWithFlags.mapNotNull { (message, shouldLoadPhoto) ->
-            val uploadId = if (shouldLoadPhoto) uploadedMap[message.id.toLong()] else null
+            val uploadId = if (shouldLoadPhoto) uploadedMap[chatId to message.id] else null
 
             message.toModel(chats, users, uploadId)
         }

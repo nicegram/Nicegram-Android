@@ -181,6 +181,7 @@ object NicegramGroupCollectHelper {
                     when (info) {
                         is MoreChatFull.Data -> {
                             val messagesInfo = prepareMessagesUseCase.prepare(
+                                chatId = info.tlrpcChatFull.full_chat.id,
                                 messages = info.messages,
                                 chats = info.tlrpcChatFull.chats,
                                 users = info.tlrpcChatFull.users,
