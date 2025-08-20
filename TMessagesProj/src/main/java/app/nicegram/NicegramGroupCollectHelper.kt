@@ -437,7 +437,7 @@ object NicegramGroupCollectHelper {
                 channel_id = chat.id
                 access_hash = chat.access_hash
             }
-            limit = 50      // Request 50, BUT then take only the 10 most relevant ones (taking groupId into account).
+            limit = 50      // Request 50, BUT then take only the X most relevant ones (taking groupId into account).
         }
 
         ConnectionsManager.getInstance(currentAccount)
@@ -447,7 +447,8 @@ object NicegramGroupCollectHelper {
                 } else if (response is TLRPC.messages_Messages) {
                     val messages = response.messages
                     val messageForTranslate = getSuitableTextForTranslate(messages)
-                    LanguageDetector.detectLanguage(messageForTranslate,
+                    LanguageDetector.detectLanguage(
+                        messageForTranslate,
                         { str ->
                             onSuccess(str, messages)
                         }, {

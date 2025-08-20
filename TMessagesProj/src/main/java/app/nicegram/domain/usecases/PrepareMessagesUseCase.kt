@@ -80,6 +80,11 @@ class PrepareMessagesUseCase @Inject constructor(
             mediaPreloaderUseCase.preloadMedia(chatId, currentAccount, messages)
         }
 
+        if (preloadedMedia.isEmpty()) {
+            Timber.e("PrepareUseCase: No messages for upload to s3 server")
+            return emptyMap()
+        }
+
         val uploadBody = uploadInitiateUseCase.buildUploadInitiateBody(preloadedMedia)
         val uploadResponse = when (val result = uploadInitiateUseCase.initiateUpload(uploadBody)) {
             is OperationResult.ResultSuccess -> result.result

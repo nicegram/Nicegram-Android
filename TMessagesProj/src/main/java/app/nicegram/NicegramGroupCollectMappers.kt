@@ -16,45 +16,53 @@ private const val GET_MESSAGE_COUNT_DEFAULT = 10
  * limits the number of groups to [getCount], and returns a list of pairs where each pair contains:
  * - a [MessageObject]
  * - a [Boolean] flag indicating whether the photo for this message should be loaded.
- *
- * The `shouldLoadPhoto` flag is set to `true` only for the first message in each group
- * that contains media of type [TLRPC.TL_messageMediaPhoto]. All other messages receive `false`.
- *
- * Groups are sorted by the date of their first message in descending order,
- * and only the [getCount] most recent groups are included.
- * Messages within each group are also sorted by date in descending order.
- * The final result list is sorted by message date in descending order.
- *
- * @param getCount The maximum number of message groups to include. Defaults to [GET_MESSAGE_COUNT_DEFAULT].
- *
- * @return A list of [Pair]<[MessageObject], [Boolean]>, where the Boolean indicates whether the photo should be loaded.
  */
 internal fun List<MessageObject>.groupAndLimitMessageObjects(
     getCount: Int = GET_MESSAGE_COUNT_DEFAULT
 ): List<Pair<MessageObject, Boolean>> {
-    return this
-        .groupBy { it.messageOwner.grouped_id.takeIf { id -> id > 0 } ?: it.messageOwner.id.toLong() }
-        .entries
-        .sortedByDescending { it.value.firstOrNull()?.messageOwner?.date ?: 0 }
-        .take(getCount)
-        .flatMap { group ->
-            val sortedGroup = group.value.sortedByDescending { it.messageOwner.date }
-
-            val firstPhotoMessageIndex =
-                sortedGroup.indexOfFirst { it.messageOwner.media is TLRPC.TL_messageMediaPhoto }
-
-            sortedGroup.mapIndexed { index, messageObject ->
-                val shouldLoadPhoto = index == firstPhotoMessageIndex
-                messageObject to shouldLoadPhoto
-            }
-        }
-        .sortedByDescending { (messageObject, needLoaded) ->  messageObject.messageOwner.date }
+    return groupAndLimit(
+        getCount = getCount,
+        isServiceMessage = { it.messageOwner is TLRPC.TL_messageService },
+        isValidMessage = {
+            it.messageOwner.message?.isNotEmpty() == true || it.messageOwner.media.toMedia(null) != null
+        },
+        getId = { it.messageOwner.id },
+        getGroupedId = { it.messageOwner.grouped_id },
+        getDate = { it.messageOwner.date },
+        getMedia = { it.messageOwner.media }
+    )
 }
 
 /**
  * Groups a list of [TLRPC.Message]s by their `grouped_id` (or `id` if `grouped_id == 0`),
  * limits the number of groups to [getCount], and returns a list of pairs where each pair contains:
  * - a [TLRPC.Message]
+ * - a [Boolean] flag indicating whether the photo for this message should be loaded.
+ */
+internal fun List<TLRPC.Message>?.groupAndLimitMessages(
+    getCount: Int = GET_MESSAGE_COUNT_DEFAULT
+): List<Pair<TLRPC.Message, Boolean>>? {
+    if (this == null) return null
+
+    return groupAndLimit(
+        getCount = getCount,
+        isServiceMessage = { it is TLRPC.TL_messageService },
+        isValidMessage = {
+            it.message?.isNotEmpty() == true || it.media.toMedia(null) != null
+        },
+        getId = { it.id },
+        getGroupedId = { it.grouped_id },
+        getDate = { it.date },
+        getMedia = { it.media }
+    )
+}
+
+// endregion
+
+/**
+ * Groups and limits a list of messages by their `grouped_id` (or `id` if `grouped_id == 0`),
+ * and returns a list of pairs where each pair contains:
+ * - a message of type [T]
  * - a [Boolean] flag indicating whether the photo for this message should be loaded.
  *
  * The `shouldLoadPhoto` flag is set to `true` only for the first message in each group
@@ -65,24 +73,35 @@ internal fun List<MessageObject>.groupAndLimitMessageObjects(
  * Messages within each group are sorted by date in descending order.
  * The final result list is also sorted by message date in descending order.
  *
- * @param getCount The maximum number of message groups to include. Defaults to [GET_MESSAGE_COUNT_DEFAULT].
- * @return A list of [Pair]<[TLRPC.Message], [Boolean]>, or null if the input list is null.
+ * @param getCount The maximum number of message groups to include.
+ * @param isServiceMessage Function to determine if a message is a service message.
+ * @param isValidMessage Function to determine if a message is valid (non-empty or has media).
+ * @param getId Function to get the message ID.
+ * @param getGroupedId Function to get the grouped ID.
+ * @param getDate Function to get the message date.
+ * @param getMedia Function to get the message media.
  */
-internal fun List<TLRPC.Message>?.groupAndLimitMessages(
-    getCount: Int = GET_MESSAGE_COUNT_DEFAULT
-): List<Pair<TLRPC.Message, Boolean>>? {
-    if (this == null) return null
-
+private inline fun <T> List<T>.groupAndLimit(
+    getCount: Int,
+    crossinline isServiceMessage: (T) -> Boolean,
+    crossinline isValidMessage: (T) -> Boolean,
+    crossinline getId: (T) -> Int,
+    crossinline getGroupedId: (T) -> Long,
+    crossinline getDate: (T) -> Int,
+    crossinline getMedia: (T) -> TLRPC.MessageMedia?
+): List<Pair<T, Boolean>> {
     return this
-        .groupBy { msg -> msg.grouped_id.takeIf { it > 0 } ?: msg.id.toLong() }
+        .asSequence()
+        .filterNot { isServiceMessage(it) }
+        .filter { isValidMessage(it) }
+        .groupBy { getGroupedId(it).takeIf { id -> id > 0 } ?: getId(it) }
         .entries
-        .sortedByDescending { it.value.firstOrNull()?.date ?: 0 }
+        .sortedByDescending { it.value.firstOrNull()?.let(getDate) ?: 0 }
         .take(getCount)
         .flatMap { group ->
-            val sortedGroup = group.value.sortedByDescending { it.date }
-
+            val sortedGroup = group.value.sortedByDescending(getDate)
             val firstPhotoIndex = sortedGroup.indexOfFirst {
-                it.media is TLRPC.TL_messageMediaPhoto
+                getMedia(it) is TLRPC.TL_messageMediaPhoto
             }
 
             sortedGroup.mapIndexed { index, message ->
@@ -90,10 +109,9 @@ internal fun List<TLRPC.Message>?.groupAndLimitMessages(
                 message to shouldLoadPhoto
             }
         }
-        .sortedByDescending { (message, needLoaded) ->  message.date }
+        .sortedByDescending { (message, needLoaded) -> getDate(message) }
+        .toList()
 }
-
-// endregion
 
 // region Mapping Extensions
 
