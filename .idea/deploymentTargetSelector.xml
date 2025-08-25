@@ -16,6 +16,9 @@
       <SelectionState runConfigName="TMessagesProj_AppHuawei">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+      <SelectionState runConfigName="TMessagesProj_AppTests">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
     </selectionStates>
   </component>
 </project>

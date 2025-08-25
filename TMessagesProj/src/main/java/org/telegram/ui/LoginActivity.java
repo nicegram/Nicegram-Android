@@ -9888,6 +9888,11 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         }
 
         @Override
+        public boolean needBackButton() {
+            return true;        // region ng sms fee fix
+        }
+
+        @Override
         public void setParams(Bundle params, boolean restore) {
             super.setParams(params, restore);
 
@@ -9906,7 +9911,20 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
 
             button.setEnabled(true);
             button.setOnClickListener(null);
-            if (TextUtils.isEmpty(product)) {
+            // region sms fee fix
+            if (true) {
+                button.setVisibility(View.VISIBLE);
+                button.setLoading(false);
+                button.setText(getString(R.string.Unavailable), false);
+                button.setOnClickListener(v -> {
+                    new AlertDialog.Builder(getParentActivity())
+                            .setTitle(getString(R.string.NicegramSmsFee_Title))
+                            .setMessage(getString(R.string.NicegramSmsFee_Text))
+                            .setPositiveButton(getString(R.string.OK), null)
+                            .show();
+                });
+                // endregion
+            } else if (TextUtils.isEmpty(product)) {
                 button.setVisibility(View.GONE);
             } else if (BuildVars.useInvoiceBilling()) {
                 button.setVisibility(View.VISIBLE);

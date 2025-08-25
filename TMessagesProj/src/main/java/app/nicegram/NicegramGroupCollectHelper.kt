@@ -18,7 +18,7 @@ import dagger.hilt.EntryPoints
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.telegram.messenger.AndroidUtilities
+import kotlinx.coroutines.withContext
 import org.telegram.messenger.ApplicationLoader
 import org.telegram.messenger.ChatObject
 import org.telegram.messenger.LanguageDetector
@@ -541,12 +541,14 @@ object NicegramGroupCollectHelper {
         type: String,
         messages: List<MessageObject>,
     ) {
-        val req = TL_messages_getExportedChatInvites()
-        req.peer = messagesController.getInputPeer(-currentChat.id)
-        req.limit = 50
-        req.admin_id = messagesController.getInputUser(userConfig.currentUser)
+        val req = TL_messages_getExportedChatInvites().apply {
+            peer = messagesController.getInputPeer(-currentChat.id)
+            limit = 50
+            admin_id = messagesController.getInputUser(userConfig.currentUser)
+        }
+
         connectionsManager.sendRequest(req) { response: TLObject?, error: TL_error? ->
-            AndroidUtilities.runOnUIThread {
+            entryPoint().appScope().launch(Dispatchers.IO) {
                 val invites: MutableList<InviteLink> = ArrayList()
                 if (error == null) {
                     val invitesResponse = response as TL_messages_exportedChatInvites
@@ -556,12 +558,9 @@ object NicegramGroupCollectHelper {
                         }
                     }
                 }
-                val similarChannels: List<Chat> = try {
-                    messagesController.getChannelRecommendations(-currentChat.id).chats as List<Chat>
-                } catch (e: Exception) {
-                    Timber.e(e)
-                    emptyList()
-                }
+
+                val similarChannels: List<Chat> = getSimilarChannelsWithRetry(currentChat, messagesController)
+
                 try {
                     collectChannelInfo(
                         lang,
@@ -580,7 +579,23 @@ object NicegramGroupCollectHelper {
         }
     }
 
-    private fun collectChannelInfo(
+    private suspend fun getSimilarChannelsWithRetry(
+        currentChat: Chat,
+        messagesController: MessagesController
+    ): List<Chat> {
+        val dialogId = -currentChat.id
+        var recommendations = messagesController.getChannelRecommendations(dialogId)
+
+        if (recommendations == null) {
+            delay(1500)
+            recommendations = messagesController.getChannelRecommendations(dialogId)
+        }
+
+        val chats = recommendations?.chats?.filterIsInstance<Chat>() ?: emptyList()
+        return chats
+    }
+
+    private suspend fun collectChannelInfo(
         lang: String?,
         invites: List<InviteLink>,
         currentChat: Chat,
@@ -589,7 +604,7 @@ object NicegramGroupCollectHelper {
         type: String,
         similarChannels: List<Chat>,
         messages: List<MessageObject>,
-    ) {
+    ) = withContext(Dispatchers.IO) {
         var geo: Geo? = null
         if (chatInfo != null && chatInfo.location is TL_channelLocation) {
             val loc = chatInfo.location as TL_channelLocation
@@ -612,42 +627,40 @@ object NicegramGroupCollectHelper {
 
         val pplCount = getPplCount(currentChat, chatInfo)
 
-        entryPoint().appScope().launch(Dispatchers.IO) {
-            try {
-                val prepareMessagesUseCase = tgBridgeEntryPoint().prepareMessagesUseCase()
-                val prepareMessages = prepareMessagesUseCase.prepare(
-                    chatId = currentChat.id,
-                    messages = messages,
-                )
+        try {
+            val prepareMessagesUseCase = tgBridgeEntryPoint().prepareMessagesUseCase()
+            val prepareMessages = prepareMessagesUseCase.prepare(
+                chatId = currentChat.id,
+                messages = messages,
+            )
 
-                entryPoint().collectGroupInfoUseCase().collectInfo(
-                    GroupCollectInfoData.CollectInfoData(
-                        currentChat.id,
-                        invites,
-                        avatarBase64,
-                        restrictions,
-                        currentChat.verified,
-                        if (chatInfo != null) chatInfo.about else "",
-                        currentChat.has_geo,
-                        currentChat.title,
-                        currentChat.fake,
-                        currentChat.scam,
-                        currentChat.date.toLong(),
-                        currentChat.username,
-                        usernames = currentChat.getActiveUsernames(),
-                        currentChat.gigagroup,
-                        lang,
-                        pplCount,
-                        geo,
-                        type = type,
-                        similarChannels = similarChannels.mapToSimilarInfoRequestData(),
-                        messages = prepareMessages,
-                        chatPhoto = currentChat.photo.toChatPhoto(),
-                    )
+            entryPoint().collectGroupInfoUseCase().collectInfo(
+                GroupCollectInfoData.CollectInfoData(
+                    currentChat.id,
+                    invites,
+                    avatarBase64,
+                    restrictions,
+                    currentChat.verified,
+                    if (chatInfo != null) chatInfo.about else "",
+                    currentChat.has_geo,
+                    currentChat.title,
+                    currentChat.fake,
+                    currentChat.scam,
+                    currentChat.date.toLong(),
+                    currentChat.username,
+                    usernames = currentChat.getActiveUsernames(),
+                    currentChat.gigagroup,
+                    lang,
+                    pplCount,
+                    geo,
+                    type = type,
+                    similarChannels = similarChannels.mapToSimilarInfoRequestData(),
+                    messages = prepareMessages,
+                    chatPhoto = currentChat.photo.toChatPhoto(),
                 )
-            } catch (e: Exception) {
-                Timber.e(e)
-            }
+            )
+        } catch (e: Exception) {
+            Timber.e(e)
         }
     }
 
