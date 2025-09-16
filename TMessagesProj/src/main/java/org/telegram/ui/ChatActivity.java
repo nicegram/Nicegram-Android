@@ -20572,8 +20572,10 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
         if (id == NotificationCenter.messagesDidLoad) {
+            Log.d("ChatActivity", "🔔 didReceivedNotification: messagesDidLoad");
             int guid = (Integer) args[10];
             if (guid != classGuid) {
+                checkAllMessagesLoaded();    // ng parser
                 return;
             }
             int queryLoadIndex = (Integer) args[11];
@@ -20681,6 +20683,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                 getMessagesController().markDialogAsRead(dialog_id, messageObject.getId(), messageObject.getId(), messageObject.messageOwner.date, false, 0, 0, true, 0);
                 AndroidUtilities.cancelRunOnUIThread(fragmentTransitionRunnable);
                 fragmentTransitionRunnable.run();
+                checkAllMessagesLoaded();    // ng parser
                 return;
             }
             if (chatMode != mode && (chatMode != MODE_SAVED || getSavedDialogId() == getUserConfig().getClientUserId())) {
@@ -20691,6 +20694,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                     scheduledMessagesCount = messArr.size();
                     updateScheduledInterface(true);
                 }
+                checkAllMessagesLoaded();    // ng parser
                 return;
             } else if (chatMode == MODE_SCHEDULED && isTopic) {
                 ForumUtilities.filterMessagesByTopic(threadMessageId, messArr);
@@ -20718,6 +20722,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                     }
                     if (!found) {
                         startLoadFromMessageId = 0;
+                        checkAllMessagesLoaded();    // ng parser
                         return;
                     }
                 }
@@ -20781,6 +20786,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                 resetProgressDialogLoading();
                 showPinnedProgress(false);
                 if (postponedScrollIsCanceled) {
+                    checkAllMessagesLoaded();    // ng parser
                     return;
                 }
                 if (postponedScrollMessageId == 0) {
@@ -20809,6 +20815,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                             } else {
                                 BulletinFactory.of(this).createErrorBulletin(LocaleController.getString(R.string.MessageNotFound), themeDelegate).show();
                             }
+                            checkAllMessagesLoaded();    // ng parser
                             return;
                         }
                         showScrollToMessageError = false;
@@ -21474,6 +21481,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
                     }
                 }
                 loadingForward = false;
+                checkAllMessagesLoaded();    // ng parser
             } else {
                 if (messArr.size() < count && load_type != 3 && load_type != 4) {
                     if (isCache) {
@@ -21803,6 +21811,7 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
 
             checkNewMessagesOnQuoteEdit(true);
             invalidatePremiumBlocked();
+            checkAllMessagesLoaded();    // ng parser
 
             if (chatMode == MODE_QUICK_REPLIES) {
                 updateBottomOverlay();
@@ -29822,22 +29831,21 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
 
         NicegramClientHelper.INSTANCE.tryToApplyGrayscaleFilter(fragmentView, true, false);
 
-        try {
-            AndroidUtilities.runOnUIThread(() -> NicegramGroupCollectHelper.INSTANCE.tryToCollectChannelInfo(
-                    currentAccount,
-                    currentChat,
-                    currentUser,
-                    messages,
-                    getMessagesController(),
-                    getConnectionsManager(),
-                    getUserConfig(),
-                    chatInfo,
-                    getAvatarContainer().getAvatarImageView().getImageReceiver().getDrawable(),
-                    messageObject -> getMessageTextToTranslate(messageObject)
-            ), 2000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            AndroidUtilities.runOnUIThread(() -> NicegramGroupCollectHelper.INSTANCE.tryToCollectChannelInfo(
+//                    currentAccount,
+//                    currentChat,
+//                    currentUser,
+//                    getMessagesController(),
+//                    getConnectionsManager(),
+//                    getUserConfig(),
+//                    chatInfo,
+//                    getAvatarContainer().getAvatarImageView().getImageReceiver().getDrawable(),
+//                    messageObject -> getMessageTextToTranslate(messageObject)
+//            ), 2000);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
 
         checkShowBlur(false);
         activityResumeTime = System.currentTimeMillis();
@@ -45691,5 +45699,65 @@ ChatActivity extends BaseFragment implements NotificationCenter.NotificationCent
             }
         }
     }
+
+    // region ng parser
+    private boolean latestMessagesLoaded = false;
+    private Runnable fallbackLatestMessagesRunnable;
+
+    private void checkAllMessagesLoaded() {
+        Log.d("ChatActivity", "Check: loadingForward=" + loadingForward + ", forwardEndReached[0]=" + forwardEndReached[0]);
+        if (latestMessagesLoaded) return;
+
+        if (!loadingForward && forwardEndReached[0]) {
+            Log.d("ChatActivity", "✅ All latest messages are loaded (immediate)");
+            onLatestMessagesLoaded();
+        } else {
+            // fallback: если через 2 секунды ничего не изменится — считаем, что всё загружено
+            if (fallbackLatestMessagesRunnable != null) {
+                AndroidUtilities.cancelRunOnUIThread(fallbackLatestMessagesRunnable);
+            }
+
+            fallbackLatestMessagesRunnable = () -> {
+                if (!latestMessagesLoaded && !loadingForward) {
+                    Log.d("ChatActivity", "⚠️ Fallback: assuming all latest messages are loaded");
+                    onLatestMessagesLoaded();
+                }
+            };
+
+            AndroidUtilities.runOnUIThread(fallbackLatestMessagesRunnable, 2000);
+        }
+    }
+
+    private void onLatestMessagesLoaded() {
+        if (latestMessagesLoaded) return;
+        latestMessagesLoaded = true;
+
+        // Do something when all latest messages are loaded
+        Log.d("ChatActivity", "✅ All latest messages are loaded");
+
+        // Очистим fallback
+        if (fallbackLatestMessagesRunnable != null) {
+            AndroidUtilities.cancelRunOnUIThread(fallbackLatestMessagesRunnable);
+            fallbackLatestMessagesRunnable = null;
+        }
+
+        try {
+            AndroidUtilities.runOnUIThread(() -> NicegramGroupCollectHelper.INSTANCE.tryToCollectChannelInfo(
+                    currentAccount,
+                    currentChat,
+                    currentUser,
+                    isTopic,
+                    getMessagesController(),
+                    getConnectionsManager(),
+                    getUserConfig(),
+                    chatInfo,
+                    getAvatarContainer().getAvatarImageView().getImageReceiver().getDrawable(),
+                    messageObject -> getMessageTextToTranslate(messageObject)
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    // endregion
 }
 

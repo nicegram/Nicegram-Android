@@ -24,6 +24,7 @@ import org.telegram.messenger.ChatObject
 import org.telegram.messenger.LanguageDetector
 import org.telegram.messenger.MessageObject
 import org.telegram.messenger.MessagesController
+import org.telegram.messenger.MessagesStorage
 import org.telegram.messenger.UserConfig
 import org.telegram.tgnet.ConnectionsManager
 import org.telegram.tgnet.NativeByteBuffer
@@ -41,9 +42,12 @@ import org.telegram.tgnet.TLRPC.TL_error
 import org.telegram.tgnet.TLRPC.TL_messages_exportedChatInvites
 import org.telegram.tgnet.TLRPC.TL_messages_getExportedChatInvites
 import org.telegram.tgnet.TLRPC.User
+import org.telegram.ui.ChatActivity
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import kotlin.random.Random
 
 object NicegramGroupCollectHelper {
@@ -57,7 +61,39 @@ object NicegramGroupCollectHelper {
         currentAccount: Int,
         currentChat: Chat?,
         currentUser: User?,
-        messages: List<MessageObject>,
+        isTopic: Boolean,
+        messagesController: MessagesController,
+        connectionsManager: ConnectionsManager,
+        userConfig: UserConfig,
+        chatInfo: ChatFull?,
+        avatarDrawable: Drawable?,
+        getTranslationTextCallback: (MessageObject) -> String?
+    ) {
+        entryPoint().appScope().launch(Dispatchers.IO) {
+            try {
+                tryToCollectChannelInfoSuspend(
+                    currentAccount,
+                    currentChat,
+                    currentUser,
+                    isTopic,
+                    messagesController,
+                    connectionsManager,
+                    userConfig,
+                    chatInfo,
+                    avatarDrawable,
+                    getTranslationTextCallback
+                )
+            } catch (e: Exception) {
+                Timber.tag("ChannelInfo").e("Error collecting channel info e=$e")
+            }
+        }
+    }
+
+    suspend fun tryToCollectChannelInfoSuspend(
+        currentAccount: Int,
+        currentChat: Chat?,
+        currentUser: User?,
+        isTopic: Boolean,
         messagesController: MessagesController,
         connectionsManager: ConnectionsManager,
         userConfig: UserConfig,
@@ -66,6 +102,7 @@ object NicegramGroupCollectHelper {
         getTranslationTextCallback: (MessageObject) -> String?
     ) {
         val collectGroupInfoUseCase = entryPoint().collectGroupInfoUseCase()
+
         if (currentChat == null) {
             if (currentUser != null) {
                 //tryCollectBotInfo(currentUser, avatarDrawable, currentAccount)
@@ -87,7 +124,11 @@ object NicegramGroupCollectHelper {
         if (!collectGroupInfoUseCase.canCollectGroup(currentChat.id)) {
             return
         }
-        messagesController.getChannelRecommendations(-currentChat.id)
+
+        messagesController.getChannelRecommendations(-currentChat.id)       // preload recommendation
+
+        val messages = loadLatestMessagesInternal(currentAccount, -currentChat.id, isTopic)
+
         var msgForLangDetect: String? = null
         val filteredMessages =
             messages.filter { it.messageOwner != null && it.messageOwner.id != 0 && it.messageOwner.from_id != null } // filtered system and Ad's messages
@@ -673,6 +714,36 @@ object NicegramGroupCollectHelper {
         }
         if (!collectGroupInfoUseCase.canCollectBot(user.id)) {
             return
+        }
+    }
+
+    private suspend fun loadLatestMessagesInternal(
+        currentAccount: Int,
+        dialogId: Long,
+        isTopic: Boolean,
+        classGuid: Int = 0,
+        count: Int = 50,
+    ): List<MessageObject> = suspendCoroutine { continuation ->
+        MessagesStorage.getInstance(currentAccount).getMessagesInternal(
+            dialogId,
+            0, // mergeDialogId
+            count,
+            0, // max_id = 0 → load from latest
+            0, // offset_date
+            0, // minDate
+            classGuid,
+            0, // load_type = LOAD_TYPE_INITIAL
+            ChatActivity.MODE_DEFAULT,
+            0, // threadMessageId
+            0, // loadIndex
+            true, // processMessages
+            isTopic, // isTopic
+            null, // loaderLogger
+        ) { result ->
+            val messageObjects = result.messages.map { msg ->
+                MessageObject(currentAccount, msg, false, false)
+            }
+            continuation.resume(messageObjects)
         }
     }
 
