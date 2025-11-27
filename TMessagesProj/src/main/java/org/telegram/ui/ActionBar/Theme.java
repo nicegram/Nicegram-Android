@@ -1773,6 +1773,23 @@ public class Theme {
             return !isMyMessagesGradientColorsNear;
         }
 
+        public void resetAccentColorsForMyMessagesGiftThemeLight(SparseIntArray currentColors) {
+            currentColors.put(Theme.key_actionBarDefault, accentColor | 0xFF000000);
+            for (int a = Theme.myMessagesBubblesStartIndex; a < Theme.myMessagesBubblesEndIndex; a++) {
+                currentColors.delete(a);
+                currentColors.put(a, defaultColors[a]);
+            }
+            for (int a = Theme.myMessagesStartIndex; a < Theme.myMessagesEndIndex; a++) {
+                currentColors.delete(a);
+                currentColors.put(a, defaultColors[a]);
+            }
+            for (int a = Theme.myMessages2StartIndex; a < Theme.myMessages2EndIndex; a++) {
+                currentColors.delete(a);
+                currentColors.put(a, defaultColors[a]);
+            }
+        }
+
+
         private float[] tempHSV = new float[3];
         private int setHue(int color, int hueFromColor) {
             Color.colorToHSV(hueFromColor, tempHSV);
@@ -2788,8 +2805,12 @@ public class Theme {
             if (settingsIndex < info.settings.size()) {
                 settings = info.settings.get(settingsIndex);
             }
+            return createNewAccent(info.id, settings, info, account, ignoreThemeInfoId);
+        }
+
+        public ThemeAccent createNewAccent(long themeId, TLRPC.ThemeSettings settings, TLRPC.TL_theme info, int account, boolean ignoreThemeInfoId) {
             if (ignoreThemeInfoId) {
-                ThemeAccent themeAccent = chatAccentsByThemeId.get(info.id);
+                ThemeAccent themeAccent = chatAccentsByThemeId.get(themeId);
                 if (themeAccent != null) {
                     return themeAccent;
                 }
@@ -2801,7 +2822,7 @@ public class Theme {
                 chatAccentsByThemeId.put(id, themeAccent);
                 return themeAccent;
             } else {
-                ThemeAccent themeAccent = accentsByThemeId.get(info.id);
+                ThemeAccent themeAccent = accentsByThemeId.get(themeId);
                 if (themeAccent != null) {
                     return themeAccent;
                 }
@@ -2813,7 +2834,7 @@ public class Theme {
                 themeAccentsMap.put(id, themeAccent);
                 themeAccents.add(0, themeAccent);
                 sortAccents(this);
-                accentsByThemeId.put(info.id, themeAccent);
+                accentsByThemeId.put(themeId, themeAccent);
                 return themeAccent;
             }
         }
@@ -3740,6 +3761,7 @@ public class Theme {
     public static final int key_chat_outReactionButtonBackground = colorsCount++;
     public static final int myMessagesEndIndex = colorsCount;
 
+    public static final int myMessages2StartIndex = colorsCount;
     public static final int key_chat_outTextSelectionHighlight = colorsCount++;
     public static final int key_chat_outTextSelectionCursor = colorsCount++;
     public static final int key_chat_outBubbleLocationPlaceholder = colorsCount++;
@@ -3747,6 +3769,8 @@ public class Theme {
     public static final int key_chat_outPsaNameText = colorsCount++;
     public static final int key_chat_outBubbleGradientAnimated = colorsCount++;
     public static final int key_chat_outBubbleGradientSelectedOverlay = colorsCount++;
+    public static final int myMessages2EndIndex = colorsCount;
+
     public static final int key_chat_inBubbleSelected = colorsCount++;
     public static final int key_chat_messageTextIn = colorsCount++;
     public static final int key_chat_messageTextOut = colorsCount++;
@@ -5547,7 +5571,12 @@ public class Theme {
         return getSelectorDrawable(getColor(key_listSelector), whiteBackground);
     }
     public static Drawable getSelectorDrawable(boolean whiteBackground, ResourcesProvider resourcesProvider) {
-        return getSelectorDrawable(getColor(key_listSelector, resourcesProvider), whiteBackground);
+        final int color = getColor(key_listSelector, resourcesProvider);
+        if (whiteBackground) {
+            return getSelectorDrawable(color, key_windowBackgroundWhite, resourcesProvider);
+        } else {
+            return createSelectorDrawable(color, 2);
+        }
     }
 
     public static Drawable getSelectorDrawable(int color, boolean whiteBackground) {
@@ -5559,6 +5588,9 @@ public class Theme {
     }
 
     public static Drawable getSelectorDrawable(int color, int backgroundColor) {
+        return getSelectorDrawable(color, backgroundColor, null);
+    }
+    public static Drawable getSelectorDrawable(int color, int backgroundColor, Theme.ResourcesProvider resourcesProvider) {
         if (backgroundColor >= 0) {
             if (Build.VERSION.SDK_INT >= 21) {
                 Drawable maskDrawable = new ColorDrawable(0xffffffff);
@@ -5566,12 +5598,12 @@ public class Theme {
                         new int[][]{StateSet.WILD_CARD},
                         new int[]{color}
                 );
-                return new BaseCell.RippleDrawableSafe(colorStateList, new ColorDrawable(getColor(backgroundColor)), maskDrawable);
+                return new BaseCell.RippleDrawableSafe(colorStateList, new ColorDrawable(getColor(backgroundColor, resourcesProvider)), maskDrawable);
             } else {
                 StateListDrawable stateListDrawable = new StateListDrawable();
                 stateListDrawable.addState(new int[]{android.R.attr.state_pressed}, new ColorDrawable(color));
                 stateListDrawable.addState(new int[]{android.R.attr.state_selected}, new ColorDrawable(color));
-                stateListDrawable.addState(StateSet.WILD_CARD, new ColorDrawable(getColor(backgroundColor)));
+                stateListDrawable.addState(StateSet.WILD_CARD, new ColorDrawable(getColor(backgroundColor, resourcesProvider)));
                 return stateListDrawable;
             }
         } else {
@@ -9781,13 +9813,15 @@ public class Theme {
         }
     }
 
-    public static void setSelectorDrawableColor(Drawable drawable, int color, boolean selected) {
+    public static boolean setSelectorDrawableColor(Drawable drawable, int color, boolean selected) {
+        boolean changed = false;
         if (drawable instanceof StateListDrawable) {
             try {
                 Drawable state;
                 if (selected) {
                     state = getStateDrawable(drawable, 0);
                     if (state instanceof ShapeDrawable) {
+                        changed = ((ShapeDrawable) state).getPaint().getColor() != color || changed;
                         ((ShapeDrawable) state).getPaint().setColor(color);
                     } else {
                         state.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.MULTIPLY));
@@ -9797,6 +9831,7 @@ public class Theme {
                     state = getStateDrawable(drawable, 2);
                 }
                 if (state instanceof ShapeDrawable) {
+                    changed = ((ShapeDrawable) state).getPaint().getColor() != color || changed;
                     ((ShapeDrawable) state).getPaint().setColor(color);
                 } else {
                     state.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.MULTIPLY));
@@ -9808,13 +9843,14 @@ public class Theme {
             RippleDrawable rippleDrawable = (RippleDrawable) drawable;
             if (selected) {
                 rippleDrawable.setColor(new ColorStateList(
-                        new int[][]{StateSet.WILD_CARD},
-                        new int[]{color}
+                    new int[][]{StateSet.WILD_CARD},
+                    new int[]{color}
                 ));
             } else {
                 if (rippleDrawable.getNumberOfLayers() > 0) {
                     Drawable drawable1 = rippleDrawable.getDrawable(0);
                     if (drawable1 instanceof ShapeDrawable) {
+                        changed = ((ShapeDrawable) drawable1).getPaint().getColor() != color || changed;
                         ((ShapeDrawable) drawable1).getPaint().setColor(color);
                     } else {
                         drawable1.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.MULTIPLY));
@@ -9822,6 +9858,7 @@ public class Theme {
                 }
             }
         }
+        return changed;
     }
 
     public static boolean isThemeWallpaperPublic() {

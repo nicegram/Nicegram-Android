@@ -13,6 +13,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
 import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -41,6 +42,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.ColorUtils;
 
 import com.google.zxing.common.detector.MathUtils;
 
@@ -49,6 +51,7 @@ import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.ImageReceiver;
+import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
@@ -74,6 +77,7 @@ import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
+import org.telegram.ui.Components.BatchParticlesDrawHelper;
 import org.telegram.ui.Components.ButtonBounce;
 import org.telegram.ui.Components.CheckBox2;
 import org.telegram.ui.Components.ColoredImageSpan;
@@ -445,7 +449,7 @@ public class StarsReactionsSheet extends BottomSheet implements NotificationCent
             };
 
             if (starsController.balanceAvailable() && starsController.getBalance().amount < totalStars) {
-                new StarsIntroActivity.StarsNeededSheet(context, resourcesProvider, totalStars, StarsIntroActivity.StarsNeededSheet.TYPE_REACTIONS, chat == null ? "" : chat.title, send).show();
+                new StarsIntroActivity.StarsNeededSheet(context, resourcesProvider, totalStars, StarsIntroActivity.StarsNeededSheet.TYPE_REACTIONS, chat == null ? "" : chat.title, send, 0).show();
             } else {
                 send.run();
             }
@@ -1225,6 +1229,9 @@ public class StarsReactionsSheet extends BottomSheet implements NotificationCent
 
         private boolean firstDraw = true;
 
+        private final @Nullable BatchParticlesDrawHelper.BatchParticlesBuffer batchParticlesBuffer;
+        private final @Nullable Paint batchParticlesPaint;
+
         public Particles(int type, int n) {
             this.type = type;
             this.visibleCount = n;
@@ -1253,6 +1260,15 @@ public class StarsReactionsSheet extends BottomSheet implements NotificationCent
             Paint paint = new Paint();
             paint.setColor(Theme.multAlpha(Color.WHITE, .75f));
             canvas.drawPath(path, paint);
+
+            if (BatchParticlesDrawHelper.isAvailable()) {
+                batchParticlesBuffer = new BatchParticlesDrawHelper.BatchParticlesBuffer(n);
+                batchParticlesBuffer.fillParticleTextureCords(0, 0, b.getWidth(), b.getHeight());
+                batchParticlesPaint = BatchParticlesDrawHelper.createBatchParticlesPaint(b);
+            } else {
+                batchParticlesBuffer = null;
+                batchParticlesPaint = null;
+            }
         }
 
         public void setVisible(float x) {
@@ -1294,6 +1310,10 @@ public class StarsReactionsSheet extends BottomSheet implements NotificationCent
 
         private long lastTime;
         public void process() {
+            if (!LiteMode.isEnabled(LiteMode.FLAG_PARTICLES)) {
+                return;
+            }
+
             final long now = System.currentTimeMillis();
             final float deltaTime = Math.min(lastTime - now, 16) / 1000f * speed;
             for (int i = 0; i < Math.min(visibleCount, particles.size()); ++i) {
@@ -1311,12 +1331,37 @@ public class StarsReactionsSheet extends BottomSheet implements NotificationCent
         }
 
         public void draw(Canvas canvas, int color) {
-            if (bPaintColor != color) {
-                bPaint.setColorFilter(new PorterDuffColorFilter(bPaintColor = color, PorterDuff.Mode.SRC_IN));
+            draw(canvas, color, 1f);
+        }
+
+        public void draw(Canvas canvas, int color, float alpha) {
+            if (!LiteMode.isEnabled(LiteMode.FLAG_PARTICLES)) {
+                return;
             }
-            for (int i = 0; i < Math.min(visibleCount, particles.size()); ++i) {
-                final Particle p = particles.get(i);
-                p.draw(canvas, color, p.la);
+
+            final int particlesCount = Math.min(visibleCount, particles.size());
+            final boolean useBatchRender = batchParticlesBuffer != null;
+            if (useBatchRender) {
+                final float bWidth = b.getWidth();
+                final float bHeight = b.getHeight();
+                for (int i = 0; i < particlesCount; ++i) {
+                    final Particle p = particles.get(i);
+                    final float pAlpha = p.a * p.s * alpha;
+                    final float halfWidth = bWidth / 2f * pAlpha;
+                    final float halfHeight = bHeight / 2f * pAlpha;
+                    batchParticlesBuffer.setParticleVertexCords(i, p.x - halfWidth, p.y - halfHeight, p.x + halfWidth, p.y + halfHeight);
+                    batchParticlesBuffer.setParticleColor(i, ColorUtils.setAlphaComponent(color, (int) (0xFF * Utilities.clamp01(p.la * alpha))));
+                }
+                BatchParticlesDrawHelper.draw(canvas, batchParticlesBuffer, particlesCount, batchParticlesPaint);
+            } else {
+                if (bPaintColor != color) {
+                    bPaint.setColorFilter(new PorterDuffColorFilter(bPaintColor = color, PorterDuff.Mode.SRC_IN));
+                }
+
+                for (int i = 0; i < particlesCount; ++i) {
+                    final Particle p = particles.get(i);
+                    p.draw(canvas, color, p.la * alpha);
+                }
             }
             firstDraw = false;
         }

@@ -18,6 +18,8 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.text.Layout;
+import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -1468,7 +1470,7 @@ public class ItemOptions {
                     clipPath.addRoundRect(AndroidUtilities.rectTmp, scrimViewRoundRadius * dimProgress, scrimViewRoundRadius * dimProgress, Path.Direction.CW);
                     canvas.clipPath(clipPath);
                 }
-                cachedBitmapPaint.setAlpha((int) (0xFF * dimProgress));
+                cachedBitmapPaint.setAlpha(0xFF);
                 canvas.drawBitmap(cachedBitmap, -viewAdditionalOffsets.left, -viewAdditionalOffsets.top, cachedBitmapPaint);
                 canvas.restore();
             } else if (scrimView != null && scrimView.getParent() instanceof View) {
@@ -1553,7 +1555,11 @@ public class ItemOptions {
                         canvas.restore();
                     }
                 } else {
-                    canvas.saveLayerAlpha(0, 0, scrimView.getWidth(), scrimView.getHeight(), (int) (0xFF * dimProgress), Canvas.ALL_SAVE_FLAG);
+                    if (allowMoveScrim) {
+                        canvas.saveLayerAlpha(0, 0, scrimView.getWidth(), scrimView.getHeight(), (int) (0xFF * dimProgress), Canvas.ALL_SAVE_FLAG);
+                    } else {
+                        canvas.save();
+                    }
                     if (scrimView instanceof ScrimView) {
                         ((ScrimView) scrimView).drawScrim(canvas, dimProgress);
                     } else {

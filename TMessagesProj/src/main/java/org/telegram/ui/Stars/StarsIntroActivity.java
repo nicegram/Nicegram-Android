@@ -764,7 +764,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                     } else if (error != null) {
                         BulletinFactory.of(this).createSimpleBulletin(R.raw.error, LocaleController.formatString(R.string.UnknownErrorCode, error)).show();
                     }
-                });
+                }, null);
             }
         } else if (item.instanceOf(StarsSubscriptionView.Factory.class)) {
             if (item.object instanceof TL_stars.StarsSubscription) {
@@ -1551,7 +1551,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
             final boolean isTon = transaction.amount instanceof TL_stars.TL_starsTonAmount;
             final boolean affiliate_to_bot = (transaction.flags & 131072) != 0;
             final boolean affiliate_to_channel = !affiliate_to_bot && (transaction.flags & 65536) != 0;
-            threeLines = did != 0 && !transaction.stargift_upgrade && !transaction.posts_search || transaction.subscription || transaction.floodskip || transaction.stargift != null && !transaction.stargift_upgrade || transaction.gift && transaction.peer instanceof TL_stars.TL_starsTransactionPeerFragment;
+            threeLines = did != 0 && !transaction.stargift_upgrade && !transaction.stargift_drop_original_details && !transaction.posts_search || transaction.subscription || transaction.floodskip || transaction.stargift != null && !transaction.stargift_upgrade && !transaction.stargift_drop_original_details || transaction.gift && transaction.peer instanceof TL_stars.TL_starsTransactionPeerFragment;
             titleTextViewParams.bottomMargin = threeLines ? 0 : dp(4.33f);
             subtitleTextView.setVisibility(threeLines ? View.VISIBLE : View.GONE);
             dateTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, threeLines ? 13 : 14);
@@ -1577,6 +1577,10 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
             if (transaction.stargift_upgrade && transaction.stargift != null) {
                 imageView.setImageDrawable(new StarGiftSheet.StarGiftDrawableIcon(imageView, transaction.stargift, 46, .25f));
                 titleTextView.setText(getString(R.string.Gift2TransactionUpgraded));
+                subtitleTextView.setVisibility(GONE);
+            } else if (transaction.stargift_drop_original_details && transaction.stargift != null) {
+                imageView.setImageDrawable(new StarGiftSheet.StarGiftDrawableIcon(imageView, transaction.stargift, 46, .25f));
+                titleTextView.setText(getString(R.string.Gift2TransactionRemovedDescription));
                 subtitleTextView.setVisibility(GONE);
             } else if (transaction.posts_search) {
                 imageView.setImageDrawable(getPlatformDrawable("search"));
@@ -1618,6 +1622,8 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                             sb.append(getString(transaction.refund ? R.string.StarGiftTransactionGiftSaleRefund : R.string.StarGiftTransactionGiftPurchase));
                         }
                         subtitleTextView.setText(sb);
+                    } else if (transaction.stargift_prepaid_upgrade) {
+                        subtitleTextView.setText(TextUtils.concat(spanString, " ", LocaleController.getString(R.string.Gift2TransactionPrepaidUpgrade)));
                     } else if (transaction.stargift instanceof TL_stars.TL_starGiftUnique) {
                         subtitleTextView.setText(getString(transaction.refund ? R.string.StarGiftTransactionGiftTransferRefund : R.string.StarGiftTransactionGiftTransfer));
                     } else if (transaction.refund) {
@@ -2567,7 +2573,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                         } else if (error != null) {
                             BulletinFactory.of(lastFragment).createSimpleBulletin(R.raw.error, LocaleController.formatString(R.string.UnknownErrorCode, error)).show();
                         }
-                    });
+                    }, null);
                 }
             }
         }
@@ -2580,6 +2586,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         private final FrameLayout footerView;
         private final FireworksOverlay fireworksOverlay;
         private Runnable whenPurchased;
+        private final TLRPC.InputPeer purposePeer;
 
         @Override
         public void didReceivedNotification(int id, int account, Object... args) {
@@ -2647,19 +2654,22 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         public static final int TYPE_PRIVATE_MESSAGE = 13;
         public static final int TYPE_STAR_GIFT_BUY_RESALE = 14;
         public static final int TYPE_SEARCH = 15;
+        public static final int TYPE_REMOVE_GIFT_DESCRIPTION = 16;
 
         public StarsNeededSheet(
             Context context,
             Theme.ResourcesProvider resourcesProvider,
             long starsNeeded,
             int type, String botName,
-            Runnable whenPurchased
+            Runnable whenPurchased,
+            long purposePeerDialogId
         ) {
             super(context, null, false, false, false, resourcesProvider);
 
             topPadding = .2f;
 
             this.whenPurchased = whenPurchased;
+            this.purposePeer = purposePeerDialogId == 0 ? null : MessagesController.getInstance(currentAccount).getInputPeer(purposePeerDialogId);
 
             fixNavigationBar();
             recyclerListView.setPadding(backgroundPaddingLeft, 0, backgroundPaddingLeft, 0);
@@ -2716,6 +2726,8 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                 stringRes = "StarsNeededTextGiftBuyResale";
             } else if (type == TYPE_SEARCH) {
                 stringRes = "StarsNeededTextSearch";
+            } else if (type == TYPE_REMOVE_GIFT_DESCRIPTION) {
+                stringRes = "StarsNeededRemoveGiftDescription";
             } else {
                 stringRes = "StarsNeededText";
             }
@@ -2853,7 +2865,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                         } else if (error != null) {
                             BulletinFactory.of((FrameLayout) containerView, resourcesProvider).createSimpleBulletin(R.raw.error, LocaleController.formatString(R.string.UnknownErrorCode, error)).show();
                         }
-                    });
+                    }, purposePeer);
                 }
             }
         }
@@ -3340,6 +3352,9 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
     }
 
     public static CharSequence getTransactionTitle(int currentAccount, boolean bot, TL_stars.StarsTransaction t) {
+        if (t.stargift_drop_original_details) {
+            return getString(R.string.StarsTransactionRemovedDescription);
+        }
         if (t.posts_search) {
             return LocaleController.getString(R.string.StarsTransactionPostsSearch);
         }
@@ -3362,7 +3377,9 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
             return LocaleController.formatString(R.string.StarTransactionCommission, percents(t.starref_commission_permille));
         }
         if (t.stargift != null) {
-            if (t.refund) {
+            if (t.stargift_prepaid_upgrade) {
+                return getString(R.string.Gift2TransactionPrepaidUpgrade);
+            } else if (t.refund) {
                 return LocaleController.getString(t.amount.amount > 0 ? (t.stargift_upgrade ? R.string.Gift2TransactionRefundedUpgrade : R.string.Gift2TransactionRefundedSent) : R.string.Gift2TransactionRefundedConverted);
             } else {
                 return LocaleController.getString(t.amount.amount > 0 ? R.string.Gift2TransactionConverted : (t.stargift_upgrade ? R.string.Gift2TransactionUpgraded : R.string.Gift2TransactionSent));
@@ -4014,6 +4031,10 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                         to_id = peerId;
                         from_id = selfId;
                     }
+                } else if (transaction.stargift_drop_original_details) {
+                    tableView.addRow(getString(R.string.StarGiftReason), getString(R.string.StarGiftReasonRemovedDescription));
+                    from_id = selfId;
+                    to_id = selfId;
                 } else {
                     tableView.addRow(getString(R.string.StarGiftReason), getString(R.string.StarGiftReasonTransfer));
                     from_id = selfId;
@@ -4650,7 +4671,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                         }));
                     };
                     if (c.balance.amount < subscription.pricing.amount) {
-                        new StarsNeededSheet(context, resourcesProvider, subscription.pricing.amount, business ? StarsNeededSheet.TYPE_BIZ_SUBSCRIPTION_KEEP : did < 0 ? StarsNeededSheet.TYPE_SUBSCRIPTION_KEEP : StarsNeededSheet.TYPE_BOT_SUBSCRIPTION_KEEP, peerName, refulfill).show();
+                        new StarsNeededSheet(context, resourcesProvider, subscription.pricing.amount, business ? StarsNeededSheet.TYPE_BIZ_SUBSCRIPTION_KEEP : did < 0 ? StarsNeededSheet.TYPE_SUBSCRIPTION_KEEP : StarsNeededSheet.TYPE_BOT_SUBSCRIPTION_KEEP, peerName, refulfill, did).show();
                     } else {
                         refulfill.run();
                     }

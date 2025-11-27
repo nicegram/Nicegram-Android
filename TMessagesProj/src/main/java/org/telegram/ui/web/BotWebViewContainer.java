@@ -15,6 +15,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.DownloadManager;
+import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -780,9 +781,15 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
         if (requestCode == REQUEST_CODE_WEB_VIEW_FILE && mFilePathCallback != null) {
             Uri[] results = null;
 
-            if (resultCode == Activity.RESULT_OK) {
-                if (data != null && data.getDataString() != null) {
-                    results = new Uri[] {Uri.parse(data.getDataString())};
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                if (data.getClipData() != null) {
+                    ClipData clipData = data.getClipData();
+                    results = new Uri[clipData.getItemCount()];
+                    for (int i = 0; i < clipData.getItemCount(); i++) {
+                        results[i] = clipData.getItemAt(i).getUri();
+                    }
+                } else if (data.getData() != null) {
+                    results = new Uri[]{data.getData()};
                 }
             }
 
@@ -2663,7 +2670,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
             case "web_app_secure_storage_restore_key": {
                 if (botUser == null) return;
                 if (secureStorage == null) secureStorage = new BotStorage(getContext(), currentAccount, UserConfig.getInstance(currentAccount).getClientUserId(), botUser.id, true);
-                restoreStorageKey(secureStorage, eventData, "secure_storage_key_restored", "secure_storage_cleared");
+                restoreStorageKey(secureStorage, eventData, "secure_storage_key_restored", "secure_storage_failed");
                 break;
             }
             case "web_app_hide_keyboard": {
@@ -4275,7 +4282,12 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
 
                     botWebViewContainer.mFilePathCallback = filePathCallback;
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        activity.startActivityForResult(fileChooserParams.createIntent(), REQUEST_CODE_WEB_VIEW_FILE);
+                        final boolean allowMultiple = fileChooserParams.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE;
+                        Intent intent = fileChooserParams.createIntent();
+                        if (allowMultiple) {
+                            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                        }
+                        activity.startActivityForResult(intent, REQUEST_CODE_WEB_VIEW_FILE);
                     } else {
                         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                         intent.addCategory(Intent.CATEGORY_OPENABLE);

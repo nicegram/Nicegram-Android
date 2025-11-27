@@ -2672,6 +2672,7 @@ public class AndroidUtilities {
             if (configuration == null) {
                 configuration = context.getResources().getConfiguration();
             }
+            // usingHardwareInput = false; just for test
             usingHardwareInput = configuration.keyboard != Configuration.KEYBOARD_NOKEYS && configuration.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO;
             WindowManager manager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
             if (manager != null) {
@@ -2918,7 +2919,7 @@ public class AndroidUtilities {
     public static int getPhotoSize(boolean highQuality) {
         if (highQuality) {
             if (highQualityPhotoSize == null) {
-                highQualityPhotoSize = 2048;
+                highQualityPhotoSize = 2560;
             }
             return highQualityPhotoSize;
         } else {
@@ -3089,7 +3090,8 @@ public class AndroidUtilities {
     }
 
     public static int charSequenceIndexOf(CharSequence cs, CharSequence needle, int fromIndex) {
-        for (int i = fromIndex; i < cs.length() - needle.length(); i++) {
+        if (needle == null || needle.length() <= 0) return -1;
+        for (int i = fromIndex; i <= cs.length() - needle.length(); i++) {
             boolean eq = true;
             for (int j = 0; j < needle.length(); j++) {
                 if (needle.charAt(j) != cs.charAt(i + j)) {
@@ -5020,6 +5022,15 @@ public class AndroidUtilities {
         return a + f * (b - a);
     }
 
+    public static float lerp(float a, float b, float c, float f) {
+        return lerp(a, b, c, 0.5f, f);
+    }
+
+    public static float lerp(float a, float b, float c, float middle, float f) {
+        if (f < middle) return lerp(a, b, f / middle);
+        return lerp(b, c, (f - middle) / (1.0f - middle));
+    }
+
     public static float lerp(boolean a, boolean b, float f) {
         return (a ? 1.0f : 0.0f) + f * ((b ? 1.0f : 0.0f) - (a ? 1.0f : 0.0f));
     }
@@ -6644,5 +6655,11 @@ public class AndroidUtilities {
 
         FileLog.d("[FLAG_SECURE]");
         printStackTrace("FLAG_SECURE");
+    }
+
+    @Nullable
+    public static <T> T randomOf(ArrayList<T> array) {
+        if (array.isEmpty()) return null;
+        return array.get(Math.abs(Utilities.fastRandom.nextInt() % array.size()));
     }
 }

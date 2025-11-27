@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6.0)
+cmake_minimum_required(VERSION 3.10.2)
 
 set(CMAKE_CXX_FLAGS "-std=c++14 -DANDROID -g")
 set(CMAKE_C_FLAGS "-w -std=c11 -DANDROID -D_LARGEFILE_SOURCE=1 -g")
@@ -639,6 +639,13 @@ target_include_directories(${NATIVE_LIB} PUBLIC
         tde2e/include
 )
 
+#target_link_options(${NATIVE_LIB} PRIVATE "-Wl,-z,max-page-size=16384")
+#target_link_options(${NATIVE_LIB} PRIVATE "-Wl,-z,common-page-size=16384")
+# Fallback for CMake < 3.13: target_link_options() is not available in CMake 3.10.2
+# Equivalent to:
+set_target_properties(${NATIVE_LIB} PROPERTIES
+        LINK_FLAGS "-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384"
+)
 target_link_libraries(${NATIVE_LIB}
         -Wl,--whole-archive rnnoise openh264 voipandroid -Wl,--no-whole-archive
         tgvoip
