@@ -25,7 +25,6 @@ configurations.all {
 
 dependencies {
     implementation project(':TMessagesProj')
-    implementation 'androidx.multidex:multidex:2.0.1'
     implementation project(path: ':core-network')
     implementation project(path: ':rep-user')
     implementation project(path: ':feature-nicegram-billing')
@@ -232,6 +231,12 @@ android {
 
     lintOptions {
         checkReleaseBuilds false
+    }
+
+    packaging {
+        resources {
+            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+        }
     }
 }
 

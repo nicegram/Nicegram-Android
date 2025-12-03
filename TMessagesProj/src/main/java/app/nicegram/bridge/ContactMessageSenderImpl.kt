@@ -20,6 +20,7 @@ class ContactMessageSenderImpl : ContactMessageSender {
             null,
             true,
             0,
+            0,
             null,
             false
         )
