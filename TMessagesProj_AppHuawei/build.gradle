@@ -49,8 +49,8 @@ dependencies {
     implementation "io.qonversion.android.sdk:sdk:3.+"
 
 
-    implementation 'com.google.dagger:hilt-android:2.48'
-    kapt 'com.google.dagger:hilt-compiler:2.48'
+    implementation 'com.google.dagger:hilt-android:2.57.2'
+    kapt 'com.google.dagger:hilt-compiler:2.57.2'
 }
 
 android {

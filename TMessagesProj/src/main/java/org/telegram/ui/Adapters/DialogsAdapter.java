@@ -1488,6 +1488,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         }
     }
 
+
     private void updateItemList() {
         itemInternals.clear();
         updateHasHints();

@@ -57,6 +57,7 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.transition.ChangeBounds;
 import android.transition.TransitionManager;
+import android.util.Log;
 import android.util.LongSparseArray;
 import android.util.Property;
 import android.util.StateSet;
@@ -644,17 +645,17 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     private int folderId;
 
-    private final static int pin = 1100;
-    private final static int read = 1101;
-    private final static int delete = 1102;
-    private final static int clear = 1103;
-    private final static int mute = 1104;
-    private final static int archive = 1105;
-    private final static int block = 1106;
-    private final static int archive2 = 1107;
-    private final static int pin2 = 1108;
-    private final static int add_to_folder = 1109;
-    private final static int remove_from_folder = 1110;
+    private final static int pin = 100;
+    private final static int read = 101;
+    private final static int delete = 102;
+    private final static int clear = 103;
+    private final static int mute = 104;
+    private final static int archive = 105;
+    private final static int block = 106;
+    private final static int archive2 = 107;
+    private final static int pin2 = 108;
+    private final static int add_to_folder = 109;
+    private final static int remove_from_folder = 110;
 
     private final static int hide_chat = 2000;
 
@@ -3488,6 +3489,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     }
                 }
             };
+//            filterTabsView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
 
             filterTabsViewIsVisible = false;
             filterTabsView.setVisibility(View.GONE);
@@ -6069,7 +6071,23 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 true
             );
             updateAuthHintCellVisibility(false);
-        }else if (folderId == 0 && getMessagesController().pendingSuggestions.contains("PREMIUM_GRACE")) {
+        } else if (folderId == 0 && getMessagesController().pendingSuggestions.contains("SETUP_PASSKEY")) {
+            dialogsHintCellVisible = true;
+            dialogsHintCell.setVisibility(View.VISIBLE);
+            dialogsHintCell.setCompact(true);
+            dialogsHintCell.setOnClickListener(v -> {
+                PasskeysActivity.showLearnSheet(getContext(), currentAccount, resourceProvider, true);
+            });
+            dialogsHintCell.setText(Emoji.replaceWithRestrictedEmoji(getString(R.string.PasskeyPopupTitle), dialogsHintCell.titleView, this::updateDialogsHint), getString(R.string.PasskeyPopupText));
+            dialogsHintCell.setOnCloseListener(v -> {
+                MessagesController.getInstance(currentAccount).removeSuggestion(0, "SETUP_PASSKEY");
+                ChangeBounds transition = new ChangeBounds();
+                transition.setDuration(200);
+                TransitionManager.beginDelayedTransition((ViewGroup) dialogsHintCell.getParent(), transition);
+                updateDialogsHint();
+            });
+            updateAuthHintCellVisibility(false);
+        } else if (folderId == 0 && getMessagesController().pendingSuggestions.contains("PREMIUM_GRACE")) {
             dialogsHintCellVisible = true;
             dialogsHintCell.setVisibility(View.VISIBLE);
             dialogsHintCell.setCompact(true);
@@ -7158,7 +7176,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Override
     public void onResume() {
         super.onResume();
-
         if (dialogStoriesCell != null) {
             dialogStoriesCell.onResume();
         }
@@ -8284,6 +8301,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 return;
             } else if (object instanceof TLRPC.TL_recentMeUrlUnknown) {
                 return;
+            } else {
+                return;
             }
         } else if (searchViewPager != null && adapter == searchViewPager.dialogsSearchAdapter) {
             Object obj = searchViewPager.dialogsSearchAdapter.getItem(position);
@@ -8667,7 +8686,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             // endregion
 //            DialogsAdapter dialogsAdapter = (DialogsAdapter) adapter;   // ng widgets
 
-                        Object item = dialogsAdapter.getItem(position);
+            Object item = dialogsAdapter.getItem(position);
             if (item instanceof TLRPC.Dialog) {
                 dialog = (TLRPC.Dialog) item;
             } else {
@@ -8714,6 +8733,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 dialog = dialogs.get(position);
                 */
             }
+
+
         }
 
         if (dialog == null) {
@@ -11742,7 +11763,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 continue;
             }
 
-            //            ArrayList<TLRPC.Dialog> dialogs = getDialogsArray(currentAccount, viewPages[b].dialogsType, folderId, false);
+//            ArrayList<TLRPC.Dialog> dialogs = getDialogsArray(currentAccount, viewPages[b].dialogsType, folderId, false);
 //            int count = viewPages[b].listView.getChildCount();
 //            for (int a = 0; a < count; a++) {
 //                View child = viewPages[b].listView.getChildAt(a);
@@ -12849,7 +12870,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     float slideFragmentProgress = 1f;
-    final int slideAmplitudeDp = 40;
+    final int slideAmplitudeDp = 120;
     boolean slideFragmentLite;
     boolean isSlideBackTransition;
     boolean isDrawerTransition;
@@ -12941,7 +12962,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     @Override
     public void onSlideProgress(boolean isOpen, float progress) {
-        if (SharedConfig.getDevicePerformanceClass() <= SharedConfig.PERFORMANCE_CLASS_LOW) {
+        if (SharedConfig.getDevicePerformanceClass() <= SharedConfig.PERFORMANCE_CLASS_LOW && !BuildVars.DEBUG_PRIVATE_VERSION) {
             return;
         }
         if (isSlideBackTransition && slideBackTransitionAnimator == null) {
@@ -12950,7 +12971,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     private void setSlideTransitionProgress(float progress) {
-        if (SharedConfig.getDevicePerformanceClass() <= SharedConfig.PERFORMANCE_CLASS_LOW || slideFragmentProgress == progress) {
+        if (SharedConfig.getDevicePerformanceClass() <= SharedConfig.PERFORMANCE_CLASS_LOW && !BuildVars.DEBUG_PRIVATE_VERSION || slideFragmentProgress == progress) {
             return;
         }
 

@@ -1,11 +1,11 @@
 plugins {
     id 'com.android.library'
-    id 'kotlin-android'
     id 'kotlin-kapt'
     id 'dagger.hilt.android.plugin'
     id 'com.google.devtools.ksp'
 }
 apply plugin: 'kotlin-android'
+apply plugin: "org.jetbrains.kotlin.plugin.compose"
 
 Properties properties = new Properties()
 properties.load(project.rootProject.file("local.properties").newDataInputStream())
@@ -55,10 +55,9 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.12.0'
-    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.core:core-ktx:1.16.0'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.9.0'
-    implementation "androidx.core:core-ktx:1.12.0"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1"
 
     implementation 'com.squareup.retrofit2:retrofit:2.11.0'
@@ -74,8 +73,8 @@ dependencies {
 
     implementation "com.google.android.play:review:2.0.1"
 
-    implementation 'com.google.dagger:hilt-android:2.48'
-    kapt 'com.google.dagger:hilt-compiler:2.48'
+    implementation 'com.google.dagger:hilt-android:2.57.2'
+    kapt 'com.google.dagger:hilt-compiler:2.57.2'
 
     implementation 'io.github.raamcosta.compose-destinations:animations-core:1.9.63'
     ksp 'io.github.raamcosta.compose-destinations:ksp:1.9.63'
