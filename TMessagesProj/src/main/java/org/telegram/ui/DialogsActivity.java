@@ -2537,8 +2537,29 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (dialog == null || !isDialogPinned(dialog) || DialogObject.isFolderDialogId(dialogId)) {
                 return false;
             }
-            int fromIndex = source.getAdapterPosition();
-            int toIndex = target.getAdapterPosition();
+            //ng region pinned chats drag and rop
+            ArrayList<TLRPC.Dialog> dialogs = getDialogsArray(currentAccount, parentPage.dialogsType, folderId, false);
+
+            int targetRealIndex = -1;
+            for (int i = 0; i < dialogs.size(); i++) {
+                if (dialogs.get(i).id == dialogId) {
+                    targetRealIndex = i;
+                    break;
+                }
+            }
+            if (targetRealIndex == -1) {
+                return false;
+            }
+
+            int offset = target.getAdapterPosition() - targetRealIndex;
+
+            int fromIndex = source.getAdapterPosition() - offset;
+            int toIndex = target.getAdapterPosition() - offset;
+
+            if (fromIndex < 0 || toIndex < 0 || fromIndex >= dialogs.size() || toIndex >= dialogs.size()) {
+                return false;
+            }
+            //end region
             if (parentPage.listView.getItemAnimator() == null) {
                 parentPage.listView.setItemAnimator(parentPage.dialogsItemAnimator);
             }
@@ -2704,8 +2725,20 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 slidingView = null;
             }
         }
-
+        // region ng pinned chats drag and drop
         @Override
+        public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+            super.clearView(recyclerView, viewHolder);
+
+            AndroidUtilities.runOnUIThread(() -> {
+                        MessagesController.getInstance(currentAccount).reorderPinnedDialogs(folderId, null, 0);
+                    }, 1
+            );
+            movingWas = false;
+        }
+        // endregion
+
+    @Override
         public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
             if (viewHolder != null) {
                 parentPage.listView.hideSelector(false);

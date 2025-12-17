@@ -38351,7 +38351,20 @@ public class ChatActivity extends BaseFragment implements
                 MediaController.getInstance().setVoiceMessagesPlaylist(result ? createVoiceMessagesPlaylist(messageObject, false) : null, false);
                 return result;
             } else if (messageObject.isMusic()) {
-                return MediaController.getInstance().setPlaylist(chatAdapter.getMessages(), messageObject, mergeDialogId, !chatAdapter.isFiltered, null);
+                // region ng audio can not be played
+                ArrayList<MessageObject> allMessages = chatAdapter.getMessages();
+                ArrayList<MessageObject> cleanMessages = new ArrayList<>();
+
+                if (allMessages != null) {
+                    for (int i = 0; i < allMessages.size(); i++) {
+                        MessageObject msg = allMessages.get(i);
+                        if (msg != null && msg.messageOwner != null) {
+                            cleanMessages.add(msg);
+                        }
+                    }
+                }
+                return MediaController.getInstance().setPlaylist(cleanMessages, messageObject, mergeDialogId, !chatAdapter.isFiltered, null);
+                // endregion
             }
             return false;
         }

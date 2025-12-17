@@ -1139,10 +1139,8 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
     public void moveDialogs(RecyclerListView recyclerView, int fromPosition, int toPosition) {
         ArrayList<TLRPC.Dialog> dialogs = parentFragment.getDialogsArray(currentAccount, dialogsType, folderId, false);
-        int fromIndex = fixPosition(fromPosition);
-        int toIndex = fixPosition(toPosition);
-        TLRPC.Dialog fromDialog = dialogs.get(fromIndex);
-        TLRPC.Dialog toDialog = dialogs.get(toIndex);
+        TLRPC.Dialog fromDialog = dialogs.get(fromPosition);//ng drag and drop pinned chats
+        TLRPC.Dialog toDialog = dialogs.get(toPosition);//ng drag and drop pinned chats
         if (dialogsType == 7 || dialogsType == 8) {
             MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
             int idx1 = filter.pinnedDialogs.get(fromDialog.id);
@@ -1154,7 +1152,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             fromDialog.pinnedNum = toDialog.pinnedNum;
             toDialog.pinnedNum = oldNum;
         }
-        Collections.swap(dialogs, fromIndex, toIndex);
+        Collections.swap(dialogs, fromPosition, toPosition);//ng drag and drop pinned chats
         updateList(null);
     }
 
