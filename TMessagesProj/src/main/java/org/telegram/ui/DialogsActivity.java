@@ -88,7 +88,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
-import androidx.core.content.res.ResourcesCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -106,10 +105,10 @@ import com.appvillis.feature_keywords.domain.KeywordsPreferencesRepository;
 import com.appvillis.feature_keywords.presentation.ui.KeywordsHintView;
 import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository;
 import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
-import com.appvillis.feature_nicegram_client.NicegramClientHelper;
 import com.appvillis.feature_nicegram_client.NicegramOnboardingHelper;
 import com.appvillis.feature_nicegram_client.NicegramSessionPrefs;
 import com.appvillis.nicegram.AnalyticsHelper;
+import com.appvillis.nicegram.NgWidgetsTrackerHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.NicegramLoginHelper;
@@ -289,7 +288,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private boolean filterTabsViewIsVisible;
     private int initialSearchType = -1;
 
-    private final int MENU_ID_NICEGRAM_ATT = 998;
+    private final int MENU_ID_NICEGRAM_WALLET = 998;
 
     private final String ACTION_MODE_SEARCH_DIALOGS_TAG = "search_dialogs_action_mode";
     private boolean isFirstTab = true;
@@ -440,7 +439,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private boolean downloadsItemVisible;
     private ActionBarMenuItem proxyItem;
     private boolean proxyItemVisible;
-    private ActionBarMenuItem nicegramAttItem;
+    private ActionBarMenuItem nicegramWalletItem;
     private ActionBarMenuItem searchItem;
     private ActionBarMenuItem optionsItem;
     private ActionBarMenuItem speedItem;
@@ -626,6 +625,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private ArrayList<Long> selectedDialogs = new ArrayList<>();
     public boolean notify = true;
     public int scheduleDate;
+    public int scheduleRepeatPeriod;
 
     private int canReadCount;
     private int canPinCount;
@@ -2747,7 +2747,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     public interface DialogsActivityDelegate {
-        boolean didSelectDialogs(DialogsActivity fragment, ArrayList<MessagesStorage.TopicKey> dids, CharSequence message, boolean param, boolean notify, int scheduleDate, TopicsFragment topicsFragment);
+        boolean didSelectDialogs(DialogsActivity fragment, ArrayList<MessagesStorage.TopicKey> dids, CharSequence message, boolean param, boolean notify, int scheduleDate, int scheduleRepeatPeriod, TopicsFragment topicsFragment);
 
         default boolean canSelectStories() { return false; }
         default boolean didSelectStories(DialogsActivity fragment) { return false; }
@@ -2850,11 +2850,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             getNotificationCenter().addObserver(this, NotificationCenter.fileLoaded);
             getNotificationCenter().addObserver(this, NotificationCenter.fileLoadFailed);
             getNotificationCenter().addObserver(this, NotificationCenter.fileLoadProgressChanged);
-            // region ng hide reactions
-            if (!PrefsHelper.INSTANCE.hideReactions(currentAccount)) {
-                getNotificationCenter().addObserver(this, NotificationCenter.dialogsUnreadReactionsCounterChanged);
-            }
-            // endregion ng hide reactions
+            getNotificationCenter().addObserver(this, NotificationCenter.dialogsUnreadReactionsCounterChanged);
             getNotificationCenter().addObserver(this, NotificationCenter.forceImportContactsStart);
             getNotificationCenter().addObserver(this, NotificationCenter.userEmojiStatusUpdated);
             getNotificationCenter().addObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
@@ -3180,10 +3176,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             updatePasscodeButton();
             updateProxyButton(false, false);
         }
-        Drawable coinDrawable = ContextCompat.getDrawable(getContext(), R.drawable.ic_coin_with_glow).mutate();
-
-        nicegramAttItem = menu.addItem(MENU_ID_NICEGRAM_ATT, coinDrawable);
-        nicegramAttItem.setOnClickListener(v -> processNicegramAttClick());
+        nicegramWalletItem = menu.addItem(MENU_ID_NICEGRAM_WALLET, R.drawable.ng_wallet_wallet_filled_24);
+        nicegramWalletItem.setOnClickListener(v -> processNicegramWalletClick());
 
         searchItem = menu.addItem(0, R.drawable.ic_ab_search).setIsSearchField(true, false).setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
             boolean isSpeedItemCreated = false;
@@ -3215,7 +3209,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             public void onSearchExpand() {
                 searching = true;
 
-                if (nicegramAttItem != null) nicegramAttItem.setVisibility(View.GONE); // ng
+                if (nicegramWalletItem != null) nicegramWalletItem.setVisibility(View.GONE); // ng
 
                 if (switchItem != null) {
                     switchItem.setVisibility(View.GONE);
@@ -3274,7 +3268,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
             @Override
             public boolean canCollapseSearch() {
-                if (nicegramAttItem != null) nicegramAttItem.setVisibility(View.VISIBLE); // ng
+                if (nicegramWalletItem != null) nicegramWalletItem.setVisibility(View.VISIBLE); // ng
 
                 if (switchItem != null) {
                     switchItem.setVisibility(View.VISIBLE);
@@ -4358,7 +4352,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                             if (closeFragment) {
                                 removeSelfFromStack();
                             }
-                            dialogsActivityDelegate.didSelectDialogs(DialogsActivity.this, arrayList, null, true, notify, scheduleDate, null);
+                            dialogsActivityDelegate.didSelectDialogs(DialogsActivity.this, arrayList, null, true, notify, scheduleDate, scheduleRepeatPeriod, null);
                         }
 
                         @Override
@@ -4727,7 +4721,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 for (int i = 0; i < selectedDialogs.size(); i++) {
                     topicKeys.add(MessagesStorage.TopicKey.of(selectedDialogs.get(i), 0));
                 }
-                delegate.didSelectDialogs(DialogsActivity.this, topicKeys, null, false, notify, scheduleDate, null);
+                delegate.didSelectDialogs(DialogsActivity.this, topicKeys, null, false, notify, scheduleDate, scheduleRepeatPeriod, null);
             } else {
                 if (floatingButton.getVisibility() != View.VISIBLE) {
                     return;
@@ -4877,7 +4871,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     for (int i = 0; i < selectedDialogs.size(); i++) {
                         topicKeys.add(MessagesStorage.TopicKey.of(selectedDialogs.get(i), 0));
                     }
-                    delegate.didSelectDialogs(DialogsActivity.this, topicKeys, message, false, notify, scheduleDate, null);
+                    delegate.didSelectDialogs(DialogsActivity.this, topicKeys, message, false, notify, scheduleDate, scheduleRepeatPeriod, null);
                 }
 
                 @Override
@@ -5052,7 +5046,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 for (int i = 0; i < selectedDialogs.size(); i++) {
                     topicKeys.add(MessagesStorage.TopicKey.of(selectedDialogs.get(i), 0));
                 }
-                delegate.didSelectDialogs(DialogsActivity.this, topicKeys, commentView.getFieldText(), false, notify, scheduleDate, null);
+                delegate.didSelectDialogs(DialogsActivity.this, topicKeys, commentView.getFieldText(), false, notify, scheduleDate, scheduleRepeatPeriod, null);
             });
             writeButton.setOnLongClickListener(v -> {
                 if (isNextButton) {
@@ -5529,7 +5523,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
 
             void toggleNgLoggo(boolean show) {
-                menu.getItem(MENU_ID_NICEGRAM_ATT).setAlpha(show ? 1.0f : 0.0f);
+                menu.getItem(MENU_ID_NICEGRAM_WALLET).setAlpha(show ? 1.0f : 0.0f);
             }
         };
         updateFilterTabs(true, false);
@@ -6306,7 +6300,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     Theme.key_windowBackgroundWhiteValueText,
                     AndroidUtilities.REPLACING_TAG_TYPE_LINKBOLD,
                     null
-            ), null, false), LocaleController.formatString("BoostingPremiumChristmasSubTitle", R.string.BoostingPremiumChristmasSubTitle));
+            ), null, false), LocaleController.formatString(R.string.BoostingPremiumChristmasSubTitle));
             dialogsHintCell.setOnCloseListener(v -> {
                 MessagesController.getInstance(currentAccount).removeSuggestion(0, "PREMIUM_CHRISTMAS");
                 ChangeBounds transition = new ChangeBounds();
@@ -6531,7 +6525,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                             if (delegate != null) {
                                 ArrayList<MessagesStorage.TopicKey> keys = new ArrayList<>();
                                 keys.add(MessagesStorage.TopicKey.of(-chatId, 0));
-                                delegate.didSelectDialogs(DialogsActivity.this, keys, null, false, notify, scheduleDate, null);
+                                delegate.didSelectDialogs(DialogsActivity.this, keys, null, false, notify, scheduleDate, scheduleRepeatPeriod, null);
                             }
                         }
                 );
@@ -6636,7 +6630,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                 if (delegate != null) {
                                     ArrayList<MessagesStorage.TopicKey> keys = new ArrayList<>();
                                     keys.add(MessagesStorage.TopicKey.of(-chatId, 0));
-                                    delegate.didSelectDialogs(DialogsActivity.this, keys, null, false, notify, scheduleDate, null);
+                                    delegate.didSelectDialogs(DialogsActivity.this, keys, null, false, notify, scheduleDate, scheduleRepeatPeriod, null);
                                 }
                             }
                     );
@@ -7186,14 +7180,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
 
         // region ng
-        NicegramClientHelper.INSTANCE.tryToApplyGrayscaleFilter(fragmentView, false, true);
+        NgWidgetsTrackerHelper.INSTANCE.viewTrackVisibilityHelper(true, getContext());
         ReviewHelper.INSTANCE.launchReview(getParentActivity());
         NicegramGroupCollectHelper.INSTANCE.tryToCollectGroupPack(currentAccount);
 
         NicegramOnboardingHelper.INSTANCE.continueOnboardingIfNeeded(isPaused, getParentActivity(),
                 () -> MainActivity.Companion.launchNgVerificationOnboarding(getParentActivity()),
                 () -> MainActivity.Companion.launchSecondNgOnboarding(getParentActivity()),
-                () -> nicegramAttItem.postDelayed(() -> {
+                () -> nicegramWalletItem.postDelayed(() -> {
                         if (!isPaused) {
                             showPopupIfNeeded();
                         }
@@ -7417,6 +7411,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Override
     public void onPause() {
         super.onPause();
+        NgWidgetsTrackerHelper.INSTANCE.viewTrackVisibilityHelper(false, getContext());
         ToastViewHelper.INSTANCE.clearToasts();
         if (storiesBulletin != null) {
             storiesBulletin.hide();
@@ -7444,11 +7439,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     @Override
-    public boolean onBackPressed() {
-        if (closeSheet()) {
+    public boolean onBackPressed(boolean invoked) {
+        if (hasShownSheet()) {
+            if (invoked) closeSheet();
             return false;
-        } else if (rightSlidingDialogContainer.hasFragment()) {
-            if (rightSlidingDialogContainer.getFragment().onBackPressed()) {
+        } else if (rightSlidingDialogContainer.hasFragment() && rightSlidingDialogContainer.getFragment().onBackPressed(invoked)) {
+            if (invoked) {
                 rightSlidingDialogContainer.finishPreview();
                 if (searchViewPager != null) {
                     searchViewPager.updateTabs();
@@ -7456,31 +7452,35 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             return false;
         } else if (filterOptions != null) {
-            filterOptions.dismiss();
-            filterOptions = null;
+            if (invoked) {
+                filterOptions.dismiss();
+                filterOptions = null;
+            }
             return false;
         } else if (filterTabsView != null && filterTabsView.isEditing()) {
-            filterTabsView.setIsEditing(false);
-            showDoneItem(false);
+            if (invoked) {
+                filterTabsView.setIsEditing(false);
+                showDoneItem(false);
+            }
             return false;
         } else if (actionBar != null && actionBar.isActionModeShowed()) {
-            if (searchViewPager != null && searchViewPager.getVisibility() == View.VISIBLE) {
-                searchViewPager.hideActionMode();
-                hideActionMode(true);
-            } else {
+            if (invoked) {
+                if (searchViewPager != null && searchViewPager.getVisibility() == View.VISIBLE) {
+                    searchViewPager.hideActionMode();
+                }
                 hideActionMode(true);
             }
             return false;
         } else if (filterTabsView != null && filterTabsView.getVisibility() == View.VISIBLE && !tabsAnimationInProgress && !filterTabsView.isAnimatingIndicator() && !startedTracking && !filterTabsView.isFirstTabSelected()) {
-            filterTabsView.selectFirstTab();
+            if (invoked) filterTabsView.selectFirstTab();
             return false;
         } else if (commentView != null && commentView.isPopupShowing()) {
-            commentView.hidePopup(true);
+            if (invoked) commentView.hidePopup(true);
             return false;
         } else if (dialogStoriesCell.isFullExpanded() && dialogStoriesCell.scrollToFirst()) {
             return false;
         }
-        return super.onBackPressed();
+        return super.onBackPressed(invoked);
     }
 
     @Override
@@ -12000,7 +12000,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         setDialogsListFrozen(true);
                         ArrayList<MessagesStorage.TopicKey> dids = new ArrayList<>();
                         dids.add(MessagesStorage.TopicKey.of(dialogId, 0));
-                        delegate.didSelectDialogs(DialogsActivity.this, dids, null, param, notify, scheduleDate, null);
+                        delegate.didSelectDialogs(DialogsActivity.this, dids, null, param, notify, scheduleDate, scheduleRepeatPeriod, null);
                     });
                 } else {
                     AlertsCreator.processError(currentAccount, error, this, req);
@@ -12079,7 +12079,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (delegate != null) {
                     ArrayList<MessagesStorage.TopicKey> dids = new ArrayList<>();
                     dids.add(MessagesStorage.TopicKey.of(dialogId, topicId));
-                    delegate.didSelectDialogs(DialogsActivity.this, dids, null, param, notify, scheduleDate, topicsFragment);
+                    delegate.didSelectDialogs(DialogsActivity.this, dids, null, param, notify, scheduleDate, scheduleRepeatPeriod, topicsFragment);
                     if (resetDelegate) {
                         delegate = null;
                     }
@@ -12107,7 +12107,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (delegate != null) {
                 ArrayList<MessagesStorage.TopicKey> dids = new ArrayList<>();
                 dids.add(MessagesStorage.TopicKey.of(dialogId, topicId));
-                boolean res = delegate.didSelectDialogs(DialogsActivity.this, dids, null, param, notify, scheduleDate, topicsFragment);
+                boolean res = delegate.didSelectDialogs(DialogsActivity.this, dids, null, param, notify, scheduleDate, scheduleRepeatPeriod, topicsFragment);
                 if (res && resetDelegate) {
                     delegate = null;
                 }
@@ -12221,7 +12221,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             for (int i = 0; i < selectedDialogs.size(); i++) {
                 topicKeys.add(MessagesStorage.TopicKey.of(selectedDialogs.get(i), 0));
             }
-            delegate.didSelectDialogs(DialogsActivity.this, topicKeys, commentView.getFieldText(), false, notify, scheduleDate, null);
+            delegate.didSelectDialogs(DialogsActivity.this, topicKeys, commentView.getFieldText(), false, notify, scheduleDate, scheduleRepeatPeriod, null);
         });
 
         boolean onlyMyself = false;
@@ -12252,6 +12252,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     @Override
                     public void didSelectDate(boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
                         DialogsActivity.this.scheduleDate = scheduleDate;
+                        DialogsActivity.this.scheduleRepeatPeriod = scheduleRepeatPeriod;
                         if (delegate == null || selectedDialogs.isEmpty()) {
                             return;
                         }
@@ -12259,7 +12260,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         for (int i = 0; i < selectedDialogs.size(); i++) {
                             topicKeys.add(MessagesStorage.TopicKey.of(selectedDialogs.get(i), 0));
                         }
-                        delegate.didSelectDialogs(DialogsActivity.this, topicKeys, commentView.getFieldText(), false, notify, scheduleDate, null);
+                        delegate.didSelectDialogs(DialogsActivity.this, topicKeys, commentView.getFieldText(), false, notify, scheduleDate, scheduleRepeatPeriod, null);
                     }
                 }, resourcesProvider);
             });
@@ -12872,7 +12873,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     float slideFragmentProgress = 1f;
-    final int slideAmplitudeDp = 120;
+    final int slideAmplitudeDp = 240;
     boolean slideFragmentLite;
     boolean isSlideBackTransition;
     boolean isDrawerTransition;
@@ -13089,12 +13090,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return ColorUtils.calculateLuminance(color) > 0.7f;
     }
 
-    private void processNicegramAttClick() {
-        AnalyticsHelper.INSTANCE.logEvent(getContext(), "att_open_from_icon", null);
+    private void processNicegramWalletClick() {
+        AnalyticsHelper.INSTANCE.logEvent(getContext(), "wallet_open_from_icon", null);
 
-        if (getParentActivity() != null) {
-            MainActivity.Companion.launchAtt(getParentActivity());
-        }
+        getParentActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        NicegramWalletHelper.INSTANCE.launchWalletIfPossible(getContext());
     }
 
     private boolean hasSeenNgPopupThisSession;
@@ -13108,7 +13108,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         hasSeenNgPopupThisSession = true;
 
         if (offer != null) {
-            nicegramAttItem.postDelayed(() -> {
+            nicegramWalletItem.postDelayed(() -> {
                 if (!isPaused) {
                     getParentActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
                     MainActivity.Companion.launchSpecialOffer(getParentActivity(), offer.getUrl(), offer.getId());
@@ -13123,7 +13123,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         KeywordsPreferencesRepository prefs = EntryPoints.get(ApplicationLoader.applicationContext, KeywordsEntryPoint.class).keywordsPreferences();
         if (prefs.getHasSeenHint()) return;
 
-        nicegramAttItem.postDelayed(() -> {
+        nicegramWalletItem.postDelayed(() -> {
             if (filterTabsView == null) return;
 
             if (!isPaused && ((LaunchActivity) getParentActivity()).visibleDialogs.isEmpty()) {
@@ -13219,7 +13219,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (dialogStoriesCell == null || storiesVisibilityAnimator != null || rightSlidingDialogContainer != null && rightSlidingDialogContainer.hasFragment() || searchIsShowed || actionBar.isActionModeShowed() || onlySelect) {
             return;
         }
-        if (StoryRecorder.isVisible() || (getLastStoryViewer() != null && getLastStoryViewer().isFullyVisible()) || NicegramClientHelper.INSTANCE.getPreferences().getHideStories()) {
+        if (StoryRecorder.isVisible() || (getLastStoryViewer() != null && getLastStoryViewer().isFullyVisible())) {
             animated = false;
         }
         boolean onlySelfStories = !isArchive() && getStoriesController().hasOnlySelfStories();
@@ -13227,8 +13227,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (isArchive()) {
             newVisibility = !getStoriesController().getHiddenList().isEmpty();
         } else {
-            newVisibility = !onlySelfStories && getStoriesController().hasStories() && !NicegramClientHelper.INSTANCE.getPreferences().getHideStories();
-            onlySelfStories = getStoriesController().hasOnlySelfStories() && !NicegramClientHelper.INSTANCE.getPreferences().getHideStories();
+            newVisibility = !onlySelfStories && getStoriesController().hasStories();
+            onlySelfStories = getStoriesController().hasOnlySelfStories();
         }
 
         hasOnlySlefStories = onlySelfStories;

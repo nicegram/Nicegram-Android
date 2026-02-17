@@ -23,7 +23,6 @@ import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
 import com.appvillis.nicegram.NicegramPrefs;
 import com.appvillis.rep_placements.domain.entity.PinnedChatsPlacement;
 
-import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -43,7 +42,6 @@ import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
-import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PasscodeActivity;
 
 import java.util.ArrayList;
@@ -68,6 +66,7 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int maxAccountsRow;
     private int importAccountRow;
     private int exportAccountsRow;
+    // other block
     private int otherSectionRow;
     private int showRegDateRow;
     private int startWithRearCameraRow;
@@ -75,15 +74,7 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int hidePhoneNumberRow;
     private int doubleBottomRow;
     private int quickRepliesRow;
-    private int hideReactionsRow;
-    private int hideStoriesRow;
-    private int hideReactionsNotificationRow;
-    private int hideUnreadCounterRow;
-    private int hideMentionNotificationRow;
-    private int animationsInChatList;
-    private int fullscreenGrayscale;
-    private int grayscaleInChatList;
-    private int grayscaleInChat;
+    private int quickTranslateButton;
     private int shareChannelsInfoRow;
     private int shareBotsInfoRow;
     private int shareStickersInfoRow;
@@ -93,6 +84,9 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int showAiShortcutsRow;
     private int rowCount = 0;
 
+    /***
+     * Add new types of pins here as extends
+     */
     abstract static class PinRow {
         abstract String getName();
 
@@ -107,24 +101,14 @@ public class NicegramSettingsActivity extends BaseFragment {
                 return placement.getName();
             }
         }
-
-        static class PumpPin extends PinRow {
-            @Override
-            String getName() {
-                return "Pump Advertising";
-            }
-        }
     }
 
     @Override
     public boolean onFragmentCreate() {
-        if (!NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements(ApplicationLoader.applicationContext).isEmpty() || NicegramPinChatsPlacementHelper.INSTANCE.pumpFeatureEnabled(ApplicationLoader.applicationContext))
+        if (!NicegramPinChatsPlacementHelper.INSTANCE.getPinChatsPlacements(ApplicationLoader.applicationContext).isEmpty())
             pinSectionHeaderRow = rowCount++;
-        for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPossiblePinChatsPlacements(ApplicationLoader.applicationContext)) {
+        for (PinnedChatsPlacement placement : NicegramPinChatsPlacementHelper.INSTANCE.getPinChatsPlacements(ApplicationLoader.applicationContext)) {
             pinSectionRowsMap.put(rowCount++, new PinRow.ChatPlacementPin(placement));
-        }
-        if (NicegramPinChatsPlacementHelper.INSTANCE.pumpFeatureEnabled(ApplicationLoader.applicationContext)) {
-            pinSectionRowsMap.put(rowCount++, new PinRow.PumpPin());
         }
 
         nicegramSectionRow = rowCount++;
@@ -139,21 +123,13 @@ public class NicegramSettingsActivity extends BaseFragment {
         downloadVideosToGallery = rowCount++;
         hidePhoneNumberRow = rowCount++;
         quickRepliesRow = rowCount++;
+        quickTranslateButton = rowCount++;
         if (!NicegramDoubleBottom.INSTANCE.getLoggedToDbot()) doubleBottomRow = rowCount++;
         else doubleBottomRow = -1;
         showNgBtnInChatRow = rowCount++;
         showKeywordsForFolderRow = rowCount++;
         showAiShortcutsRow = rowCount++;
         showRegDateRow = rowCount++;
-        hideReactionsRow = rowCount++;
-        hideStoriesRow = rowCount++;
-        hideReactionsNotificationRow = rowCount++;
-        hideUnreadCounterRow = rowCount++;
-        hideMentionNotificationRow = rowCount++;
-        animationsInChatList = rowCount++;
-        fullscreenGrayscale = rowCount++;
-        grayscaleInChatList = rowCount++;
-        grayscaleInChat = rowCount++;
         shareChannelsInfoRow = rowCount++;
         //shareBotsInfoRow = rowCount++;
         //shareStickersInfoRow = rowCount++;
@@ -166,7 +142,7 @@ public class NicegramSettingsActivity extends BaseFragment {
     public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setAllowOverlayTitle(true);
-        actionBar.setTitle(LocaleController.getString("NicegramSettings"));
+        actionBar.setTitle(LocaleController.getString(R.string.NicegramSettings));
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {
@@ -197,46 +173,7 @@ public class NicegramSettingsActivity extends BaseFragment {
             if (getParentActivity() == null) {
                 return;
             }
-            if (position == hideReactionsRow) {
-                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, NicegramPrefs.PREF_HIDE_REACTIONS_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, !enabled);
-                editor.apply();
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_CHAT);
-            } else if (position == hideStoriesRow) {
-                enabled = NicegramClientHelper.INSTANCE.getPreferences().getHideStories();
-                NicegramClientHelper.INSTANCE.getPreferences().setHideStories(!enabled);
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_ALL);
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.storiesUpdated);
-            } else if (position == hideReactionsNotificationRow) {
-                enabled = NicegramClientHelper.INSTANCE.getPreferences().getHideReactionsNotification();
-                NicegramClientHelper.INSTANCE.getPreferences().setHideReactionsNotification(!enabled);
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_ALL);
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.mainUserInfoChanged);
-            } else if (position == hideUnreadCounterRow) {
-                enabled = NicegramClientHelper.INSTANCE.getPreferences().getHideUnreadCounter();
-                NicegramClientHelper.INSTANCE.getPreferences().setHideUnreadCounter(!enabled);
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_CHAT);
-            } else if (position == hideMentionNotificationRow) {
-                enabled = NicegramClientHelper.INSTANCE.getPreferences().getHideMentionNotification();
-                NicegramClientHelper.INSTANCE.getPreferences().setHideMentionNotification(!enabled);
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_CHAT);
-            } else if (position == animationsInChatList) {
-                enabled = NicegramClientHelper.INSTANCE.getPreferences().getAnimationInChatList();
-                NicegramClientHelper.INSTANCE.getPreferences().setAnimationInChatList(!enabled);
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_CHAT);
-            } else if (position == fullscreenGrayscale) {
-                enabled = NicegramClientHelper.INSTANCE.getPreferences().getGrayscaleFullScreen();
-                NicegramClientHelper.INSTANCE.getPreferences().setGrayscaleFullScreen(!enabled);
-                ((LaunchActivity) AndroidUtilities.findActivity(context)).tryUpdateGrayscale();
-            } else if (position == grayscaleInChatList) {
-                enabled = NicegramClientHelper.INSTANCE.getPreferences().getGrayscaleInChatList();
-                NicegramClientHelper.INSTANCE.getPreferences().setGrayscaleInChatList(!enabled);
-            } else if (position == grayscaleInChat) {
-                enabled = NicegramClientHelper.INSTANCE.getPreferences().getGrayscaleInChat();
-                NicegramClientHelper.INSTANCE.getPreferences().setGrayscaleInChat(!enabled);
-            } else if (position == startWithRearCameraRow) {
+            if (position == startWithRearCameraRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
                 enabled = preferences.getBoolean(NicegramPrefs.PREF_START_WITH_REAR_CAMERA, NicegramPrefs.PREF_START_WITH_REAR_CAMERA_DEFAULT);
@@ -284,11 +221,8 @@ public class NicegramSettingsActivity extends BaseFragment {
                 PinRow pinRow = pinSectionRowsMap.get(position);
                 if (pinRow instanceof PinRow.ChatPlacementPin) {
                     PinnedChatsPlacement placement = ((PinRow.ChatPlacementPin) pinRow).placement;
-                    enabled = !NicegramPinChatsPlacementHelper.INSTANCE.isPinnedChatHidden(context, ((PinRow.ChatPlacementPin) pinRow).placement.getId());
+                    enabled = !NicegramPinChatsPlacementHelper.INSTANCE.isPinnedChatHidden(context, ((PinRow.ChatPlacementPin) pinRow).placement);
                     NicegramPinChatsPlacementHelper.INSTANCE.setPinnedChatHidden(context, placement.getId(), enabled);
-                } else if (pinRow instanceof PinRow.PumpPin) {
-                    enabled = NicegramPinChatsPlacementHelper.INSTANCE.pumpEnabled(context);
-                    NicegramPinChatsPlacementHelper.INSTANCE.setPumpEnabled(context, !enabled);
                 }
             } else if (position == unblockGuideRow) {
                 Browser.openUrl(getParentActivity(), NicegramConsts.UNBLOCK_URL);
@@ -298,13 +232,16 @@ public class NicegramSettingsActivity extends BaseFragment {
                     ((TextCheckCell) view).setChecked(false);
                 } else {
                     if (SharedConfig.passcodeHash.length() <= 0 || UserConfig.getActivatedAccountsCount() < 2) {
-                        Toast.makeText(getParentActivity(), LocaleController.getString("NicegramDoubleBottomDesc"), Toast.LENGTH_LONG).show();
+                        Toast.makeText(getParentActivity(), LocaleController.getString(R.string.NicegramDoubleBottomDesc), Toast.LENGTH_LONG).show();
                     } else {
                         presentFragment(new PasscodeActivity(PasscodeActivity.TYPE_SETUP_CODE, true), true);
                     }
                 }
             } else if (position == quickRepliesRow) {
                 presentFragment(new QuickRepliesNgFragment());
+            } else if (position == quickTranslateButton) {
+                enabled = PrefsHelper.INSTANCE.showQuickTranslateButton(currentAccount);
+                PrefsHelper.INSTANCE.enableQuickTranslateButton(currentAccount, !enabled);
             } else if (position == importAccountRow) {
                 AccountsExportHelper.INSTANCE.pickFileAndImport((accounts, uri) -> {
                     ExportAccountsBottomSheetFragment frag = ExportAccountsBottomSheetFragment.Companion.create(accounts, true, selectedAccounts -> {
@@ -352,8 +289,8 @@ public class NicegramSettingsActivity extends BaseFragment {
                 if (!enabled) {
                     AlertsCreator.createSimpleAlert(
                             getParentActivity(),
-                            "", LocaleController.getString("NicegramMaxAccount_IncreaseWarn"),
-                            LocaleController.getString("NicegramMaxAccount_Increase"),
+                            "", LocaleController.getString(R.string.NicegramMaxAccount_IncreaseWarn),
+                            LocaleController.getString(R.string.NicegramMaxAccount_Increase),
                             () -> {
                                 PrefsHelper.INSTANCE.setMaxAccountCount(context, NicegramPrefs.PREF_MAX_ACCOUNTS_MAX);
                                 view.postDelayed(() -> {RebirthHelper.INSTANCE.triggerRebirth(context);}, 500);
@@ -363,8 +300,8 @@ public class NicegramSettingsActivity extends BaseFragment {
                 } else {
                     AlertsCreator.createSimpleAlert(
                             getParentActivity(),
-                            "", LocaleController.getString("NicegramMaxAccount_ReduceWarn"),
-                            LocaleController.getString("NicegramMaxAccount_Reduce"),
+                            "", LocaleController.getString(R.string.NicegramMaxAccount_ReduceWarn),
+                            LocaleController.getString(R.string.NicegramMaxAccount_Reduce),
                             () -> {
                                 PrefsHelper.INSTANCE.setMaxAccountCount(context, NicegramPrefs.PREF_MAX_ACCOUNTS_DEFAULT);
                                 view.postDelayed(() -> {RebirthHelper.INSTANCE.triggerRebirth(context);}, 500);
@@ -441,9 +378,9 @@ public class NicegramSettingsActivity extends BaseFragment {
                 case 0: {
                     HeaderCell headerCell = (HeaderCell) holder.itemView;
                     if (position == pinSectionHeaderRow) {
-                        headerCell.setText(LocaleController.getString("Nicegram_PinSection"));
+                        headerCell.setText(LocaleController.getString(R.string.Nicegram_PinSection));
                     } else if (position == accountSectionHeaderRow) {
-                        headerCell.setText(LocaleController.getString("Ng_AccountsExport_Accounts"));
+                        headerCell.setText(LocaleController.getString(R.string.Ng_AccountsExport_Accounts));
                     }
                     break;
                 }
@@ -451,48 +388,30 @@ public class NicegramSettingsActivity extends BaseFragment {
                     TextCheckCell checkCell = (TextCheckCell) holder.itemView;
                     SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
                     if (position == showNgBtnInChatRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("NicegramShowNgBtnInChats"), PrefsHelper.INSTANCE.getShowNgFloatingMenuInChat(currentAccount), false);
+                        checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegramShowNgBtnInChats), PrefsHelper.INSTANCE.getShowNgFloatingMenuInChat(currentAccount), false);
                     } else if (position == showKeywordsForFolderRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("NgKeywords_ShowKeywords"), PrefsHelper.INSTANCE.getShowFoldersForKeywords(currentAccount), false);
+                        checkCell.setTextAndCheck(LocaleController.getString(R.string.NgKeywords_ShowKeywords), PrefsHelper.INSTANCE.getShowFoldersForKeywords(currentAccount), false);
                     } else if(position == showAiShortcutsRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("AiShortcuts_ShowInChat"), getAiShortcutsSettings().getShowInChat(), false);
+                        checkCell.setTextAndCheck(LocaleController.getString(R.string.AiShortcuts_ShowInChat), getAiShortcutsSettings().getShowInChat(), false);
                     } else if (position == showRegDateRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("NicegramShowRegistrationDate"), preferences.getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT), false);
+                        checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegramShowRegistrationDate), preferences.getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT), false);
                     } else if (position == doubleBottomRow) {
-                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramDoubleBottom"), LocaleController.getString("NicegramDoubleBottomDesc"), NicegramDoubleBottom.INSTANCE.hasDbot(), true, false);
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString(R.string.NicegramDoubleBottom), LocaleController.getString(R.string.NicegramDoubleBottomDesc), NicegramDoubleBottom.INSTANCE.hasDbot(), true, false);
                         checkCell.setEnabled(false);
                     } else if (position == startWithRearCameraRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("NicegramStartWithRearCamera"), preferences.getBoolean(NicegramPrefs.PREF_START_WITH_REAR_CAMERA, NicegramPrefs.PREF_START_WITH_REAR_CAMERA_DEFAULT), false);
+                        checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegramStartWithRearCamera), preferences.getBoolean(NicegramPrefs.PREF_START_WITH_REAR_CAMERA, NicegramPrefs.PREF_START_WITH_REAR_CAMERA_DEFAULT), false);
                     } else if (position == downloadVideosToGallery) {
-                        checkCell.setTextAndCheck(LocaleController.getString("NicegramDownloadVideosToGallery"), preferences.getBoolean(NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY, NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY_DEFAULT), false);
+                        checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegramDownloadVideosToGallery), preferences.getBoolean(NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY, NicegramPrefs.PREF_DOWNLOAD_VIDEOS_TO_GALLERY_DEFAULT), false);
                     } else if (position == hidePhoneNumberRow) {
-                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramHidePhoneNumber"), LocaleController.getString("NicegramHidePhoneNumberDesc"), preferences.getBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, NicegramPrefs.PREF_HIDE_PHONE_NUMBER_DEFAULT), true, false);
-                    } else if (position == hideReactionsRow) {
-                        checkCell.setTextAndCheck(LocaleController.getString("NicegramHideReactions"), preferences.getBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, NicegramPrefs.PREF_HIDE_REACTIONS_DEFAULT), false);
-                    } else if (position == hideStoriesRow) {
-                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramHideStories), NicegramClientHelper.INSTANCE.getPreferences().getHideStories(), false);
-                    } else if (position == hideReactionsNotificationRow) {
-                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramHideReactionsNotification), NicegramClientHelper.INSTANCE.getPreferences().getHideReactionsNotification(), false);
-                    } else if (position == hideUnreadCounterRow) {
-                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramHideUnreadCounter), NicegramClientHelper.INSTANCE.getPreferences().getHideUnreadCounter(), false);
-                    } else if (position == hideMentionNotificationRow) {
-                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramHideMentionNotification), NicegramClientHelper.INSTANCE.getPreferences().getHideMentionNotification(), false);
-                    } else if (position == animationsInChatList) {
-                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramAnimationsInChatList), NicegramClientHelper.INSTANCE.getPreferences().getAnimationInChatList(), false);
-                    } else if (position == fullscreenGrayscale) {
-                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramFullScreenGrayscale), NicegramClientHelper.INSTANCE.getPreferences().getGrayscaleFullScreen(), false);
-                    } else if (position == grayscaleInChatList) {
-                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramGrayscaleInChatList), NicegramClientHelper.INSTANCE.getPreferences().getGrayscaleInChatList(), false);
-                    } else if (position == grayscaleInChat) {
-                        checkCell.setTextAndCheck(mContext.getString(R.string.NicegramGrayscaleInChat), NicegramClientHelper.INSTANCE.getPreferences().getGrayscaleInChat(), false);
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString(R.string.NicegramHidePhoneNumber), LocaleController.getString(R.string.NicegramHidePhoneNumberDesc), preferences.getBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, NicegramPrefs.PREF_HIDE_PHONE_NUMBER_DEFAULT), true, false);
                     } else if (position == shareChannelsInfoRow) {
-                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramShareChannelInfo"), LocaleController.getString("NicegramShareChannelInfoDesc"), NicegramClientHelper.INSTANCE.getPreferences().getCanShareChannels(), true, false);
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString(R.string.NicegramShareChannelInfo), LocaleController.getString(R.string.NicegramShareChannelInfoDesc), NicegramClientHelper.INSTANCE.getPreferences().getCanShareChannels(), true, false);
                     } else if (position == shareBotsInfoRow) {
-                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramShareBotsInfo"), LocaleController.getString("NicegramShareChannelInfoDesc"), NicegramClientHelper.INSTANCE.getPreferences().getCanShareBots(), true, false);
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString(R.string.NicegramShareBotsInfo), LocaleController.getString(R.string.NicegramShareChannelInfoDesc), NicegramClientHelper.INSTANCE.getPreferences().getCanShareBots(), true, false);
                     } else if (position == shareStickersInfoRow) {
-                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramShareStickersInfo"), LocaleController.getString("NicegramShareChannelInfoDesc"), NicegramClientHelper.INSTANCE.getPreferences().getCanShareStickers(), true, false);
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString(R.string.NicegramShareStickersInfo), LocaleController.getString(R.string.NicegramShareChannelInfoDesc), NicegramClientHelper.INSTANCE.getPreferences().getCanShareStickers(), true, false);
                     } else if (position == maxAccountsRow) {
-                        checkCell.setTextAndValueAndCheck(LocaleController.getString("NicegramMaxAccount_IncreaseTo"), LocaleController.getString("NicegramMaxAccount_Default"), PrefsHelper.INSTANCE.getMaxAccountCount(getContext()) == NicegramPrefs.PREF_MAX_ACCOUNTS_MAX, true, false);
+                        checkCell.setTextAndValueAndCheck(LocaleController.getString(R.string.NicegramMaxAccount_IncreaseTo), LocaleController.getString(R.string.NicegramMaxAccount_Default), PrefsHelper.INSTANCE.getMaxAccountCount(getContext()) == NicegramPrefs.PREF_MAX_ACCOUNTS_MAX, true, false);
                         checkCell.setEnabled(false);
                     } else if (position == showHiddenChatsRow) {
                         checkCell.setTextAndCheck(getContext().getString(R.string.NicegramShowHiddenChats), HiddenChatsHelper.INSTANCE.getShowHiddenChats(), false);
@@ -501,24 +420,25 @@ public class NicegramSettingsActivity extends BaseFragment {
                         boolean checked = false;
                         if (pinRow instanceof PinRow.ChatPlacementPin) {
                             PinnedChatsPlacement placement = ((PinRow.ChatPlacementPin) pinRow).placement;
-                            checked = !NicegramPinChatsPlacementHelper.INSTANCE.isPinnedChatHidden(mContext, placement.getId());
-                        } else if (pinRow instanceof PinRow.PumpPin) {
-                            checked = NicegramPinChatsPlacementHelper.INSTANCE.pumpEnabled(mContext);
+                            checked = !NicegramPinChatsPlacementHelper.INSTANCE.isPinnedChatHidden(mContext, placement);
                         }
                         checkCell.setTextAndCheck(pinRow.getName(), checked, false);
+                    } else if (position == quickTranslateButton) {
+                        boolean checked = PrefsHelper.INSTANCE.showQuickTranslateButton(currentAccount);
+                        checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegramQuickTranslateButton), checked, false);
                     }
                     break;
                 }
                 case 2: {
                     TextCell textCell = (TextCell) holder.itemView;
                     if (position == unblockGuideRow) {
-                        textCell.setText(LocaleController.getString("NicegramUnblockGuide"), false);
+                        textCell.setText(LocaleController.getString(R.string.NicegramUnblockGuide), false);
                     } else if (position == quickRepliesRow) {
-                        textCell.setText(LocaleController.getString("QuickReplies"), false);
+                        textCell.setText(LocaleController.getString(R.string.QuickReplies), false);
                     } else if (position == importAccountRow) {
-                        textCell.setText(LocaleController.getString("Ng_AccountsExport_ImportFromFile"), false);
+                        textCell.setText(LocaleController.getString(R.string.Ng_AccountsExport_ImportFromFile), false);
                     } else if (position == exportAccountsRow) {
-                        textCell.setText(LocaleController.getString("Ng_AccountsExport_ExportAsFile"), false);
+                        textCell.setText(LocaleController.getString(R.string.Ng_AccountsExport_ExportAsFile), false);
                     }
                     break;
                 }
@@ -536,15 +456,12 @@ public class NicegramSettingsActivity extends BaseFragment {
                 return 0;
             } else if (position == showRegDateRow ||
                     position == startWithRearCameraRow || position == downloadVideosToGallery ||
-                    position == hidePhoneNumberRow || position == hideReactionsRow || position == doubleBottomRow ||
+                    position == hidePhoneNumberRow || position == doubleBottomRow ||
                     position == maxAccountsRow || position == shareChannelsInfoRow ||
                     position == shareBotsInfoRow || position == shareStickersInfoRow ||
-                    position == showNgBtnInChatRow || position == showKeywordsForFolderRow || position == showHiddenChatsRow ||
-                    pinSectionRowsMap.contains(position) || position == hideMentionNotificationRow ||
-                    position == hideReactionsNotificationRow || position == hideUnreadCounterRow ||
-                    position == hideStoriesRow || position == animationsInChatList ||
-                    position == fullscreenGrayscale || position == grayscaleInChatList ||
-                    position == grayscaleInChat || position == showAiShortcutsRow
+                    position == showNgBtnInChatRow || position == showKeywordsForFolderRow ||
+                    position == showHiddenChatsRow || pinSectionRowsMap.contains(position) ||
+                    position == showAiShortcutsRow || position == quickTranslateButton
             ) {
                 return 1;
             } else if (position == unblockGuideRow || position == quickRepliesRow || position == importAccountRow || position == exportAccountsRow) {

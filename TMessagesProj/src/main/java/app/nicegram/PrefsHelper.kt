@@ -2,7 +2,6 @@ package app.nicegram
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.appvillis.core_ui.BuildConfig
 import com.appvillis.nicegram.AnalyticsHelper.logEvent
 import com.appvillis.nicegram.NicegramAssistantEntryPoint
 import com.appvillis.nicegram.NicegramPrefs
@@ -11,6 +10,7 @@ import dagger.hilt.EntryPoints
 import org.telegram.messenger.ApplicationLoader
 import org.telegram.messenger.MessagesController
 import java.util.concurrent.TimeUnit
+import androidx.core.content.edit
 
 object PrefsHelper {
     private fun entryPoint(context: Context) =
@@ -24,6 +24,11 @@ object PrefsHelper {
     fun showRegDate(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(NicegramPrefs.PREF_SHOW_REG_DATE, NicegramPrefs.PREF_SHOW_REG_DATE_DEFAULT)
+    }
+
+    fun enableQuickTranslateButton(currentAccount: Int, enable: Boolean) {
+        MessagesController.getNicegramSettings(currentAccount)
+            .edit { putBoolean(NicegramPrefs.PREF_QUICK_TRANSLATE, enable) }
     }
 
     fun showQuickTranslateButton(currentAccount: Int): Boolean {
@@ -47,11 +52,6 @@ object PrefsHelper {
     fun hidePhoneNumber(currentAccount: Int): Boolean {
         return MessagesController.getNicegramSettings(currentAccount)
             .getBoolean(NicegramPrefs.PREF_HIDE_PHONE_NUMBER, NicegramPrefs.PREF_HIDE_PHONE_NUMBER_DEFAULT)
-    }
-
-    fun hideReactions(currentAccount: Int): Boolean {
-        return MessagesController.getNicegramSettings(currentAccount)
-            .getBoolean(NicegramPrefs.PREF_HIDE_REACTIONS, NicegramPrefs.PREF_HIDE_REACTIONS_DEFAULT)
     }
 
     // region ng translate input text
@@ -143,32 +143,6 @@ object PrefsHelper {
             .putLong("${NicegramPrefs.PREF_CHAT_BANNER_TS_WITH_ID_}$bannerId", targetTime)
             .apply()
     }
-
-    fun getSpeech2TextOpenAi(context: Context): Boolean {
-        return getNgGlobalPrefs(context)
-            .getBoolean(NicegramPrefs.PREF_S2TEXT_OPEN_AI_ENABLED, NicegramPrefs.PREF_S2TEXT_OPEN_AI_ENABLED_DEFAULT)
-    }
-
-    fun setSpeech2TextOpenAi(context: Context, enabled: Boolean) {
-        getNgGlobalPrefs(context)
-            .edit()
-            .putBoolean(NicegramPrefs.PREF_S2TEXT_OPEN_AI_ENABLED, enabled)
-            .apply()
-    }
-
-    fun setSpeech2TextBulletinSeen(context: Context) {
-        getNgGlobalPrefs(context)
-            .edit()
-            .putBoolean(NicegramPrefs.PREF_S2TEXT_BULLET_SEEN, true)
-            .apply()
-    }
-
-    fun getSpeech2TextBulletinSeen(context: Context): Boolean {
-        return getNgGlobalPrefs(context)
-            .getBoolean(NicegramPrefs.PREF_S2TEXT_BULLET_SEEN, NicegramPrefs.PREF_S2TEXT_BULLET_SEEN_DEFAULT)
-    }
-
-    fun alwaysShowSpeech2Text(context: Context) = if (BuildConfig.IS_LITE_CLIENT) false else entryPoint(context).ngClientRemoteConfigRepo().alwaysShowSpeech2Text
 
     fun setShowNgFloatingMenuInChat(currentAccount: Int, show: Boolean) {
         MessagesController.getNicegramSettings(currentAccount)

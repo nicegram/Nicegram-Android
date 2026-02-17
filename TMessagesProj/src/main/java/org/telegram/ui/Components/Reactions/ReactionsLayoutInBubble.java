@@ -67,8 +67,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Objects;
 
-import app.nicegram.PrefsHelper;
-
 public class ReactionsLayoutInBubble {
 
     private final static int ANIMATION_TYPE_IN = 1;
@@ -251,7 +249,7 @@ public class ReactionsLayoutInBubble {
                     }
                     ReactionButton button = new ReactionLayoutButton(old, reactionCount, isSmall, isTag);
                     button.inGroup = messageObject.hasValidGroupId();
-                    if (!PrefsHelper.INSTANCE.hideReactions(currentAccount)) { reactionButtons.add(button); } // ng hide reactions
+                    reactionButtons.add(button);
                     hasPaidReaction = hasPaidReaction || button.paid;
                     if (!isSmall && !isTag && messageObject.messageOwner.reactions.recent_reactions != null) {
                         ArrayList<TLObject> users = null;
@@ -304,12 +302,9 @@ public class ReactionsLayoutInBubble {
                         }
                     }
                     if (isSmall && reactionCount.count > 1 && reactionCount.chosen) {
-                        if (!PrefsHelper.INSTANCE.hideReactions(currentAccount)) { // ng hide reactions
-                            //reactionButtons.add(new ReactionButton(null, reactionCount, isSmall));
-                            ReactionButton button2 = new ReactionLayoutButton(null, reactionCount, isSmall, isTag);
-                            button2.inGroup = messageObject.hasValidGroupId();
-                            reactionButtons.add(button2);
-                        }
+                        ReactionButton button2 = new ReactionLayoutButton(null, reactionCount, isSmall, isTag);
+                        button2.inGroup = messageObject.hasValidGroupId();
+                        reactionButtons.add(button2);
                         reactionButtons.get(0).isSelected = false;
                         reactionButtons.get(1).isSelected = true;
                         reactionButtons.get(0).realCount = 1;

@@ -16,7 +16,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
@@ -32,8 +31,6 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -57,11 +54,6 @@ import androidx.annotation.NonNull;
 import androidx.collection.LongSparseArray;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
-
-import com.appvillis.feature_nicegram_client.NicegramClientHelper;
-import com.appvillis.rep_placements.domain.entity.PinnedChatsPlacement;
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.FutureTarget;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
@@ -144,10 +136,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Stack;
-import java.util.concurrent.ExecutionException;
-
-import app.nicegram.PrefsHelper;
-import timber.log.Timber;
 
 public class DialogCell extends BaseCell implements StoriesListPlaceProvider.AvatarOverlaysView {
 
@@ -663,8 +651,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
         };
         addView(emojiStatusView);
-        emojiStatus = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(emojiStatusView, dp(22),
-                NicegramClientHelper.INSTANCE.getPreferences().getAnimationInChatList() ? AnimatedEmojiDrawable.CACHE_TYPE_EMOJI_STATUS : AnimatedEmojiDrawable.CACHE_TYPE_EMOJI_CALL); // ng disable animation
+        emojiStatus = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(emojiStatusView, dp(22));
         botVerification = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, dp(17));
         avatarImage.setAllowLoadingOnAttachedOnly(true);
     }
@@ -856,12 +843,10 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             thumbImage[i].onAttachedToWindow();
         }
         resetPinnedArchiveState();
-        // ng disable animations
-        int cacheType = NicegramClientHelper.INSTANCE.getPreferences().getAnimationInChatList() ? AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES : AnimatedEmojiDrawable.CACHE_TYPE_EMOJI_CALL;
-        animatedEmojiStack = AnimatedEmojiSpan.update(cacheType, this, animatedEmojiStack, messageLayout);
-        animatedEmojiStack2 = AnimatedEmojiSpan.update(cacheType, this, animatedEmojiStack2, messageNameLayout);
-        animatedEmojiStack3 = AnimatedEmojiSpan.update(cacheType, this, animatedEmojiStack3, buttonLayout);
-        animatedEmojiStackName =  AnimatedEmojiSpan.update(cacheType, this, animatedEmojiStackName, nameLayout);
+        animatedEmojiStack = AnimatedEmojiSpan.update(AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES, this, animatedEmojiStack, messageLayout);
+        animatedEmojiStack2 = AnimatedEmojiSpan.update(AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES, this, animatedEmojiStack2, messageNameLayout);
+        animatedEmojiStack3 = AnimatedEmojiSpan.update(AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES, this, animatedEmojiStack3, buttonLayout);
+        animatedEmojiStackName =  AnimatedEmojiSpan.update(AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES, this, animatedEmojiStackName, nameLayout);
         if (emojiStatus != null) {
             emojiStatus.attach();
         }
@@ -1549,8 +1534,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                         }
                         drawCount2 = true;
                         boolean lastMessageIsReaction = false;
-                        if (dialogsType == 0 && currentDialogId > 0 && message.isOutOwner() && message.messageOwner.reactions != null && message.messageOwner.reactions.recent_reactions != null && !message.messageOwner.reactions.recent_reactions.isEmpty() && reactionMentionCount > 0
-                                && !PrefsHelper.INSTANCE.hideReactions(currentAccount)) { // ng hide reactions
+                        if (dialogsType == 0 && currentDialogId > 0 && message.isOutOwner() && message.messageOwner.reactions != null && message.messageOwner.reactions.recent_reactions != null && !message.messageOwner.reactions.recent_reactions.isEmpty() && reactionMentionCount > 0) {
                             TLRPC.MessagePeerReaction lastReaction = message.messageOwner.reactions.recent_reactions.get(0);
                             if (lastReaction.unread && lastReaction.peer_id.user_id != 0 &&lastReaction.peer_id.user_id != UserConfig.getInstance(currentAccount).clientUserId) {
                                 lastMessageIsReaction = true;
@@ -1955,22 +1939,22 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     if (clearingDialog) {
                         drawCount = false;
                         showChecks = false;
-                    } else if (unreadCount != 0 && !NicegramClientHelper.INSTANCE.getPreferences().getHideUnreadCounter() && (unreadCount != 1 || unreadCount != mentionCount || message == null || !message.messageOwner.mentioned)) {
+                    } else if (unreadCount != 0 && (unreadCount != 1 || unreadCount != mentionCount || message == null || !message.messageOwner.mentioned)) {
                         drawCount = true;
                         countString = String.format("%d", unreadCount);
-                    } else if (markUnread && !NicegramClientHelper.INSTANCE.getPreferences().getHideUnreadCounter()) {
+                    } else if (markUnread) {
                         drawCount = true;
                         countString = "";
                     } else {
                         drawCount = false;
                     }
-                    if (mentionCount != 0 && !NicegramClientHelper.INSTANCE.getPreferences().getHideMentionNotification()) { // ng hide mentions count
+                    if (mentionCount != 0) {
                         drawMention = true;
                         mentionString = "@";
                     } else {
                         drawMention = false;
                     }
-                    if (reactionMentionCount > 0 && !NicegramClientHelper.INSTANCE.getPreferences().getHideReactionsNotification()) { // ng hide Reactions notification
+                    if (reactionMentionCount > 0) {
                         drawReactionMention = true;
                     } else {
                         drawReactionMention = false;
@@ -2245,9 +2229,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         } catch (Exception e) {
             FileLog.e(e);
         }
-        // ng disable animations
-        int cacheType = NicegramClientHelper.INSTANCE.getPreferences().getAnimationInChatList() ? AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES : AnimatedEmojiDrawable.CACHE_TYPE_EMOJI_CALL;
-        animatedEmojiStackName = AnimatedEmojiSpan.update(cacheType, this, animatedEmojiStackName, nameLayout);
+
+        animatedEmojiStackName = AnimatedEmojiSpan.update(AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES, this, animatedEmojiStackName, nameLayout);
+
 
         int messageWidth;
         int avatarLeft;
@@ -2499,7 +2483,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         if (twoLinesForName) {
             messageTop += dp(20);
         }
-        animatedEmojiStack2 = AnimatedEmojiSpan.update(cacheType, this, animatedEmojiStack2, messageNameLayout);
+        animatedEmojiStack2 = AnimatedEmojiSpan.update(AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES, this, animatedEmojiStack2, messageNameLayout);
 
 
         try {
@@ -2517,7 +2501,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         } catch (Exception e) {
 
         }
-        animatedEmojiStack3 = AnimatedEmojiSpan.update(cacheType, this, animatedEmojiStack3, buttonLayout);
+        animatedEmojiStack3 = AnimatedEmojiSpan.update(AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES, this, animatedEmojiStack3, buttonLayout);
 
         try {
             if (!TextUtils.isEmpty(typingString)) {
@@ -2579,7 +2563,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             messageLayout = null;
             FileLog.e(e);
         }
-        animatedEmojiStack = AnimatedEmojiSpan.update(cacheType, this, animatedEmojiStack, messageLayout);
+        animatedEmojiStack = AnimatedEmojiSpan.update(AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES, this, animatedEmojiStack, messageLayout);
 
         double widthpx;
         float left;
@@ -3908,7 +3892,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     canvas.translate(messageLeft, top);
                     int oldAlpha = messageLayout.getPaint().getAlpha();
                     messageLayout.getPaint().setAlpha((int) (oldAlpha * (1f - updateHelper.typingProgres)));
-                    if (!spoilers.isEmpty() && NicegramClientHelper.INSTANCE.getPreferences().getAnimationInChatList()) {
+                    if (!spoilers.isEmpty()) {
                         try {
                             canvas.save();
                             SpoilerEffect.clipOutCanvas(canvas, spoilers);
@@ -4193,8 +4177,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 canvas.drawRoundRect(rect, 11.5f * AndroidUtilities.density, 11.5f * AndroidUtilities.density, Theme.dialogs_errorPaint);
                 setDrawableBounds(Theme.dialogs_errorDrawable, errorLeft + dp(5.5f), errorTop + dp(5));
                 Theme.dialogs_errorDrawable.draw(canvas);
-                                        // ng hide unread counter                                                               // ng hide mention counter
-            } else if ((drawCount && !NicegramClientHelper.INSTANCE.getPreferences().getHideUnreadCounter() || drawMention && !NicegramClientHelper.INSTANCE.getPreferences().getHideMentionNotification()) && drawCount2 || countChangeProgress != 1f || drawReactionMention || reactionsMentionsChangeProgress != 1f) {
+            } else if ((drawCount || drawMention) && drawCount2 || countChangeProgress != 1f || drawReactionMention || reactionsMentionsChangeProgress != 1f) {
                 boolean drawCounterMuted;
                 if (isTopic) {
                     drawCounterMuted = topicMuted;
@@ -4526,7 +4509,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             }
         }
 
-        emojiStatusView.setVisibility(emojiStatusVisible ? View.VISIBLE : View.GONE);
+        emojiStatusView.setVisibility(emojiStatusVisible ? View.VISIBLE : View.INVISIBLE);
 
         if (needInvalidate) {
             invalidate();
@@ -5678,7 +5661,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        if (rightFragmentOpenedProgress == 0 && !isTopic && !isShareToStoryCell && storyParams.checkOnTouchEvent(ev, this) && !NicegramClientHelper.INSTANCE.getPreferences().getHideStories()) {
+        if (rightFragmentOpenedProgress == 0 && !isTopic && !isShareToStoryCell && storyParams.checkOnTouchEvent(ev, this)) {
             return true;
         }
         return super.onInterceptTouchEvent(ev);
@@ -5686,7 +5669,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        if (!isTopic && !isShareToStoryCell && !NicegramClientHelper.INSTANCE.getPreferences().getHideStories() && ev.getAction() == MotionEvent.ACTION_UP || ev.getAction() == MotionEvent.ACTION_CANCEL) {
+        if (!isTopic && !isShareToStoryCell && ev.getAction() == MotionEvent.ACTION_UP || ev.getAction() == MotionEvent.ACTION_CANCEL) {
             storyParams.checkOnTouchEvent(ev, this);
         }
         return super.dispatchTouchEvent(ev);
@@ -5694,7 +5677,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (rightFragmentOpenedProgress == 0 && !isTopic && !isShareToStoryCell && storyParams.checkOnTouchEvent(event, this) && !NicegramClientHelper.INSTANCE.getPreferences().getHideStories()) {
+        if (rightFragmentOpenedProgress == 0 && !isTopic && !isShareToStoryCell && storyParams.checkOnTouchEvent(event, this)) {
             return true;
         }
         if (delegate == null || delegate.canClickButtonInside()) {

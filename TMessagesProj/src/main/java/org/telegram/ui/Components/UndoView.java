@@ -1371,7 +1371,7 @@ public class UndoView extends FrameLayout {
 
             avatarImageView.setVisibility(GONE);
             subinfoTextView.setVisibility(GONE);
-            undoTextView.setVisibility(VISIBLE);
+            undoTextView.setVisibility(GONE);   // ng hide tg premium screen
             undoButton.setVisibility(VISIBLE);
             undoImageView.setVisibility(GONE);
         } else if (currentAction == ACTION_HINT_SWIPE_TO_REPLY) {

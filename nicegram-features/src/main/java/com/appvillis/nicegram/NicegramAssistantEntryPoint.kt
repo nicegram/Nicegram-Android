@@ -1,6 +1,5 @@
 package com.appvillis.nicegram
 
-import com.appvillis.core_network.ApiService
 import com.appvillis.core_resources.domain.TgResourceProvider
 import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo
 import com.appvillis.feature_ai_chat.domain.ClearDataUseCase
@@ -20,9 +19,6 @@ import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase
 import com.appvillis.feature_nicegram_client.domain.NgClientRemoteConfigRepo
 import com.appvillis.feature_nicegram_client.domain.NgRevLoginUseCase
 import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter
-import com.appvillis.feature_pump_ads.domain.usecases.GetPumpAdsConfigUseCase
-import com.appvillis.feature_pump_ads.domain.usecases.GetSettingsUseCase
-import com.appvillis.feature_pump_ads.domain.usecases.UpdateSettingsUseCase
 import com.appvillis.nicegram_wallet.module_bridge.InChatResultManager
 import com.appvillis.nicegram_wallet.wallet_dapps.domain.BrowserResponseManager
 import com.appvillis.nicegram_wallet.wallet_dapps.domain.TgBrowserBridgeFactory
@@ -33,7 +29,6 @@ import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.WalletPopupActivityLauncher
 import com.appvillis.rep_placements.domain.GetChatPlacementsUseCase
 import com.appvillis.rep_placements.domain.GetPinChatsPlacementsUseCase
-import com.appvillis.rep_placements.domain.GetPinPlacementsStatusUseCase
 import com.appvillis.rep_placements.domain.HidePlacementUseCase
 import com.appvillis.rep_user.domain.AppSessionControlUseCase
 import com.appvillis.rep_user.domain.GetUserStatusUseCase
@@ -57,16 +52,11 @@ interface NicegramAssistantEntryPoint {
     fun analyticsManager(): AnalyticsManager
     fun getChatPlacementsUseCase(): GetChatPlacementsUseCase
     fun getPinChatsPlacementsUseCase(): GetPinChatsPlacementsUseCase
-    fun getPinPlacementsStatusUseCase(): GetPinPlacementsStatusUseCase
     fun hidePlacementUseCase(): HidePlacementUseCase
     fun userRepository(): UserRepository
     fun collectGroupInfoUseCase(): CollectGroupInfoUseCase
     fun ngClientRemoteConfigRepo(): NgClientRemoteConfigRepo
-    fun apiService(): ApiService
     fun ngRevLoginUseCase(): NgRevLoginUseCase
-    fun getPumpAdsConfigUseCase(): GetPumpAdsConfigUseCase
-    fun getPumpSettingsUseCase(): GetSettingsUseCase
-    fun updatePumpSettingsUseCase(): UpdateSettingsUseCase
     fun saveUserActionUseCase(): SaveUserActionUseCase
     fun getOngoingActionsUseCase(): GetOngoingActionsUseCase
     fun claimAdsUseCase(): ClaimAdsUseCase

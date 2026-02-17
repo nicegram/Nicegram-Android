@@ -9306,17 +9306,4 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
                 Theme.getColor(Theme.key_glass_defaultIcon, resourcesProvider),
                 (int) (255 * alpha));
     }
-
-    // region ng gif on long click
-    public void onGifOpen() {
-        showBackspaceButton(false, false);
-        showStickerSettingsButton(false, false);
-        if (pager.getCurrentItem() != 1) {
-            pager.setCurrentItem(1, false);
-        }
-        if (gifTabs != null) {
-            gifTabs.selectTab(0);
-        }
-    }
-    // endregion ng gif on long click
 }

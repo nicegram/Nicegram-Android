@@ -28,6 +28,7 @@ object NicegramLocales {
         "NicegramDialogPolicyText",
         // region Telegram premium
         "UnlockPremiumReactionsDescription",
+        "UnlockPremiumTranscriptionHint",
         "LimitReachedPublicLinks",
         "LimitReachedFolders",
         "LimitReachedChatInFolders",

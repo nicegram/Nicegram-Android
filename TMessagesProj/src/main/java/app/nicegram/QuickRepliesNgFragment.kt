@@ -29,7 +29,7 @@ class QuickRepliesNgFragment : BaseFragment() {
 
         actionBar.setBackButtonImage(R.drawable.ic_ab_back)
         actionBar.setAllowOverlayTitle(true)
-        actionBar.setTitle(LocaleController.getString("QuickReplies"))
+        actionBar.setTitle(LocaleController.getString(R.string.QuickReplies))
         actionBar.setActionBarMenuOnItemClick(object : ActionBarMenuOnItemClick() {
             override fun onItemClick(id: Int) {
                 if (id == -1) {

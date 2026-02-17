@@ -998,7 +998,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     codeFieldContainer.codeField[0].requestFocus();
                 }
                 onPasscodeError();
-                ToastView toastView = ToastView.Companion.newInstance(getParentActivity(), LocaleController.getString("NicegramDoubleBottomAnotherCode"), R.drawable.toast_error_icon, true);
+                ToastView toastView = ToastView.Companion.newInstance(getParentActivity(), LocaleController.getString(R.string.NicegramDoubleBottomAnotherCode), R.drawable.toast_error_icon, true);
                 ToastViewHelper.INSTANCE.showViewToast(toastView, fragmentView, true, true, AndroidUtilities.dp(24));
                 return;
             }

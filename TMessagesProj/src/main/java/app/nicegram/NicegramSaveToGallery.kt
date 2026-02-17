@@ -4,6 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import org.telegram.messenger.LocaleController
 import org.telegram.messenger.MediaController
+import org.telegram.messenger.R
 
 object NicegramSaveToGallery {
 
@@ -20,7 +21,7 @@ object NicegramSaveToGallery {
     fun tryToSave(filename: String, path: String, withContext: Context) {
         if (filesToSave.contains(filename)) {
             MediaController.saveFile(path, withContext, 0, null, null)
-            Toast.makeText(withContext, LocaleController.getString("VideoSavedHint"), Toast.LENGTH_SHORT).show()
+            Toast.makeText(withContext, LocaleController.getString(R.string.VideoSavedHint), Toast.LENGTH_SHORT).show()
             removeFromSaveList(filename)
         }
     }

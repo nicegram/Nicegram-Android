@@ -7,8 +7,6 @@ import org.telegram.ui.Stories.StoriesStorage;
 
 import java.util.ArrayList;
 
-import app.nicegram.ui.AttVH;
-
 public class ChatMessagesMetadataController {
 
     final ChatActivity chatActivity;
@@ -40,8 +38,6 @@ public class ChatMessagesMetadataController {
             storiesToCheck.clear();
             for (int i = from; i < to; i++) {
                 MessageObject messageObject = messages.get(i);
-                if (messageObject instanceof AttVH.AttMessageObject) continue;
-
                 if (chatActivity.getThreadMessage() != messageObject && messageObject.getId() > 0 && (messageObject.messageOwner.action == null || messageObject.canSetReaction()) && (currentTime - messageObject.reactionsLastCheckTime) > 15000L) {
                     messageObject.reactionsLastCheckTime = currentTime;
                     reactionsToCheck.add(messageObject);

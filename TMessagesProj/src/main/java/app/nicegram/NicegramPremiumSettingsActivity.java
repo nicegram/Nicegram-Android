@@ -33,21 +33,15 @@ public class NicegramPremiumSettingsActivity extends BaseFragment {
     private ListAdapter adapter;
 
     private int nicegramSectionRow;
-    private int mentionAllRow;
     private int saveFolderOnExitRow;
-    private int quickTranslateButton;
     private int ignoredLanguagesRow;
-    private int openAiSpeech2Text;
     private int rowCount = 0;
 
     @Override
     public boolean onFragmentCreate() {
         nicegramSectionRow = -1;
-        mentionAllRow = rowCount++;
         saveFolderOnExitRow = rowCount++;
-        quickTranslateButton = rowCount++;
         ignoredLanguagesRow = rowCount++;
-        openAiSpeech2Text = rowCount++;
 
         return super.onFragmentCreate();
     }
@@ -87,19 +81,7 @@ public class NicegramPremiumSettingsActivity extends BaseFragment {
             if (getParentActivity() == null) {
                 return;
             }
-            if (position == mentionAllRow) {
-                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_MENTION_ALL_ENABLED, NicegramPrefs.PREF_MENTION_ALL_ENABLED_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_MENTION_ALL_ENABLED, !enabled);
-                editor.apply();
-            } else if (position == quickTranslateButton) {
-                SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean(NicegramPrefs.PREF_QUICK_TRANSLATE, NicegramPrefs.PREF_QUICK_TRANSLATE_DEFAULT);
-                editor.putBoolean(NicegramPrefs.PREF_QUICK_TRANSLATE, !enabled);
-                editor.apply();
-            } else if (position == ignoredLanguagesRow) {
+            if (position == ignoredLanguagesRow) {
                 presentFragment(new RestrictedLanguagesSelectActivity());
             } else if (position == saveFolderOnExitRow) {
                 SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
@@ -107,9 +89,6 @@ public class NicegramPremiumSettingsActivity extends BaseFragment {
                 enabled = preferences.getBoolean(NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT, NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT_DEFAULT);
                 editor.putBoolean(NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT, !enabled);
                 editor.apply();
-            } else if (position == openAiSpeech2Text) {
-                enabled = PrefsHelper.INSTANCE.getSpeech2TextOpenAi(getContext());
-                PrefsHelper.INSTANCE.setSpeech2TextOpenAi(getContext(), !enabled);
             }
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(!enabled);
@@ -180,21 +159,15 @@ public class NicegramPremiumSettingsActivity extends BaseFragment {
                 case 1: {
                     TextCheckCell checkCell = (TextCheckCell) holder.itemView;
                     SharedPreferences preferences = MessagesController.getNicegramSettings(currentAccount);
-                    if (position == mentionAllRow) {
-                        checkCell.setTextAndValueAndCheck(LocaleController.getString(R.string.ShowMentionAll), LocaleController.getString(R.string.For20OrLessChats), preferences.getBoolean(NicegramPrefs.PREF_MENTION_ALL_ENABLED, NicegramPrefs.PREF_MENTION_ALL_ENABLED_DEFAULT), true, false);
-                    } else if (position == quickTranslateButton) {
-                        checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegramQuickTranslateButton), preferences.getBoolean(NicegramPrefs.PREF_QUICK_TRANSLATE, NicegramPrefs.PREF_QUICK_TRANSLATE_DEFAULT), false);
-                    } else if (position == saveFolderOnExitRow) {
+                    if (position == saveFolderOnExitRow) {
                         checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegramSaveFolderOnExit), preferences.getBoolean(NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT, NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT_DEFAULT), false);
-                    } else if (position == openAiSpeech2Text) {
-                        checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegramOpenAiSpeech2Text), PrefsHelper.INSTANCE.getSpeech2TextOpenAi(getContext()), false);
                     }
                     break;
                 }
                 case 2: {
                     TextCell textCell = (TextCell) holder.itemView;
                     if (position == ignoredLanguagesRow) {
-                        textCell.setText(LocaleController.getString("NicegramIgnoredLanguages"), false);
+                        textCell.setText(LocaleController.getString(R.string.NicegramIgnoredLanguages), false);
                     }
                     break;
                 }
@@ -205,8 +178,7 @@ public class NicegramPremiumSettingsActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == nicegramSectionRow) {
                 return 0;
-            } else if (position == mentionAllRow || position == quickTranslateButton || position == saveFolderOnExitRow
-            || position == openAiSpeech2Text) {
+            } else if (position == saveFolderOnExitRow) {
                 return 1;
             } else if (position == ignoredLanguagesRow) {
                 return 2;

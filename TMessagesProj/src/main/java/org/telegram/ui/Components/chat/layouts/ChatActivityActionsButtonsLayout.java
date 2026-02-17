@@ -47,19 +47,22 @@ public class ChatActivityActionsButtonsLayout extends LinearLayout {
         super(context);
         this.resourcesProvider = resourcesProvider;
 
-        replyButton.button = ChatActivityBlurredRoundButton.create(context, blurredBackgroundDrawableViewFactory,
-            colorProvider, resourcesProvider, 0);
+        replyButton.button = ChatActivityBlurredRoundButton.create(
+            context, blurredBackgroundDrawableViewFactory, colorProvider, resourcesProvider
+        );
         replyButton.button.setOnClickListener(v -> {});
         ScaleStateListAnimator.apply(replyButton.button, .065f, 2f);
 
-        forwardButton.button = ChatActivityBlurredRoundButton.create(context, blurredBackgroundDrawableViewFactory,
-            colorProvider, resourcesProvider, 0);
+        forwardButton.button = ChatActivityBlurredRoundButton.create(
+            context, blurredBackgroundDrawableViewFactory, colorProvider, resourcesProvider
+        );
         forwardButton.button.setOnClickListener(v -> {});
         ScaleStateListAnimator.apply(forwardButton.button, .065f, 2f);
 
         // region ng forward as copy
-        forwardAsCopyButton.button = ChatActivityBlurredRoundButton.create(context, blurredBackgroundDrawableViewFactory,
-            colorProvider, resourcesProvider, 0);
+        forwardAsCopyButton.button = ChatActivityBlurredRoundButton.create(
+            context, blurredBackgroundDrawableViewFactory, colorProvider, resourcesProvider
+        );
         forwardAsCopyButton.button.setOnClickListener(v -> {});
         ScaleStateListAnimator.apply(forwardAsCopyButton.button, .065f, 2f);
         // endregion

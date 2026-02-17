@@ -31,7 +31,6 @@ import androidx.collection.LongSparseArray;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
@@ -80,9 +79,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import app.nicegram.MentionAllHelper;
 import app.nicegram.QuickRepliesHelper;
-import app.nicegram.ui.AttVH;
 
 public class MentionsAdapter extends RecyclerListView.SelectionAdapter implements NotificationCenter.NotificationCenterDelegate {
 
@@ -1248,8 +1245,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             final ArrayList<Long> users = new ArrayList<>();
             if (messageObjects != null) {
                 for (int a = 0; a < Math.min(100, messageObjects.size()); a++) {
-                    if (messageObjects.get(a) instanceof AttVH.AttMessageObject) continue;
-
                     long from_id = messageObjects.get(a).getFromChatId();
                     if (from_id > 0 && !users.contains(from_id)) {
                         users.add(from_id);
@@ -1718,10 +1713,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         } else if (searchResultBotContext != null) {
             count += searchResultBotContext.size() + (searchResultBotContextSwitch != null || searchResultBotWebViewSwitch != null ? 1 : 0);
         } else if (searchResultUsernames != null) {
-            if (shouldShowMentionAll())
-                count += searchResultUsernames.size() + 1;
-            else
-                count += searchResultUsernames.size();
+            count += searchResultUsernames.size();
         } else if (searchResultHashtags != null) {
             count += searchResultHashtags.size();
         } else if (searchResultCommands != null || quickReplies != null) {
@@ -2028,15 +2020,11 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         } else {
             MentionCell cell = (MentionCell) holder.itemView;
             if (searchResultUsernames != null) {
-                if (position == 0 && shouldShowMentionAll()) {
-                    ((MentionCell) holder.itemView).setUser(null, true);
-                } else {
-                    TLObject object = searchResultUsernames.get(shouldShowMentionAll() ? position - 1 : position);
-                    if (object instanceof TLRPC.User) {
-                        cell.setUser((TLRPC.User) object, false);
-                    } else if (object instanceof TLRPC.Chat) {
-                        cell.setChat((TLRPC.Chat) object);
-                    }
+                TLObject object = searchResultUsernames.get(position);
+                if (object instanceof TLRPC.User) {
+                    cell.setUser((TLRPC.User) object);
+                } else if (object instanceof TLRPC.Chat) {
+                    cell.setChat((TLRPC.Chat) object);
                 }
             } else if (searchResultHashtags != null && position >= 0 && position < searchResultHashtags.size()) {
                 cell.setText(searchResultHashtags.get(position));
@@ -2082,11 +2070,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
 
     private int getThemedColor(int key) {
         return Theme.getColor(key, resourcesProvider);
-    }
-
-    private Boolean shouldShowMentionAll() {
-        if (info == null) return false;
-        return MentionAllHelper.INSTANCE.shouldShowMentionAll(ApplicationLoader.applicationContext, info.participants_count, currentAccount);
     }
 
     public void setDialogId(long dialogId) {

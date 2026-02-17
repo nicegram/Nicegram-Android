@@ -351,7 +351,7 @@ public class FilterTabsView extends FrameLayout {
             boolean animateCounterRemove = animateFromTabCount > 0 && currentTab.counter == 0 && animateTabCounter;
             boolean animateCounterReplace = animateFromTabCount > 0 && currentTab.counter > 0 && animateTabCounter;
 
-            if (currentTab.counter > 0 && !NicegramClientHelper.INSTANCE.getPreferences().getHideUnreadCounter() || animateCounterRemove ) {
+            if (currentTab.counter > 0 || animateCounterRemove ) {
                 if (animateCounterRemove) {
                     counterText = String.format("%d", animateFromTabCount);
                 } else {

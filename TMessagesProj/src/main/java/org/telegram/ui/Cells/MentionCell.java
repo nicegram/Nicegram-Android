@@ -14,17 +14,13 @@ import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.MediaDataController;
-import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.TLRPC;
@@ -90,21 +86,13 @@ public class MentionCell extends LinearLayout {
         super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(36), MeasureSpec.EXACTLY));
     }
 
-    public void setUser(TLRPC.User user, Boolean allUsers) {
+    public void setUser(TLRPC.User user) {
         resetEmojiSuggestion();
         if (user == null) {
-            if (allUsers) {
-                usernameTextView.setText(LocaleController.getString("MentionAllUsers"));
-                nameTextView.setVisibility(View.GONE);
-                imageView.setImageDrawable(null);
-                imageView.setImageResource(R.mipmap.ic_launcher_default_round);
-                return;
-            } else {
-                nameTextView.setText("");
-                usernameTextView.setText("");
-                imageView.setImageDrawable(null);
-                return;
-            }
+            nameTextView.setText("");
+            usernameTextView.setText("");
+            imageView.setImageDrawable(null);
+            return;
         }
         avatarDrawable.setInfo(user);
         if (user.photo != null && user.photo.photo_small != null) {
