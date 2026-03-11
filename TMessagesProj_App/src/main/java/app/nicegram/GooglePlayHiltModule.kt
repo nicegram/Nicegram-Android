@@ -4,8 +4,10 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.appvillis.core_markets.MarketFeatureFlagsProvider
 import com.appvillis.core_network.ApiService
+import com.appvillis.feature_analytics.domain.AnalyticsManager
 import com.appvillis.feature_nicegram_billing.data.BillingManagerImpl
 import com.appvillis.feature_nicegram_billing.domain.BillingManager
+import com.appvillis.feature_nicegram_billing.domain.PurchaseSync
 import com.appvillis.rep_user.domain.RefreshUserInfoUseCase
 import com.appvillis.rep_user.domain.UserRepository
 import dagger.Module
@@ -21,6 +23,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object GooglePlayHiltModule {
+
     @Provides
     @Singleton
     fun provideBillingManger(
@@ -28,9 +31,20 @@ object GooglePlayHiltModule {
         apiService: ApiService,
         userRepository: UserRepository,
         sharedPreferences: SharedPreferences,
-        refreshUserInfoUseCase: RefreshUserInfoUseCase
+        refreshUserInfoUseCase: RefreshUserInfoUseCase,
+        purchaseSync: PurchaseSync,
+        analyticsManager: AnalyticsManager,
     ): BillingManager =
-        BillingManagerImpl(context, CoroutineScope(SupervisorJob() + Dispatchers.IO), apiService, userRepository, refreshUserInfoUseCase, sharedPreferences)
+        BillingManagerImpl(
+            context,
+            CoroutineScope(SupervisorJob() + Dispatchers.IO),
+            apiService,
+            userRepository,
+            refreshUserInfoUseCase,
+            sharedPreferences,
+            purchaseSync,
+            analyticsManager,
+        )
 
     @Provides
     @Singleton

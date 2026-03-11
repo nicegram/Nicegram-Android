@@ -6,7 +6,6 @@ import com.appvillis.feature_ai_chat.domain.ClearDataUseCase
 import com.appvillis.feature_ai_chat.domain.UseResultManager
 import com.appvillis.feature_ai_chat.domain.usecases.GetBalanceTopUpRequestUseCase
 import com.appvillis.feature_ai_chat.domain.usecases.GetChatCommandsUseCase
-import com.appvillis.feature_analytics.domain.AnalyticsManager
 import com.appvillis.feature_attention_economy.domain.usecases.ClaimAdsUseCase
 import com.appvillis.feature_attention_economy.domain.usecases.GetOngoingActionsUseCase
 import com.appvillis.feature_avatar_generator.domain.usecases.AvatarsOnboardingUseCase
@@ -49,7 +48,6 @@ interface NicegramAssistantEntryPoint {
     fun nicegramSessionCounter(): NicegramSessionCounter
     fun appSessionControlUseCase(): AppSessionControlUseCase
     fun getNicegramOnboardingStatusUseCase(): GetNicegramOnboardingStatusUseCase
-    fun analyticsManager(): AnalyticsManager
     fun getChatPlacementsUseCase(): GetChatPlacementsUseCase
     fun getPinChatsPlacementsUseCase(): GetPinChatsPlacementsUseCase
     fun hidePlacementUseCase(): HidePlacementUseCase

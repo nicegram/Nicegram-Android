@@ -1,6 +1,7 @@
 package app.nicegram
 
-import com.appvillis.nicegram.NicegramAssistantEntryPoint
+import com.appvillis.feature_analytics.data.AnalyticsValue
+import com.appvillis.feature_analytics.domain.AnalyticsEntryPoint
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.hilt.EntryPoints
 import org.telegram.messenger.ApplicationLoader
@@ -9,7 +10,8 @@ import org.telegram.tgnet.TLRPC.Chat
 import org.telegram.tgnet.TLRPC.ChatFull
 
 object NicegramAnalyticsHelper {
-    private fun entryPoint() = EntryPoints.get(ApplicationLoader.applicationContext, NicegramAssistantEntryPoint::class.java)
+    private fun entryPoint() = EntryPoints
+        .get(ApplicationLoader.applicationContext, AnalyticsEntryPoint::class.java)
 
     fun trackChatOpen(chat: Chat?, chatInfo: ChatFull?) {
         val analyticsManager = entryPoint().analyticsManager()
@@ -25,10 +27,10 @@ object NicegramAnalyticsHelper {
             val roundedParticipantCount = if (participantsCount < 50) 50 else ((participantsCount / 1000) + 1) * 1000
             analyticsManager.logEvent(
                 "group_open_by_$role", mapOf(
-                    "type" to type,
-                    "restricted" to restricted.toString(),
-                    "visibility" to visibility,
-                    "participantsCount" to roundedParticipantCount.toString()
+                    "type" to AnalyticsValue.StringVal(type),
+                    "restricted" to AnalyticsValue.BooleanVal(restricted),
+                    "visibility" to AnalyticsValue.StringVal(visibility),
+                    "participantsCount" to AnalyticsValue.IntVal(roundedParticipantCount)
                 )
             )
         } catch (e: Exception) {

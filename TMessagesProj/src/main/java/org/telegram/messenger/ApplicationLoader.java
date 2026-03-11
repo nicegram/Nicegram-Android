@@ -37,6 +37,7 @@ import androidx.annotation.NonNull;
 import com.appvillis.assistant_core.app.AppInit;
 import com.appvillis.core_resources.MarketConsts;
 import com.appvillis.core_resources.domain.TgResourceProvider;
+import com.appvillis.feature_analytics.data.AnalyticsValue;
 import com.appvillis.feature_nicegram_assistant.QrCodeHelper;
 import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter;
 import com.appvillis.lib_android_base.Intents;
@@ -680,8 +681,8 @@ public class ApplicationLoader extends Application {
             } else if (accountCount > 1 && accountCount <= 100) {
                 accountCountToLog = (int) Math.round(accountCount / 10.0) * 10;
             }
-            Map<String, String> paramsMap = new HashMap<>();
-            paramsMap.put("profiles_count", String.valueOf(accountCount));
+            Map<String, AnalyticsValue> paramsMap = new HashMap<>();
+            paramsMap.put("profiles_count", new AnalyticsValue.IntVal(accountCount));
             AnalyticsHelper.INSTANCE.logEvent(this, "user_set_" + accountCountToLog + "_profiles", paramsMap);
         }, 5000);
 

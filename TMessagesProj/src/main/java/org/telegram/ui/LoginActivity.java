@@ -105,6 +105,8 @@ import com.appvillis.core_network.data.HeaderInterceptor;
 import com.appvillis.core_resources.widgets.EsimBannerView;
 import com.appvillis.feature_account_export.ExportAccountsBottomSheetFragment;
 import com.appvillis.feature_account_export.domain.Account;
+import com.appvillis.feature_analytics.data.factories.NicegramTgAuthEvents;
+import com.appvillis.nicegram.AnalyticsHelper;
 import com.appvillis.nicegram.NicegramLoginHelper;
 import com.appvillis.nicegram.NicegramThemeApplyHelper;
 import com.appvillis.nicegram.presentation.NicegramTutorialSmsDialog;
@@ -1789,6 +1791,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         MessagesController.getInstance(currentAccount).loadAppConfig();
         MessagesController.getInstance(currentAccount).checkPeerColors(false);
 
+        AnalyticsHelper.INSTANCE.logEvent(getContext(), NicegramTgAuthEvents.INSTANCE.nicegramTgauthSuccess());
         // region NG Gold theme
         try {
             File myFile = NicegramThemeApplyHelper.INSTANCE.getNgGoldTheme(ApplicationLoader.getFilesDirFixed(), LoginActivity.this.getContext());
@@ -2192,7 +2195,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             ImportAccountLoginView importAccountsView = new ImportAccountLoginView(context, () -> {
                 AccountsExportHelper.INSTANCE.pickFileAndImport((accounts, uri) -> {
                     ExportAccountsBottomSheetFragment frag = ExportAccountsBottomSheetFragment.Companion.create(accounts, true, selectedAccounts -> {
-                        AccountsExportHelper.INSTANCE.importAccounts((FragmentActivity)getParentActivity(), uri, selectedAccounts);
+                        AccountsExportHelper.importAccountsAsync((FragmentActivity)getParentActivity(), uri, selectedAccounts, null);
                         return null;
                     });
                     frag.show(((FragmentActivity)getParentActivity()).getSupportFragmentManager(),  "export_accounts");
@@ -3028,7 +3031,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             if (NicegramLoginHelper.INSTANCE.onLoginBtnClicked(getContext(), phoneNumber, uri -> {
                 List<Account> account = new ArrayList<>();
                 account.add(new Account(0, "0", "", ""));
-                AccountsExportHelper.INSTANCE.importAccounts((FragmentActivity) getParentActivity(), uri, account);
+                AccountsExportHelper.importAccountsAsync((FragmentActivity) getParentActivity(), uri, account, null);
                 return null;
             })) {
                 return;

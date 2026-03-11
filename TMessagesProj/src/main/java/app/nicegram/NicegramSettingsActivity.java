@@ -245,7 +245,7 @@ public class NicegramSettingsActivity extends BaseFragment {
             } else if (position == importAccountRow) {
                 AccountsExportHelper.INSTANCE.pickFileAndImport((accounts, uri) -> {
                     ExportAccountsBottomSheetFragment frag = ExportAccountsBottomSheetFragment.Companion.create(accounts, true, selectedAccounts -> {
-                        AccountsExportHelper.INSTANCE.importAccounts((FragmentActivity)this.getParentActivity(), uri, selectedAccounts);
+                        AccountsExportHelper.importAccountsAsync((FragmentActivity)this.getParentActivity(), uri, selectedAccounts, null);
                         return null;
                     });
                     frag.show(((FragmentActivity)this.getParentActivity()).getSupportFragmentManager(),  "export_accounts");
@@ -280,7 +280,7 @@ public class NicegramSettingsActivity extends BaseFragment {
                         }
                     }
 
-                    AccountsExportHelper.INSTANCE.exportAccounts(accountNs);
+                    AccountsExportHelper.exportAccountsAsync((FragmentActivity) getParentActivity(), accountNs, null);
                     return null;
                 });
                 frag.show(((FragmentActivity)this.getParentActivity()).getSupportFragmentManager(),  "export_accounts");
