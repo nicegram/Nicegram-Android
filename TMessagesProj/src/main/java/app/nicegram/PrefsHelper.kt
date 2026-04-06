@@ -82,10 +82,6 @@ object PrefsHelper {
             .getBoolean(NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT, NicegramPrefs.PREF_SAVE_FOLDER_ON_EXIT_DEFAULT)
     }
 
-    fun bypassCopyProtection(context: Context): Boolean {
-        return entryPoint(context).ngClientRemoteConfigRepo().allowCopyProtectedContent
-    }
-
     fun setCurrentFolder(currentAccount: Int, folder: Int) {
         MessagesController.getNicegramSettings(currentAccount)
             .edit()

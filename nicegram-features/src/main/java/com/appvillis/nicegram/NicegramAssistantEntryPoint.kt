@@ -8,6 +8,7 @@ import com.appvillis.feature_ai_chat.domain.usecases.GetBalanceTopUpRequestUseCa
 import com.appvillis.feature_ai_chat.domain.usecases.GetChatCommandsUseCase
 import com.appvillis.feature_attention_economy.domain.usecases.ClaimAdsUseCase
 import com.appvillis.feature_attention_economy.domain.usecases.GetOngoingActionsUseCase
+import com.appvillis.feature_auth.domain.CheckIfNeedToCompleteAutoLoginUseCase
 import com.appvillis.feature_avatar_generator.domain.usecases.AvatarsOnboardingUseCase
 import com.appvillis.feature_avatar_generator.domain.usecases.GetAvatarsUseCase
 import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase
@@ -92,4 +93,5 @@ interface NicegramAssistantEntryPoint {
     fun useResultManager(): UseResultManager
     fun aiChatRemoteConfigRepo(): AiChatRemoteConfigRepo
     // end region
+    fun checkIfNeedToCompleteAutoLoginUseCase(): CheckIfNeedToCompleteAutoLoginUseCase
 }

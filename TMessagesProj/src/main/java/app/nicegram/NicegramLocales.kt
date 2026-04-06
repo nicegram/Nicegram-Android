@@ -1,6 +1,7 @@
 package app.nicegram
 
 import org.telegram.messenger.LocaleController.LocaleInfo
+import org.telegram.messenger.R
 
 object NicegramLocales {
     val locales = listOf(
@@ -100,6 +101,8 @@ object NicegramLocales {
         "StealthModePremiumHint",
         "UpgradePremiumTitle",
         "SaveOnAnnualPremiumTitle",
+        "TelegramStars",
+        "AccountFrozen1Text",
         // endregion
     )
 

@@ -50,7 +50,7 @@ public class NicegramPremiumSettingsActivity extends BaseFragment {
     public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setAllowOverlayTitle(true);
-        actionBar.setTitle(LocaleController.getString("NicegramSettings"));
+        actionBar.setTitle(LocaleController.getString(R.string.NicegramAssistant_NicegramPremium));
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {

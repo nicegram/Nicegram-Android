@@ -1,6 +1,7 @@
 package app.nicegram.bridge
 
 import app.nicegram.domain.usecases.PrepareMessagesUseCase
+import app.nicegram.domain.usecases.user.HasSignedInUserUseCase
 import com.appvillis.feature_attention_economy.bridge.AttChatListPeersProvider
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -11,4 +12,6 @@ import dagger.hilt.components.SingletonComponent
 interface TgBridgeEntryPoint {
     fun attChatListPeersProvider(): AttChatListPeersProvider
     fun prepareMessagesUseCase(): PrepareMessagesUseCase
+
+    fun hasSignedInUseCase(): HasSignedInUserUseCase
 }
