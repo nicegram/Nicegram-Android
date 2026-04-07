@@ -15,13 +15,8 @@ class HasSignedInUserUseCase @Inject constructor() {
     fun getFirstAccountAuthFlow(): Flow<Boolean> = callbackFlow {
         val accountIndex = 0
 
-        var isAuthorized = false
-        (0..UserConfig.MAX_ACCOUNT_COUNT).forEach { index ->
-            val isActivated = UserConfig.getInstance(index).isClientActivated
-            if (isActivated) {
-                isAuthorized = true
-                return@forEach
-            }
+        val isAuthorized = (0 until UserConfig.MAX_ACCOUNT_COUNT).any { index ->
+            UserConfig.getInstance(index).isClientActivated
         }
         trySend(isAuthorized)
 
@@ -32,7 +27,8 @@ class HasSignedInUserUseCase @Inject constructor() {
             }
         }
 
-        NotificationCenter.getInstance(accountIndex).addObserver(observer, NotificationCenter.mainUserInfoChanged)
+        NotificationCenter.getInstance(accountIndex)
+            .addObserver(observer, NotificationCenter.mainUserInfoChanged)
 
         awaitClose {
             NotificationCenter.getInstance(accountIndex)
