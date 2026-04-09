@@ -21,8 +21,8 @@ class HasSignedInUserUseCase @Inject constructor() {
         trySend(isAuthorized)
 
         val observer = NotificationCenter.NotificationCenterDelegate { id, account, _ ->
-            if (id == NotificationCenter.mainUserInfoChanged && account == accountIndex) {
-                val newState = UserConfig.getInstance(accountIndex).isClientActivated
+            if (id == NotificationCenter.mainUserInfoChanged) {
+                val newState = UserConfig.getInstance(account).isClientActivated
                 trySend(newState)
             }
         }
