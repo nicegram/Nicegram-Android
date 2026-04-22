@@ -7,14 +7,14 @@ import dagger.hilt.EntryPoints
 object NicegramAssistantHelper {
     private fun entryPoint(context: Context) = EntryPoints.get(context.applicationContext, NicegramAssistantEntryPoint::class.java)
 
-    fun getSpecialOffer(context: Context): SpecialOffersRepository.SpecialOffer? {
+    fun getSpecialOffer(context: Context?): SpecialOffersRepository.SpecialOffer? {
+        context ?: return null
         val ep = entryPoint(context)
         val getSpecialOfferUseCase = ep.getSpecialOfferUseCase()
         val appSessionControlUseCase = ep.appSessionControlUseCase()
 
-        if (!getSpecialOfferUseCase.haveSeenCurrentOffer() && getSpecialOfferUseCase.canShowSpecialOfferCurrentSession(
-                appSessionControlUseCase.appSessionNumber
-            )
+        if (!getSpecialOfferUseCase.haveSeenCurrentOffer() &&
+            getSpecialOfferUseCase.canShowSpecialOfferCurrentSession(appSessionControlUseCase.appSessionNumber)
         ) {
             return getSpecialOfferUseCase.specialOffer
         }

@@ -63,6 +63,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 
+import app.nicegram.NicegramDoubleBottom;
+
 public class UserInfoActivity extends UniversalFragment implements NotificationCenter.NotificationCenterDelegate {
 
     private EditTextCell firstNameEdit;
@@ -180,7 +182,9 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
         accountNumbers.clear();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             if (UserConfig.getInstance(a).isClientActivated() && currentAccount != a) {
-                accountNumbers.add(a);
+                if (!NicegramDoubleBottom.INSTANCE.needToHideAccount(UserConfig.getInstance(a).clientUserId)) { // nicegram logic --start
+                    accountNumbers.add(a);
+                } // nicegram logic --end
             }
         }
         Collections.sort(accountNumbers, (o1, o2) -> {
@@ -303,19 +307,20 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
             for (int i = 0; i < accountNumbers.size(); ++i) {
                 items.add(SettingsActivity.AccountCell.Factory.of(i, accountNumbers.get(i)));
             }
-            if (!UserConfig.hasPremiumOnAccounts()) {
-                final int moreAccounts = Math.max(0, UserConfig.getMaxAccountCount() - UserConfig.getActivatedAccountsCount());
-                items.add(UItem.asShadow(
-                    TextUtils.concat(
-                        moreAccounts > 0 ? LocaleController.formatPluralStringComma("AddAccountInfo1", moreAccounts) + " " : "",
-                        replaceSingleTag(LocaleController.formatPluralStringComma("AddAccountInfo2", UserConfig.getMaxAccountCount()), () -> {
-                            presentFragment(new PremiumPreviewFragment("add_account"));
-                        })
-                    )
-                ));
-            } else {
+            // nicegram: -- unused description (start)
+//            if (!UserConfig.hasPremiumOnAccounts()) {
+//                final int moreAccounts = Math.max(0, UserConfig.getMaxAccountCount() - UserConfig.getActivatedAccountsCount());
+//                items.add(UItem.asShadow(
+//                    TextUtils.concat(
+//                        moreAccounts > 0 ? LocaleController.formatPluralStringComma("AddAccountInfo1", moreAccounts) + " " : "",
+//                        replaceSingleTag(LocaleController.formatPluralStringComma("AddAccountInfo2", UserConfig.getMaxAccountCount()), () -> {
+//                            presentFragment(new PremiumPreviewFragment("add_account"));
+//                        })
+//                    )
+//                ));
+//            } else {
                 items.add(UItem.asShadow(null));
-            }
+//            } // nicegram: -- unused description (end)
         }
         logoutRow = items.size();
         items.add(UItem.asButton(BUTTON_LOGOUT, R.drawable.msg_leave, getString(R.string.LogOut)).red());

@@ -1,0 +1,175 @@
+{
+  "project_info": {
+    "project_number": "766680609344",
+    "project_id": "nicegram-55d94",
+    "storage_bucket": "nicegram-55d94.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:766680609344:android:13fe398a350182a300e5a5",
+        "android_client_info": {
+          "package_name": "app.nicegram"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "766680609344-4d5sq0tvhquam9ib20jcuq5halfg3nph.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.nicegram",
+            "certificate_hash": "6ae04a1ee4f3392cbb6e96243a8641673302f737"
+          }
+        },
+        {
+          "client_id": "766680609344-qev1f0romta2i8tqcs2p0phkc9ojllc1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.nicegram",
+            "certificate_hash": "3e301a3170dd54ed8641967afc43de5b2ebdca22"
+          }
+        },
+        {
+          "client_id": "766680609344-r3nrjo41vkpu18tm8v2ob4qrfr9d4888.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.nicegram",
+            "certificate_hash": "3134a2e3fc06495e5253ff57c8b5f576b84d3830"
+          }
+        },
+        {
+          "client_id": "766680609344-r4liajofn80fdjvtoeijk770dpkoqjkp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.nicegram",
+            "certificate_hash": "a2695c1d4db25a28766c7b7b9019357b4f0043ca"
+          }
+        },
+        {
+          "client_id": "766680609344-0cq02iume1gf06cu2ksenfg8k6in112v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAA3DGDN3j_cYZ4XacggcQOy5YsBjYi-Pk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "766680609344-0cq02iume1gf06cu2ksenfg8k6in112v.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "766680609344-2age2g22734e0bmkio91n43unbs2nhi2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "app.nicegram"
+              }
+            }
+          ]
+        }
+      },
+      "admob_app_id": "ca-app-pub-8442379328499682~8316689622"
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:766680609344:android:19cf30b02a99e72d00e5a5",
+        "android_client_info": {
+          "package_name": "app.nicegram.beta"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "766680609344-3rh5sjpkfr7am99jrv3bur3oj61er8cb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.nicegram.beta",
+            "certificate_hash": "a2695c1d4db25a28766c7b7b9019357b4f0043ca"
+          }
+        },
+        {
+          "client_id": "766680609344-7ntqaade75m09t3c8dcs4qmjr46ukhv3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.nicegram.beta",
+            "certificate_hash": "6ae04a1ee4f3392cbb6e96243a8641673302f737"
+          }
+        },
+        {
+          "client_id": "766680609344-g15v264mv54889bt11ml4t1figqbcjmf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.nicegram.beta",
+            "certificate_hash": "3e301a3170dd54ed8641967afc43de5b2ebdca22"
+          }
+        },
+        {
+          "client_id": "766680609344-0cq02iume1gf06cu2ksenfg8k6in112v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAA3DGDN3j_cYZ4XacggcQOy5YsBjYi-Pk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "766680609344-0cq02iume1gf06cu2ksenfg8k6in112v.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "766680609344-2age2g22734e0bmkio91n43unbs2nhi2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "app.nicegram"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:766680609344:android:a99f4244af74fd6000e5a5",
+        "android_client_info": {
+          "package_name": "app.nicegram.lite"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "766680609344-0cq02iume1gf06cu2ksenfg8k6in112v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAA3DGDN3j_cYZ4XacggcQOy5YsBjYi-Pk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "766680609344-0cq02iume1gf06cu2ksenfg8k6in112v.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "766680609344-2age2g22734e0bmkio91n43unbs2nhi2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "app.nicegram"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

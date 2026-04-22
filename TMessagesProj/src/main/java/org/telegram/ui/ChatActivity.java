@@ -44521,6 +44521,7 @@ public class ChatActivity extends BaseFragment implements
                 }
                 // region ng reply privatly
                 if (allowChatActions && currentChat != null
+                        && selectedObject.messageOwner.from_id != null
                         && (getUserConfig().getClientUserId() != selectedObject.messageOwner.from_id.user_id) // isn't your message
                         && (selectedObject.messageOwner.from_id.user_id != 0) // is't broadcast message
                 ) {
@@ -44549,7 +44550,8 @@ public class ChatActivity extends BaseFragment implements
                     icons.add(R.drawable.msg_link);
                 }
                 // region ng restricted from context menu
-                if (getUserConfig().getClientUserId() != selectedObject.messageOwner.from_id.user_id &&// isn't your message
+                if (selectedObject.messageOwner.from_id != null &&
+                        getUserConfig().getClientUserId() != selectedObject.messageOwner.from_id.user_id &&// isn't your message
                         (!ChatObject.isChannel(currentChat) || currentChat.megagroup) &&
                         currentChat != null &&
                         (currentChat.creator || currentChat.admin_rights != null && currentChat.admin_rights.edit_messages)) {

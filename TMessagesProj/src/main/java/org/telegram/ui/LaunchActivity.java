@@ -504,12 +504,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             @Override
             protected void onLayout(boolean changed, int l, int t, int r, int b) {
                 super.onLayout(changed, l, t, r, b);
-                /*// region ng dbot
-                if (NicegramDoubleBottom.INSTANCE.getNeedToReloadDrawer()) {
-                    NicegramDoubleBottom.INSTANCE.setNeedToReloadDrawer(false);
-                    drawerLayoutAdapter.notifyDataSetChanged();
-                }
-                // endregion */
 
                 boolean portrait = (b - t) > (r - l);
                 if (portrait != wasPortrait) {

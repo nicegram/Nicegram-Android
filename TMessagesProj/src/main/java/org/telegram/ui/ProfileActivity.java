@@ -10616,7 +10616,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         channelDividerRow = rowCount++;
                     }
                 }
-                if (!isBot && !user.self) {
+                if (!isBot && !UserObject.isUserSelf(user)) {
                     walletHeaderRow = rowCount++;
                     walletInfoRow = rowCount++;
                 }

@@ -1,6 +1,5 @@
 # Built application files
 *.apk
-*.aar
 *.ap_
 *.aab
 
@@ -50,6 +49,7 @@ captures/
 .idea/modules.xml
 # Comment next line if keeping position of elements in Navigation Editor is relevant for you
 .idea/navEditor.xml
+.idea/shelf
 
 # Keystore files
 # Uncomment the following lines if you do not want to check your keystore files in.
@@ -88,17 +88,12 @@ lint/tmp/
 # Android Profiling
 *.hprof
 
-# Keystore files
-*.jks
-*.keystore
-
-# Google Services (e.g. APIs or Firebase)
-google-services.json
-agconnect-services.json
-output.json
-
-NicegramNetworkConsts.kt
-nicegram-assistant-android/
-.gitmodules
-gradle.properties
-TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java
+TMessagesProj/.cxx/
+TMessagesProj/jniLibs/
+TMessagesProj/jniRes/
+**/.DS_Store
+TMessagesProj/afat/
+TMessagesProj_App/afat/
+TMessagesProj_AppHockeyApp/afat/
+TMessagesProj_AppStandalone/afat/
+TMessagesProj_AppHuawei/afat/

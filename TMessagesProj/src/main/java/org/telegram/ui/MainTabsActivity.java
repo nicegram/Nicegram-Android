@@ -71,6 +71,7 @@ import org.telegram.ui.Stories.recorder.HintView2;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.PrefsHelper;
 import app.nicegram.RebirthHelper;
 import me.vkryl.android.animator.BoolAnimator;
@@ -369,7 +370,9 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         accountNumbers.clear();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             if (UserConfig.getInstance(a).isClientActivated()) {
-                accountNumbers.add(a);
+                if (!NicegramDoubleBottom.INSTANCE.needToHideAccount(UserConfig.getInstance(a).clientUserId)) { // nicegram logic --start
+                    accountNumbers.add(a);
+                } // nicegram logic --end
             }
         }
         Collections.sort(accountNumbers, (o1, o2) -> {

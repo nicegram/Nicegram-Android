@@ -143,6 +143,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import app.nicegram.AiBotSettingsActivity;
+import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramPremiumSettingsActivity;
 import app.nicegram.NicegramSettingsActivity;
 import me.vkryl.android.animator.BoolAnimator;
@@ -626,7 +627,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         accountNumbers.clear();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             if (UserConfig.getInstance(a).isClientActivated() && currentAccount != a) {
-                accountNumbers.add(a);
+                if (!NicegramDoubleBottom.INSTANCE.needToHideAccount(UserConfig.getInstance(a).clientUserId)) { // nicegram logic --start
+                    accountNumbers.add(a);
+                } // nicegram logic --end
             }
         }
         Collections.sort(accountNumbers, (o1, o2) -> {
