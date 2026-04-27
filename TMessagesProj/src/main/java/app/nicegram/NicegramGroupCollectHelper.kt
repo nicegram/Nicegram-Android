@@ -5,7 +5,6 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Base64
 import app.nicegram.bridge.TgBridgeEntryPoint
-import co.touchlab.stately.concurrency.AtomicBoolean
 import com.appvillis.core_network.data.body.ChannelInfoRequest
 import com.appvillis.feature_nicegram_client.NicegramClientHelper
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase
@@ -46,6 +45,7 @@ import org.telegram.ui.ChatActivity
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.random.Random
@@ -197,7 +197,7 @@ object NicegramGroupCollectHelper {
         ) : MoreChatFull()
     }
 
-    private var collectInProgress = AtomicBoolean(false)
+    private val collectInProgress = AtomicBoolean(false)
 
     fun tryToCollectGroupPack(currentAccount: Int) {
         if (NicegramClientHelper.preferences?.canShareChannels != true) return
@@ -205,8 +205,8 @@ object NicegramGroupCollectHelper {
         val collectGroupInfoUseCase = entryPoint().collectGroupInfoUseCase()
         if (!collectGroupInfoUseCase.canCollectGroupPack()) return
 
-        if (collectInProgress.value) return
-        collectInProgress.value = true
+        if (collectInProgress.get()) return
+        collectInProgress.set(true)
 
         entryPoint().appScope().launch(Dispatchers.IO) {
             try {
@@ -251,7 +251,7 @@ object NicegramGroupCollectHelper {
             } catch (e: Exception) {
                 Timber.e(e)
             } finally {
-                collectInProgress.value = false
+                collectInProgress.set(false)
             }
         }
     }

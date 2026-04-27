@@ -1,46 +1,31 @@
-include ':TMessagesProj'
-include ':TMessagesProj_App'
-include ':TMessagesProj_AppHuawei'
-include ':TMessagesProj_AppHockeyApp'
-include ':TMessagesProj_AppStandalone'
-include ':TMessagesProj_AppTests'
-include ':nicegram-features'
+rootProject.name = 'nicegram-android'
 
-def modules = [
-        'assistant-core',
-        'feature-nicegram-assistant',
-        'feature-ai-chat',
-        'feature-nicegram-billing',
-        'feature-auth',
-        'feature-analytics',
-        'feature-nuhub',
-        'feature-rewards',
-        'feature-nicegram-client',
-        'rep-user',
-        'rep-remote-config',
-        'rep-placements',
-        'lib-android-base',
-        'core-ui',
-        'core-network',
-        'core-markets',
-        'bridges',
-        'feature-avatar-generator',
-        'nicegram-wallet',
-        'feature-attention-economy',
-        'feature-onboarding-steps',
-        'feature-chat-widgets',
-        'feature-ai-agents',
-        'rep-user-actions',
-        'feature-ai-shortcuts',
-        'feature-gods-eye',
-        'feature-keywords',
-        'feature-user-activities',
-        'feature-account-export',
-        'feature-ai-chat-analysis',
-]
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+include(":TMessagesProj")
+include(":TMessagesProj_App")
+include(":TMessagesProj_AppHuawei")
+include(":TMessagesProj_AppHockeyApp")
+include(":TMessagesProj_AppStandalone")
+include(":TMessagesProj_AppTests")
+include(":nicegram-features")
 
-for (module in modules) {
-    def moduleName = ":${module}"
-    include moduleName
-    project(moduleName).projectDir = new File("nicegram-assistant-android/${module}")
+includeBuild('nicegram-assistant-android') {
+    dependencySubstitution {
+        substitute module('nicegram:assistant-core') using project(':assistant-core')
+        substitute module('nicegram:features:account-export') using project(':features:account-export')
+        substitute module('nicegram:features:user-activities') using project(':features:user-activities')
+        substitute module('nicegram:features:ai-chat-analysis') using project(':features:ai-chat-analysis')
+        substitute module('nicegram:core:network') using project(':core:network')
+        substitute module('nicegram:core:markets') using project(':core:markets')
+        substitute module('nicegram:features:rep-user') using project(':features:rep-user')
+        substitute module('nicegram:features:nicegram-billing') using project(':features:nicegram-billing')
+    }
+}
+
+dependencyResolutionManagement {
+    versionCatalogs {
+        internalLibs {
+            from(files("nicegram-assistant-android/gradle/libs.versions.toml"))
+        }
+    }
 }

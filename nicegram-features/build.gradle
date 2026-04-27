@@ -55,32 +55,43 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.16.0'
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'com.google.android.material:material:1.9.0'
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1"
+    implementation("nicegram:assistant-core")
 
-    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
-    implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.10.0'
+    // Core & AppCompat
+    implementation(internalLibs.androidx.core.ktx)
+    implementation(internalLibs.androidx.appcompat)
 
-    implementation 'org.jsoup:jsoup:1.13.1'
-    //implementation 'com.google.android.gms:play-services-maps:18.0.2'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    // UI & Design
+    implementation(internalLibs.android.material)
 
-    implementation 'com.google.firebase:firebase-config:21.4.1'
+    // Coroutines
+    implementation(internalLibs.kotlinx.coroutines.android)
 
+    // Retrofit & OkHttp
+    implementation(internalLibs.retrofit.core)
+    implementation(internalLibs.retrofit.converter.gson)
+    implementation(internalLibs.okhttp.logging)
 
-    implementation "com.google.android.play:review:2.0.1"
+    // Jsoup
+    implementation(internalLibs.jsoup)
 
-    implementation 'com.google.dagger:hilt-android:2.57.2'
-    kapt 'com.google.dagger:hilt-compiler:2.57.2'
+    // UI
+    implementation(internalLibs.androidx.constraintlayout)
 
-    implementation 'io.github.raamcosta.compose-destinations:animations-core:1.9.63'
-    ksp 'io.github.raamcosta.compose-destinations:ksp:1.9.63'
+    // Firebase
+    implementation(platform(internalLibs.firebase.bom))
+    implementation(internalLibs.firebase.config)
 
-    implementation project(":assistant-core")
-    implementation project(":feature-account-export")
+    // Play Review
+    implementation(internalLibs.google.play.review)
+
+    // Dagger Hilt
+    implementation(internalLibs.hilt.android)
+    ksp(internalLibs.hilt.compiler)
+
+    // Compose Destinations
+    implementation(internalLibs.raamcosta.destination.animations)
+    ksp(internalLibs.raamcosta.destinations.ksp)
 }
 repositories {
     mavenCentral()
