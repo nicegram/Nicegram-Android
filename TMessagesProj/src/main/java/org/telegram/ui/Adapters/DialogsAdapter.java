@@ -845,7 +845,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             case VIEW_TYPE_NG_WIDGETS: {
                 View view = holder.itemView;
                 if (view instanceof NgWidgetsView) {
-                    ((NgWidgetsView) view).setData(Theme.getColor(Theme.key_chats_name), Theme.getColor(Theme.key_chats_message), Theme.getColor(Theme.key_chats_pinnedOverlay));
+                    ((NgWidgetsView) view).setData(Theme.isCurrentThemeDark());
                 }
                 break;
             }

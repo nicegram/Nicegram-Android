@@ -46,6 +46,8 @@ import androidx.biometric.BiometricManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.core_ui.domain.ToastMessage;
+import com.appvillis.core_ui.domain.ToastText;
 import com.appvillis.core_ui.widgets.ToastView;
 import com.google.android.exoplayer2.util.Log;
 import com.appvillis.core_ui.widgets.ToastViewHelper;
@@ -929,7 +931,7 @@ public class PasscodeActivity extends BaseFragment implements NotificationCenter
                     codeFieldContainer.codeField[0].requestFocus();
                 }
                 onPasscodeError();
-                ToastView toastView = ToastView.Companion.newInstance(getParentActivity(), LocaleController.getString(R.string.NicegramDoubleBottomAnotherCode), R.drawable.toast_error_icon, true);
+                ToastView toastView = ToastView.Companion.newInstance(getParentActivity(), new ToastMessage.Error(new ToastText.Raw(LocaleController.getString(R.string.NicegramDoubleBottomAnotherCode))));
                 ToastViewHelper.INSTANCE.showViewToast(toastView, fragmentView, true, true, AndroidUtilities.dp(24));
                 return;
             }

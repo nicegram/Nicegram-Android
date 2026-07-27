@@ -106,13 +106,16 @@ import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.QueryProductDetailsParams;
+import com.appvillis.assistant_core.MainActivity;
 import com.appvillis.core_network.data.HeaderInterceptor;
 import com.appvillis.core_domain.repository.user.UserRepository;
-import com.appvillis.core_ui.widgets.EsimBannerView;
 import com.appvillis.feature_account_export.ExportAccountsBottomSheetFragment;
 import com.appvillis.feature_account_export.domain.Account;
 import com.appvillis.feature_auth.analytics.NicegramTgAuthEvents;
 import com.appvillis.core_analytics.AnalyticsHelper;
+import com.appvillis.feature_telegram_session.api.BannerTelegramSessionView;
+import com.appvillis.feature_telegram_session.api.TelegramSessionSource;
+import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.nicegram.NicegramLoginHelper;
 import com.appvillis.nicegram.presentation.NicegramTutorialSmsDialog;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -161,6 +164,7 @@ import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
+import org.telegram.tgnet.tl.TL_update;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -852,7 +856,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
     }
 
     private boolean isCustomKeyboardForceDisabled() {
-        return AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y || AndroidUtilities.isTablet() || AndroidUtilities.isAccessibilityTouchExplorationEnabled();
+        return /*AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y || AndroidUtilities.isTablet() || */ AndroidUtilities.isAccessibilityTouchExplorationEnabled();
     }
 
     private boolean isCustomKeyboardVisible() {
@@ -1682,6 +1686,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         MessagesController.getInstance(currentAccount).checkPromoInfo(true);
         ConnectionsManager.getInstance(currentAccount).updateDcSettings();
         MessagesController.getInstance(currentAccount).loadAppConfig();
+        MessagesController.getInstance(currentAccount).loadWebBrowserConfig();
         MessagesController.getInstance(currentAccount).checkPeerColors(false);
 
         AnalyticsHelper.INSTANCE.logEvent(getContext(), NicegramTgAuthEvents.INSTANCE.nicegramTgauthSuccess());
@@ -2074,22 +2079,23 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             subtitleView.setLineSpacing(dp(2), 1.0f);
             addView(subtitleView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 32, 8, 32, 0));
             // region ng esim banner
-            FrameLayout esimBannerLayout = EsimBannerView.Companion.newInstance(context);
-            addView(esimBannerLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.START, 16, 14, 16, 8));
-            esimBannerLayout.setOnClickListener(view -> {
-                String url = "https://esimplus.onelink.me/WxwP/wxkmptvq";
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                Context nullableContext = view.getContext();
-                try {
-                    if (nullableContext != null) {
-                        nullableContext.startActivity(intent);
+            if (NicegramAssistantHelper.INSTANCE.isTelegramSessionEnabled(context)) {
+                BannerTelegramSessionView bannerTelegramSessionView = new BannerTelegramSessionView(context);
+                bannerTelegramSessionView.setData(Theme.isCurrentThemeDark());
+                addView(bannerTelegramSessionView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.START, 16, 16, 16, 16));
+                bannerTelegramSessionView.setOnClickListener(view -> {
+                    Context nullableContext = view.getContext();
+                    try {
+                        if (nullableContext != null) {
+                            MainActivity.Companion.launchTelegramSession(nullableContext, TelegramSessionSource.TG_LOGIN);
+                        }
+                    } catch (ActivityNotFoundException e) {
+                        if (nullableContext != null) {
+                            Toast.makeText(nullableContext, LocaleController.getString(R.string.Error_Default), Toast.LENGTH_SHORT).show();
+                        }
                     }
-                } catch (ActivityNotFoundException e) {
-                    if (nullableContext != null) {
-                        Toast.makeText(nullableContext, LocaleController.getString(R.string.Error_Default), Toast.LENGTH_SHORT).show();
-                    }
-                }
-            });
+                });
+            }
 
             ImportAccountLoginView importAccountsView = new ImportAccountLoginView(context, () -> {
                 AccountsExportHelper.INSTANCE.pickFileAndImport((accounts, uri) -> {
@@ -10320,7 +10326,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                                                             req2.purpose = purpose;
                                                             getConnectionsManager().sendRequest(req2, (response, error) -> {
                                                                 if (response instanceof TLRPC.Updates) {
-                                                                    for (TLRPC.TL_updateSentPhoneCode u : findUpdatesAndRemove((TLRPC.Updates) response, TLRPC.TL_updateSentPhoneCode.class)) {
+                                                                    for (TL_update.TL_updateSentPhoneCode u : findUpdatesAndRemove((TLRPC.Updates) response, TL_update.TL_updateSentPhoneCode.class)) {
                                                                         AndroidUtilities.runOnUIThread(() -> {
                                                                             paid = true;
                                                                             LoginActivity fragment = LaunchActivity.findFragment(LoginActivity.class);

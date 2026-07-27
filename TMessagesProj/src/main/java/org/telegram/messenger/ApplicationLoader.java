@@ -36,7 +36,7 @@ import androidx.annotation.NonNull;
 
 import com.appvillis.assistant_core.app.AppInit;
 import com.appvillis.core_domain.usecase.user.AppSessionControlUseCase;
-import com.appvillis.core_domain.usecase.user.GetUserStatusUseCase;
+import com.appvillis.core_domain.usecase.user.FetchNicegramUserLoggedInStatusUseCase;
 import com.appvillis.core_ui.MarketConsts;
 import com.appvillis.core_ui.domain.TgResourceProvider;
 import com.appvillis.core_analytics.AnalyticsValue;
@@ -103,7 +103,7 @@ public class ApplicationLoader extends Application {
     private static IMapsProvider mapsProvider;
     private static ILocationServiceProvider locationServiceProvider;
     @Inject
-    public GetUserStatusUseCase getUserStatusUseCase;
+    public FetchNicegramUserLoggedInStatusUseCase fetchNicegramUserLoggedInStatusUseCase;
     @Inject
     public AppSessionControlUseCase appSessionControlUseCase;
     @Inject
@@ -372,6 +372,7 @@ public class ApplicationLoader extends Application {
         }
 
         NativeLoader.initNativeLibs(ApplicationLoader.applicationContext);
+
         try {
             ConnectionsManager.native_setJava(false);
         } catch (UnsatisfiedLinkError error) {
@@ -662,7 +663,7 @@ public class ApplicationLoader extends Application {
             return null;
         });
 
-        AnalyticsHelper.INSTANCE.logEvent(this, getUserStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
+        AnalyticsHelper.INSTANCE.logEvent(this, fetchNicegramUserLoggedInStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
         new Handler().postDelayed(() -> {
             int accountCount = 0;
             for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {

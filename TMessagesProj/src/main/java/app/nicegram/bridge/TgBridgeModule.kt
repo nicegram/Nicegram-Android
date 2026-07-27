@@ -2,13 +2,17 @@ package app.nicegram.bridge
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import app.nicegram.bridge.att.AttChatListPeersProviderImpl
+import app.nicegram.bridge.att.AttPeerUsernameResolverImpl
 import com.appvillis.bridges.user.bridges.TgAuthBridge
 import com.appvillis.core_network.UserLocaleProvider
 import com.appvillis.core_ui.domain.TgImagesLoader
 import com.appvillis.feature_attention_economy.bridge.AttChatListPeersProvider
+import com.appvillis.feature_attention_economy.bridge.AttPeerUsernameResolver
 import com.appvillis.feature_auth.domain.TelegramBotBridge
 import com.appvillis.core_domain.TelegramIdBridge
 import com.appvillis.feature_keywords.domain.KeywordsSearchRetriever
+import com.appvillis.feature_telegram_session.api.TgLoginBridge
 import com.appvillis.feature_user_activities.domain.UserCommonGroupsMessagesRetriever
 import com.appvillis.nicegram_wallet.module_bridge.ContactMessageSender
 import com.appvillis.nicegram_wallet.module_bridge.QrCodeRenderer
@@ -104,6 +108,10 @@ object TgBridgeModule {
 
     @Provides
     @Singleton
+    fun provideAttPeerUsernameResolver(): AttPeerUsernameResolver = AttPeerUsernameResolverImpl()
+
+    @Provides
+    @Singleton
     fun provideKeywordsSearchRetriever(): KeywordsSearchRetriever = KeywordsSearchRetrieverImpl()
 
     @Provides
@@ -118,4 +126,8 @@ object TgBridgeModule {
     @Provides
     @Singleton
     fun provideTgAuthBridge(): TgAuthBridge = TgAuthBridgeImpl()
+
+    @Provides
+    @Singleton
+    fun provideTgLoginBridge(): TgLoginBridge = TgLoginBridgeImpl()
 }

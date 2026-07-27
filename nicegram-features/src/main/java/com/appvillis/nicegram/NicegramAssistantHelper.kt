@@ -1,6 +1,7 @@
 package com.appvillis.nicegram
 
 import android.content.Context
+import com.appvillis.core_domain.usecase.call
 import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository
 import dagger.hilt.EntryPoints
 
@@ -39,4 +40,7 @@ object NicegramAssistantHelper {
             }
 
     fun getEsimSplashData(context: Context) = entryPoint(context).aiChatRemoteConfigRepo().esimSplashData
+
+    fun isTelegramSessionEnabled(context: Context): Boolean =
+        entryPoint(context).isTelegramSessionEnabledUseCase().call()
 }

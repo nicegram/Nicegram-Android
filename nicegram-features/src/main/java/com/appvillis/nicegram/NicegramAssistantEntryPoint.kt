@@ -2,7 +2,7 @@ package com.appvillis.nicegram
 
 import com.appvillis.core_domain.repository.user.UserRepository
 import com.appvillis.core_domain.usecase.user.AppSessionControlUseCase
-import com.appvillis.core_domain.usecase.user.GetUserStatusUseCase
+import com.appvillis.core_domain.usecase.user.FetchNicegramUserLoggedInStatusUseCase
 import com.appvillis.core_ui.domain.TgResourceProvider
 import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo
 import com.appvillis.feature_ai_chat.domain.ClearDataUseCase
@@ -28,6 +28,10 @@ import com.appvillis.nicegram_wallet.wallet_storage.domain.GetCurrentWalletUseCa
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.WalletPopupActivityLauncher
 import com.appvillis.core_domain.usecase.placements.GetChatPlacementsUseCase
+import com.appvillis.core_common.DispatchersProvider
+import com.appvillis.core_domain.usecase.telegramsession.IsNeedToShowTelegramSessionBackupUseCase
+import com.appvillis.core_domain.usecase.telegramsession.IsSystemTelegramSessionUseCase
+import com.appvillis.core_domain.usecase.telegramsession.IsTelegramSessionEnabledUseCase
 import com.appvillis.core_domain.usecase.placements.GetPinChatsPlacementsUseCase
 import com.appvillis.core_domain.usecase.placements.HidePlacementUseCase
 import com.appvillis.rep_user_actions.domain.usecases.SaveUserActionUseCase
@@ -41,8 +45,9 @@ import kotlinx.coroutines.CoroutineScope
 interface NicegramAssistantEntryPoint {
     //region common
     fun appScope(): CoroutineScope
+    fun dispatchersProvider(): DispatchersProvider
     fun tgResourceProvider(): TgResourceProvider
-    fun getUserStatusUseCase(): GetUserStatusUseCase
+    fun getUserStatusUseCase(): FetchNicegramUserLoggedInStatusUseCase
     fun nicegramSessionCounter(): NicegramSessionCounter
     fun appSessionControlUseCase(): AppSessionControlUseCase
     fun getNicegramOnboardingStatusUseCase(): GetNicegramOnboardingStatusUseCase
@@ -56,6 +61,9 @@ interface NicegramAssistantEntryPoint {
     fun saveUserActionUseCase(): SaveUserActionUseCase
     fun getOngoingActionsUseCase(): GetOngoingActionsUseCase
     fun claimAdsUseCase(): ClaimAdsUseCase
+    fun isTelegramSessionEnabledUseCase(): IsTelegramSessionEnabledUseCase
+    fun isNeedToShowTelegramSessionBackupUseCase(): IsNeedToShowTelegramSessionBackupUseCase
+    fun isSystemTelegramSessionUseCase(): IsSystemTelegramSessionUseCase
     // end region
 
     // region special offer

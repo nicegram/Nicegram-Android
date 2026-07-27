@@ -9,6 +9,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.FragmentActivity
 import com.appvillis.core_ui.CoreUiEntryPoint
+import com.appvillis.core_ui.domain.ToastMessage
+import com.appvillis.core_ui.domain.ToastText
 import com.appvillis.feature_account_export.ExportAccountsEntryPoint
 import com.appvillis.feature_account_export.domain.Account
 import com.appvillis.feature_account_export.domain.ExportEventsBridge
@@ -165,8 +167,8 @@ object AccountsExportHelper {
                 withContext(Dispatchers.Main) {
                     exportEventsBridge(activity).sendEvent(ExportEventsBridge.EVENT_EXPORT_IMPORT_COMPLETED)
                     if (importedMeta.isNotEmpty()) {
-                        coreUi(activity).toastDisplayHelper()
-                            .showToast(activity.getString(R.string.Common_SuccessNew), false)
+                        coreUi(activity).toastMessages()
+                            .showToast(ToastMessage.Success(ToastText.Res(R.string.Common_SuccessNew)))
                         NicegramDoubleBottom.needToReloadDrawer = true
                     }
                     callback?.onSuccess(Unit)
@@ -179,7 +181,7 @@ object AccountsExportHelper {
                 Timber.e(t)
                 withContext(Dispatchers.Main) {
                     callback?.onError(t)
-                    coreUi(activity).toastDisplayHelper().showToast("Import failed: ${t.message}", true)
+                    coreUi(activity).toastMessages().showToast(ToastMessage.Error(ToastText.Raw("Import failed: ${t.message}")))
                 }
             }
         }
@@ -492,8 +494,8 @@ object AccountsExportHelper {
                 }
             }
 
-            EntryPoints.get(activity.applicationContext, CoreUiEntryPoint::class.java).toastDisplayHelper()
-                .showToast(activity.getString(R.string.Common_SuccessNew), false)
+            EntryPoints.get(activity.applicationContext, CoreUiEntryPoint::class.java).toastMessages()
+                .showToast(ToastMessage.Success(ToastText.Res(R.string.Common_SuccessNew)))
 
             Timber.d("Exported to $destUri")
         } catch (e: IOException) {

@@ -9,6 +9,8 @@ import android.widget.FrameLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.core_ui.domain.ToastMessage;
+import com.appvillis.core_ui.domain.ToastText;
 import com.appvillis.core_ui.widgets.ToastView;
 import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.core_ui.widgets.ToastViewHelper;
@@ -87,7 +89,7 @@ public class AiBotSettingsActivity extends BaseFragment {
                         getContext().getString(R.string.Chatbot_ClearAlertYes),
                         () -> {
                             AiChatBotHelper.INSTANCE.getClearDataUseCase(getContext()).invoke();
-                            ToastView toastView = ToastView.Companion.newInstance(getParentActivity(), LocaleController.getString("CancelLinkSuccessTitle"), R.drawable.toast_success_icon, false);
+                            ToastView toastView = ToastView.Companion.newInstance(getParentActivity(), new ToastMessage.Success(new ToastText.Raw(LocaleController.getString("CancelLinkSuccessTitle"))));
                             ToastViewHelper.INSTANCE.showViewToast(toastView, fragmentView, true, true, AndroidUtilities.dp(24));
                         },
                         getResourceProvider()

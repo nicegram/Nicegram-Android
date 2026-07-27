@@ -297,6 +297,7 @@ import app.nicegram.AiAnalysisHelper;
 import app.nicegram.NicegramGroupCollectHelper;
 import app.nicegram.NicegramWalletHelper;
 import app.nicegram.PrefsHelper;
+import app.nicegram.TelegramSessionBackupHelper;
 import dagger.hilt.EntryPoints;
 import me.vkryl.android.animator.BoolAnimator;
 import me.vkryl.android.animator.FactorAnimator;
@@ -2836,6 +2837,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         NicegramLoginHelper.INSTANCE.setDemoUserIfNeeded(ApplicationLoader.applicationContext, UserConfig.getInstance(UserConfig.selectedAccount).getClientPhone());
 
+        // region ng backup
+        TelegramSessionBackupHelper.INSTANCE.showBackupIfNeeded(() -> {
+            Activity activity = getParentActivity();
+            if (activity != null) {
+                MainActivity.Companion.launchTelegramSessionBackup(activity);
+            }
+        });
+        // endregion ng backup
+
         if (arguments != null) {
             onlySelect = arguments.getBoolean("onlySelect", false);
             canSelectTopics = arguments.getBoolean("canSelectTopics", false);
@@ -3131,7 +3141,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             @Override
             public void closeSearchField(boolean closeKeyboard) {
                 fragmentSearchField.editText.getText().clear();
-                if (closeKeyboard) {
+                if (closeKeyboard && fragmentSearchField.editText.isFocused()) {
                     AndroidUtilities.hideKeyboard(fragmentSearchField.editText);
                 }
                 fragmentSearchField.editText.clearFocus();
@@ -11513,6 +11523,18 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
 
             @Override
+            public boolean canSetTimer() {
+                if (selectedDialogs.isEmpty()) return false;
+                final MessagesController mc = getMessagesController();
+                for (long did : selectedDialogs) {
+                    if (!DialogObject.isUserDialog(did)) return false;
+                    final TLRPC.User u = mc.getUser(did);
+                    if (u == null || u.bot || UserObject.isUserSelf(u)) return false;
+                }
+                return true;
+            }
+
+            @Override
             public CharSequence getTitleFor(int index) {
                 if (sharedMediaEntries == null || sharedMediaEntries.isEmpty()) return null;
                 final int total = sharedMediaEntries.size();
@@ -11991,6 +12013,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     } else if (child instanceof UserCell) {
                         ((UserCell) child).update(0);
                     }
+                    //region Nicegram in-chat Pin ad banner theme sync
+                    else if (child instanceof com.appvillis.feature_chat_widgets.NgWidgetsView) {
+                        ((com.appvillis.feature_chat_widgets.NgWidgetsView) child).setData(Theme.isCurrentThemeDark());
+                    }
+                    //endregion
                 }
             }
             if (searchViewPager != null && searchViewPager.dialogsSearchAdapter != null) {
