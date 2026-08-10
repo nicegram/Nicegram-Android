@@ -1,7 +1,7 @@
 package com.appvillis.nicegram
 
 import android.content.Context
-import com.appvillis.feature_chat_widgets.NgWidgetsEntryPoint
+import com.appvillis.assistant_core.view.NgWidgetsEntryPoint
 import dagger.hilt.EntryPoints
 import kotlinx.coroutines.launch
 import timber.log.Timber

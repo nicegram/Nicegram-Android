@@ -3,6 +3,7 @@ package com.appvillis.nicegram
 import com.appvillis.core_domain.repository.user.UserRepository
 import com.appvillis.core_domain.usecase.user.AppSessionControlUseCase
 import com.appvillis.core_domain.usecase.user.FetchNicegramUserLoggedInStatusUseCase
+import com.appvillis.core_domain.usecase.user.SetDemoUserUseCase
 import com.appvillis.core_ui.domain.TgResourceProvider
 import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo
 import com.appvillis.feature_ai_chat.domain.ClearDataUseCase
@@ -23,7 +24,7 @@ import com.appvillis.nicegram_wallet.module_bridge.InChatResultManager
 import com.appvillis.nicegram_wallet.wallet_dapps.domain.BrowserResponseManager
 import com.appvillis.nicegram_wallet.wallet_dapps.domain.TgBrowserBridgeFactory
 import com.appvillis.nicegram_wallet.wallet_scanqr.QrResultEmitter
-import com.appvillis.nicegram_wallet.wallet_security.domain.VerificationManager
+import com.appvillis.core_domain.VerificationManager
 import com.appvillis.nicegram_wallet.wallet_storage.domain.GetCurrentWalletUseCase
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager
 import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.WalletPopupActivityLauncher
@@ -50,6 +51,7 @@ interface NicegramAssistantEntryPoint {
     fun getUserStatusUseCase(): FetchNicegramUserLoggedInStatusUseCase
     fun nicegramSessionCounter(): NicegramSessionCounter
     fun appSessionControlUseCase(): AppSessionControlUseCase
+    fun setDemoUserUseCase(): SetDemoUserUseCase
     fun getNicegramOnboardingStatusUseCase(): GetNicegramOnboardingStatusUseCase
     fun getChatPlacementsUseCase(): GetChatPlacementsUseCase
     fun getPinChatsPlacementsUseCase(): GetPinChatsPlacementsUseCase

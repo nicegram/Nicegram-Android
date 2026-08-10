@@ -4,13 +4,12 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import app.nicegram.bridge.att.AttChatListPeersProviderImpl
 import app.nicegram.bridge.att.AttPeerUsernameResolverImpl
-import com.appvillis.bridges.user.bridges.TgAuthBridge
+import com.appvillis.core_domain.bridge.TgUserBridge
 import com.appvillis.core_network.UserLocaleProvider
 import com.appvillis.core_ui.domain.TgImagesLoader
 import com.appvillis.feature_attention_economy.bridge.AttChatListPeersProvider
 import com.appvillis.feature_attention_economy.bridge.AttPeerUsernameResolver
 import com.appvillis.feature_auth.domain.TelegramBotBridge
-import com.appvillis.core_domain.TelegramIdBridge
 import com.appvillis.feature_keywords.domain.KeywordsSearchRetriever
 import com.appvillis.feature_telegram_session.api.TgLoginBridge
 import com.appvillis.feature_user_activities.domain.UserCommonGroupsMessagesRetriever
@@ -21,12 +20,12 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import org.telegram.messenger.LocaleController
-import org.telegram.messenger.UserConfig
 import java.util.Locale
 import javax.inject.Singleton
 
@@ -93,13 +92,6 @@ object TgBridgeModule {
 
     @Provides
     @Singleton
-    fun provideTgIdBridge() = object : TelegramIdBridge {
-        override val telegramId: Long
-            get() = UserConfig.getInstance(UserConfig.selectedAccount).clientUserId
-    }
-
-    @Provides
-    @Singleton
     fun provideTelegramBotBridge(): TelegramBotBridge = TelegramBotBridgeImpl()
 
     @Provides
@@ -125,9 +117,14 @@ object TgBridgeModule {
 
     @Provides
     @Singleton
-    fun provideTgAuthBridge(): TgAuthBridge = TgAuthBridgeImpl()
-
-    @Provides
-    @Singleton
     fun provideTgLoginBridge(): TgLoginBridge = TgLoginBridgeImpl()
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+interface TgBridgeBindsModule {
+
+    @Binds
+    @Singleton
+    fun bindTgUserBridge(impl: TgUserBridgeImpl): TgUserBridge
 }

@@ -118,6 +118,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
     private ArrayList<MediaDataController.KeywordResult> searchResultSuggestions;
     private String[] lastSearchKeyboardLanguage;
     private ArrayList<TLRPC.User> searchResultCommandsUsers;
+    private ArrayList<Boolean> searchResultCommandsEphemeral;
     private ArrayList<TLRPC.BotInlineResult> searchResultBotContext;
     private long searchResultBotContextSwitchUserId;
     private TLRPC.TL_inlineBotSwitchPM searchResultBotContextSwitch;
@@ -891,6 +892,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 searchResultUsernames = null;
                 searchResultUsernamesMap = null;
                 searchResultCommands = null;
+                searchResultCommandsEphemeral = null;
                 quickReplies = null;
                 searchResultSuggestions = null;
                 searchResultCommandsHelp = null;
@@ -973,7 +975,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             AndroidUtilities.cancelRunOnUIThread(checkAgainRunnable);
             checkAgainRunnable = null;
         }
-        if (TextUtils.isEmpty(text) || text.length() > MessagesController.getInstance(currentAccount).maxMessageLength) {
+        if (TextUtils.isEmpty(text) || text.length() > MessagesController.getInstance(currentAccount).getMaxMessageLength()) {
             searchForContextBot(null, null);
             delegate.needChangePanelVisibility(false);
             lastText = null;
@@ -1462,6 +1464,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             stickers = null;
             quickReplies = null;
             searchResultCommands = null;
+            searchResultCommandsEphemeral = null;
             searchResultCommandsHelp = null;
             searchResultCommandsUsers = null;
             searchResultSuggestions = null;
@@ -1553,6 +1556,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             searchResultUsernamesMap = null;
             quickReplies = null;
             searchResultCommands = null;
+            searchResultCommandsEphemeral = null;
             searchResultCommandsHelp = null;
             searchResultCommandsUsers = null;
             searchResultSuggestions = null;
@@ -1585,15 +1589,17 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             ArrayList<String> newResult = new ArrayList<>();
             ArrayList<String> newResultHelp = new ArrayList<>();
             ArrayList<TLRPC.User> newResultUsers = new ArrayList<>();
+            ArrayList<Boolean> newResultEphemeral = new ArrayList<>();
             final String command = result.toString().toLowerCase();
             for (int b = 0; b < botInfo.size(); b++) {
                 TL_bots.BotInfo info = botInfo.valueAt(b);
                 for (int a = 0; a < info.commands.size(); a++) {
-                    TLRPC.TL_botCommand botCommand = info.commands.get(a);
+                    TLRPC.BotCommand botCommand = info.commands.get(a);
                     if (botCommand != null && botCommand.command != null && botCommand.command.startsWith(command)) {
                         newResult.add("/" + botCommand.command);
                         newResultHelp.add(botCommand.description);
                         newResultUsers.add(messagesController.getUser(info.user_id));
+                        newResultEphemeral.add(botCommand.ephemeral);
                     }
                 }
             }
@@ -1623,6 +1629,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             searchResultCommands = newResult;
             searchResultCommandsHelp = newResultHelp;
             searchResultCommandsUsers = newResultUsers;
+            searchResultCommandsEphemeral = newResultEphemeral;
             contextMedia = false;
             searchResultBotContext = null;
             notifyDataSetChanged();
@@ -1641,6 +1648,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 searchResultUsernames = null;
                 searchResultUsernamesMap = null;
                 searchResultCommands = null;
+                searchResultCommandsEphemeral = null;
                 quickReplies = null;
                 searchResultCommandsHelp = null;
                 searchResultCommandsUsers = null;
@@ -1654,6 +1662,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             searchResultUsernamesMap = null;
             searchResultSuggestions = null;
             searchResultCommands = null;
+            searchResultCommandsEphemeral = null;
             quickReplies = null;
             searchResultCommandsHelp = null;
             searchResultCommandsUsers = null;
@@ -1889,14 +1898,23 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 if (i < 0 || i >= searchResultCommands.size()) {
                     return null;
                 }
+
+                final String result;
+                TLRPC.User searchUser = null;
                 if (searchResultCommandsUsers != null && (botsCount != 1 || info instanceof TLRPC.TL_channelFull)) {
                     if (searchResultCommandsUsers.get(i) != null) {
-                        return String.format("%s@%s", searchResultCommands.get(i), searchResultCommandsUsers.get(i) != null ? UserObject.getPublicUsername(searchResultCommandsUsers.get(i)) : "");
+                        searchUser = searchResultCommandsUsers.get(i);
+                        result = String.format("%s@%s", searchResultCommands.get(i), searchUser != null ? UserObject.getPublicUsername(searchUser) : "");
                     } else {
-                        return String.format("%s", searchResultCommands.get(i));
+                        result =String.format("%s", searchResultCommands.get(i));
                     }
+                } else {
+                    result = searchResultCommands.get(i);
                 }
-                return searchResultCommands.get(i);
+                if (searchResultCommandsEphemeral != null && searchResultCommandsEphemeral.get(i) == true) {
+                    return new EphemeralCommand(result, searchUser != null ? searchUser.id : 0);
+                }
+                return result;
             }
         } else if (searchResultQuickReplies != null) {
             if (i < 0 || i >= searchResultQuickReplies.size()) {
@@ -1905,6 +1923,16 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             return searchResultQuickReplies.get(i);
         }
         return null;
+    }
+
+    public static class EphemeralCommand {
+        public final String command;
+        public final long botUserId;
+
+        public EphemeralCommand(String command, long botUserId) {
+            this.command = command;
+            this.botUserId = botUserId;
+        }
     }
 
     public boolean isLongClickEnabled() {
@@ -2056,7 +2084,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             } else if (searchResultCommands != null && position >= 0 && position < searchResultCommands.size()) {
                 final String help = searchResultCommandsHelp != null && position >= 0 && position < searchResultCommandsHelp.size() ? searchResultCommandsHelp.get(position) : null;
                 final TLRPC.User user = searchResultCommandsUsers != null && position >= 0 && position < searchResultCommandsUsers.size() ? searchResultCommandsUsers.get(position) : null;
-                cell.setBotCommand(searchResultCommands.get(position), help, user);
+                final boolean ephemeral = searchResultCommandsEphemeral != null && position >= 0 && position < searchResultCommandsEphemeral.size() ? searchResultCommandsEphemeral.get(position) : null;
+                cell.setBotCommand(searchResultCommands.get(position), help, user, ephemeral);
             } else if (searchResultQuickReplies != null) {
                 ((MentionCell) holder.itemView).setText(searchResultQuickReplies.get(position));
             }

@@ -59,6 +59,7 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.utils.LeakDetector;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.ArticleViewer;
+import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.LaunchActivity;
@@ -212,6 +213,13 @@ public abstract class BaseFragment {
         if (BuildConfig.DEBUG_PRIVATE_VERSION) {
             LeakDetector.getInstance().add(this);
         }
+
+        Bulletin.addDelegate(this, new Bulletin.Delegate() {
+            @Override
+            public int getBottomOffset(int tag) {
+                return isSupportEdgeToEdge() ? AndroidUtilities.navigationBarHeight : 0;
+            }
+        });
     }
 
     public void setCurrentAccount(int account) {
@@ -475,7 +483,7 @@ public abstract class BaseFragment {
         }
 
         if (hasForceLightStatusBar() && !AndroidUtilities.isTablet() && getParentLayout().getLastFragment() == this && getParentActivity() != null && !finishing) {
-            AndroidUtilities.setLightStatusBar(getParentActivity().getWindow(), Theme.getColor(Theme.key_actionBarDefault) == Color.WHITE);
+            AndroidUtilities.setLightStatusBar(getParentActivity(), Theme.getColor(Theme.key_actionBarDefault) == Color.WHITE);
         }
 
         if (sheetsStack != null) {
@@ -988,7 +996,7 @@ public abstract class BaseFragment {
                 } else {
                     AndroidUtilities.setLightNavigationBar(bottomSheet[0], true);
                 }
-                AndroidUtilities.setLightStatusBar(getWindow(), fragment.isLightStatusBar());
+                AndroidUtilities.setLightStatusBar(this, fragment.isLightStatusBar());
                 fragment.onBottomSheetCreated();
             }
 
@@ -1426,6 +1434,16 @@ public abstract class BaseFragment {
 
     }
 
+
+    private Bulletin.Delegate bulletinDelegate;
+
+    public void setBulletinDelegate(Bulletin.Delegate bulletinDelegate) {
+        this.bulletinDelegate = bulletinDelegate;
+    }
+
+    public Bulletin.Delegate getBulletinDelegate() {
+        return bulletinDelegate;
+    }
 
 
     protected void dumpCanvas() {

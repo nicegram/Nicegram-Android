@@ -193,7 +193,10 @@ public class StoriesUtilities {
         params.showProgress = showProgress;
         if (params.currentState == STATE_EMPTY && params.progressToSate == 1f) {
             avatarImage.setImageCoords(params.originalAvatarRect);
+            canvas.save();
+            canvas.scale(scale, scale, params.originalAvatarRect.centerX(), params.originalAvatarRect.centerY());
             avatarImage.draw(canvas);
+            canvas.restore();
             return;
         }
         int restoreCount = canvas.save();
@@ -1280,6 +1283,14 @@ public class StoriesUtilities {
         Runnable longPressRunnable;
         public View child;
 
+        public boolean isAvatarClickable(long dialogId, TLRPC.Chat chat, TLRPC.User user) {
+            return false;
+        }
+
+        public boolean onAvatarClick(View view, long dialogId) {
+            return false;
+        }
+
         public boolean checkOnTouchEvent(MotionEvent event, View view) {
             child = view;
             StoriesController storiesController = MessagesController.getInstance(UserConfig.selectedAccount).getStoriesController();
@@ -1292,7 +1303,10 @@ public class StoriesUtilities {
                     chat = MessagesController.getInstance(UserConfig.selectedAccount).getChat(-dialogId);
                 }
                 boolean hasStories;
-                if (drawHiddenStoriesAsSegments) {
+
+                if (isAvatarClickable(dialogId, chat, user)) {
+                    hasStories = true;
+                } else if (drawHiddenStoriesAsSegments) {
                     hasStories = storiesController.hasHiddenStories();
                 } else {
                     if (dialogId > 0) {
@@ -1369,6 +1383,10 @@ public class StoriesUtilities {
         }
 
         private void processOpenStory(View view) {
+            if (onAvatarClick(view, dialogId)) {
+                return;
+            }
+
             int currentAccount = UserConfig.selectedAccount;
             MessagesController messagesController = MessagesController.getInstance(UserConfig.selectedAccount);
             StoriesController storiesController = messagesController.getStoriesController();

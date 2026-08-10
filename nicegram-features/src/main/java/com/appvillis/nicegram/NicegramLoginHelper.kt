@@ -2,7 +2,6 @@ package com.appvillis.nicegram
 
 import android.content.Context
 import android.net.Uri
-import com.appvillis.bridges.user.bridges.WalletUserBridgeImpl
 import com.appvillis.feature_account_export.ExportAccountsHelper
 import com.appvillis.nicegram.network.NicegramNetwork
 import dagger.hilt.EntryPoints
@@ -26,7 +25,8 @@ object NicegramLoginHelper {
     }
 
     fun setDemoUserIfNeeded(context: Context, phone: String) {
-        WalletUserBridgeImpl.isDemoUser = entryPoint(context).ngRevLoginUseCase().isReviewPhone(phone)
+        entryPoint(context).setDemoUserUseCase()
+            .invoke(entryPoint(context).ngRevLoginUseCase().isReviewPhone(phone))
     }
 
     fun checkLoginPhoneForSms(context: Context, phone: String, callback: (code: String?) -> Unit) {

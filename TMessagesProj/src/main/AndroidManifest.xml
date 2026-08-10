@@ -819,6 +819,13 @@
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
             android:value="org.telegram.messenger.chromecast.ChromecastOptionsProvider" />
 
+        <!--region Nicegram-->
+        <!-- Disable Sentry auto-init; Sentry is initialized manually in AppInit -->
+        <meta-data
+            android:name="io.sentry.auto-init"
+            android:value="false" />
+        <!--endregion-->
+
     </application>
 
     <queries>
