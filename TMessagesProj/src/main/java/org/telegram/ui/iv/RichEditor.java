@@ -20,6 +20,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
+import android.Manifest; // nicegram voice input
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -89,6 +90,13 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EmojiView;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RadialProgressView;
+import org.telegram.ui.Components.PermissionRequest; // nicegram voice input
+import com.appvillis.core_ui.domain.ToastMessage;
+import com.appvillis.core_ui.domain.ToastText;
+import com.appvillis.core_ui.widgets.ToastView;
+import com.appvillis.core_ui.widgets.ToastViewHelper;
+import com.appvillis.feature_voice_input.api.VoiceInputView; // nicegram voice input
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
@@ -320,6 +328,12 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
     private LinearLayout blocksLayout;
     private final ArrayList<Button> blockButtons = new ArrayList<>();
     private ImageView addButton;
+    // region nicegram voice input
+    private ImageView voiceButton;
+    private RadialProgressView voiceInputProgress;   // nicegram voice input: shown in place of the icon during autologin
+    private VoiceInputView voiceInputView;
+    private int savedBottomPanelVisibility = -1;
+    // endregion nicegram voice input
 
     private LinearLayout formattingPanel;
     private LinearLayout formattingPanelLayout;
@@ -781,6 +795,30 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
 
         bottomPanel.addView(blocksContainer2, LayoutHelper.createLinear(0, 44, 1f));
 
+        // region nicegram voice input: dictation button, tg-styled, sitting to the LEFT of the attach button.
+        voiceButton = new ImageView(context);
+        voiceButton.setImageResource(R.drawable.ic_sound_wave);
+        voiceButton.setScaleType(ImageView.ScaleType.CENTER);
+        voiceButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_windowBackgroundWhiteBlackText), PorterDuff.Mode.SRC_IN));
+        voiceButton.setBackground(withShadow(Theme.createRadSelectorDrawable(getThemedColor(Theme.key_windowBackgroundWhite), Theme.blendOver(getThemedColor(Theme.key_windowBackgroundWhite), getThemedColor(Theme.key_listSelector)), dp(22), dp(22))));
+        bottomPanel.addView(voiceButton, LayoutHelper.createLinear(44, 44, 0, Gravity.RIGHT | Gravity.CENTER_VERTICAL, 8, 0, 0, 0));
+        ScaleStateListAnimator.apply(voiceButton);
+        voiceButton.setContentDescription(getString(R.string.VoiceInput_TooltipTitle));
+        voiceButton.setOnClickListener(v -> {
+            ensureVoiceInputView();
+            if (voiceInputView != null) {
+                voiceInputView.onIconClicked();
+            }
+        });
+        // Spinner shown in the voice button's slot while a Nicegram autologin runs (see setVoiceInputAuthLoading).
+        voiceInputProgress = new RadialProgressView(context);
+        voiceInputProgress.setSize(dp(20));
+        voiceInputProgress.setStrokeWidth(2f);
+        voiceInputProgress.setProgressColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
+        voiceInputProgress.setVisibility(View.GONE);
+        bottomPanel.addView(voiceInputProgress, LayoutHelper.createLinear(44, 44, 0, Gravity.RIGHT | Gravity.CENTER_VERTICAL, 8, 0, 0, 0));
+        // endregion nicegram voice input
+
         addButton = new ImageView(context);
         addButton.setImageResource(R.drawable.outline_poll_attach_24);
         addButton.setScaleType(ImageView.ScaleType.CENTER);
@@ -999,6 +1037,13 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
         }
 
         return fragmentView = container;
+    }
+
+    @Override
+    public boolean isSwipeBackEnabled(MotionEvent event) {
+        if (listView != null && listView.textSelectionHelper.isInSelectionMode())
+            return false;
+        return super.isSwipeBackEnabled(event);
     }
 
     private static final int BOTTOM_PANEL_TOOLBAR = 0;
@@ -2474,8 +2519,84 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
 
     private boolean persistedDraftOnEnd;
 
+    // region nicegram voice input
+    // Lazily create the recording bar and wire it to this editor.
+    // Swaps the voice button for a spinner while a Nicegram autologin is in flight.
+    private void setVoiceInputAuthLoading(boolean loading) {
+        if (voiceInputProgress != null) {
+            voiceInputProgress.setVisibility(loading ? View.VISIBLE : View.GONE);
+        }
+        if (voiceButton != null) {
+            voiceButton.setEnabled(!loading);
+            voiceButton.setVisibility(loading ? View.GONE : View.VISIBLE);
+        }
+    }
+
+    private void ensureVoiceInputView() {
+        if (voiceInputView == null && bottomInnerContainer != null) {
+            VoiceInputView view = new VoiceInputView(getContext());
+            view.setDarkTheme(Theme.isCurrentThemeDark());
+            view.setOnRequestMicPermission(() -> {
+                if (PermissionRequest.hasPermission(Manifest.permission.RECORD_AUDIO)) {
+                    view.onMicPermissionResult(true);
+                } else {
+                    PermissionRequest.requestPermission(Manifest.permission.RECORD_AUDIO, view::onMicPermissionResult);
+                }
+            });
+            // While recording, hide the tg toolbar controls; our transparent bar takes their place.
+            view.setOnHideInputField(() -> {
+                savedBottomPanelVisibility = bottomPanel.getVisibility();
+                bottomPanel.setVisibility(View.INVISIBLE);
+            });
+            view.setOnShowInputField(() -> {
+                bottomPanel.setVisibility(savedBottomPanelVisibility != -1 ? savedBottomPanelVisibility : View.VISIBLE);
+                savedBottomPanelVisibility = -1;
+            });
+            view.setOnInsertText(this::insertVoiceText);
+            view.setOnGeoBlockError(() -> {
+                ToastView toastView = ToastView.Companion.newInstance(
+                        getContext(),
+                        new ToastMessage.Error(new ToastText.Raw(LocaleController.getString(R.string.VoiceInput_TranscribeGeoBlock))));
+                ToastViewHelper.INSTANCE.showViewToast(toastView, bulletinContainer, true, true, AndroidUtilities.dp(24));
+            });
+            view.setOnAuthLoading(loading -> setVoiceInputAuthLoading(loading));
+            view.setOnAuthError(() -> {
+                ToastView toastView = ToastView.Companion.newInstance(
+                        getContext(),
+                        new ToastMessage.Error(new ToastText.Raw(LocaleController.getString(R.string.Error_Default))));
+                ToastViewHelper.INSTANCE.showViewToast(toastView, bulletinContainer, true, true, AndroidUtilities.dp(24));
+            });
+            bottomInnerContainer.addView(view, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 8 + 44 + 8, Gravity.FILL_HORIZONTAL | Gravity.BOTTOM));
+            voiceInputView = view;
+        }
+    }
+
+    // nicegram voice input: insert the transcript at the cursor in the focused text block.
+    private void insertVoiceText(CharSequence text) {
+        if (text == null || listView == null) {
+            return;
+        }
+        RichEditText et = listView.findFocusedEditText();
+        if (et == null) {
+            return;
+        }
+        int i = et.getSelectionStart();
+        if (i < 0) {
+            i = et.length();
+        }
+        et.getText().insert(i, text);
+        et.setSelection(i + text.length());
+    }
+    // endregion nicegram voice input
+
     @Override
     public void onFragmentDestroy() {
+        // region nicegram voice input
+        if (voiceInputView != null) {
+            voiceInputView.destroy();
+            voiceInputView = null;
+        }
+        // endregion nicegram voice input
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
         if (!persistedDraftOnEnd) {
             persistDraft();

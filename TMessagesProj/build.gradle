@@ -2,6 +2,7 @@ import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'  // nicegram
+apply plugin: 'org.jetbrains.kotlin.plugin.compose' // nicegram compose
 apply plugin: 'dagger.hilt.android.plugin' // nicegram
 apply plugin: "com.google.devtools.ksp" // nicegram
 apply plugin: 'com.google.firebase.crashlytics' // nicegram
@@ -111,6 +112,10 @@ dependencies {
     // Compose Destinations
     implementation(internalLibs.raamcosta.destination.animations)
     ksp(internalLibs.raamcosta.destinations.ksp)
+
+    // nicegram compose
+    implementation(platform(internalLibs.androidx.compose.bom))
+    implementation(internalLibs.androidx.compose.ui)
     //endregion
 }
 
@@ -144,6 +149,7 @@ android {
     // region nicegram
     buildFeatures {
         viewBinding true
+        compose true
     }
     //endregion
 

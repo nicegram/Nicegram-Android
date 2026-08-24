@@ -13,6 +13,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.core_domain.entry.placements.PinnedChatsPlacementEntry;
 import com.appvillis.feature_account_export.ExportAccountsBottomSheetFragment;
 import com.appvillis.feature_account_export.domain.Account;
 import com.appvillis.feature_ai_shortcuts.AiShortcutsEntryPoint;
@@ -21,7 +22,6 @@ import com.appvillis.feature_nicegram_client.NicegramClientHelper;
 import com.appvillis.feature_nicegram_client.NicegramConsts;
 import com.appvillis.nicegram.NicegramPinChatsPlacementHelper;
 import com.appvillis.nicegram.NicegramPrefs;
-import com.appvillis.core_domain.entry.placements.PinnedChatsPlacementEntry;
 
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
@@ -39,6 +39,7 @@ import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextCheckCell;
+import org.telegram.ui.Cells.TextDetailSettingsCell;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
@@ -74,6 +75,8 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int hidePhoneNumberRow;
     private int doubleBottomRow;
     private int quickRepliesRow;
+    private int voiceTranscribeSectionRow;
+    private int voiceTranscribeModelRow;
     private int quickTranslateButton;
     private int shareChannelsInfoRow;
     private int shareBotsInfoRow;
@@ -113,6 +116,8 @@ public class NicegramSettingsActivity extends BaseFragment {
 
         nicegramSectionRow = rowCount++;
         unblockGuideRow = rowCount++;
+        voiceTranscribeSectionRow = rowCount++;
+        voiceTranscribeModelRow = rowCount++;
         accountSectionRow = rowCount++;
         accountSectionHeaderRow = rowCount++;
         maxAccountsRow = rowCount++;
@@ -168,6 +173,7 @@ public class NicegramSettingsActivity extends BaseFragment {
         listView.setVerticalScrollBarEnabled(false);
         frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         listView.setAdapter(adapter = new ListAdapter(context));
+        listView.setSections();
         listView.setOnItemClickListener((view, position, x, y) -> {
             boolean enabled = false;
             if (getParentActivity() == null) {
@@ -239,6 +245,8 @@ public class NicegramSettingsActivity extends BaseFragment {
                 }
             } else if (position == quickRepliesRow) {
                 presentFragment(new QuickRepliesNgFragment());
+            } else if (position == voiceTranscribeModelRow) {
+                presentFragment(new VoiceTranscriptionNgFragment());
             } else if (position == quickTranslateButton) {
                 enabled = PrefsHelper.INSTANCE.showQuickTranslateButton(currentAccount);
                 PrefsHelper.INSTANCE.enableQuickTranslateButton(currentAccount, !enabled);
@@ -340,7 +348,8 @@ public class NicegramSettingsActivity extends BaseFragment {
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return !(position == nicegramSectionRow || position == otherSectionRow || position == accountSectionRow);
+            return !(position == nicegramSectionRow || position == otherSectionRow
+                    || position == accountSectionRow || position == voiceTranscribeSectionRow);
         }
 
         @Override
@@ -352,21 +361,21 @@ public class NicegramSettingsActivity extends BaseFragment {
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view;
             switch (viewType) {
+                case 4:
+                    view = new TextDetailSettingsCell(mContext);
+                    break;
                 case 3:
                     view = new ShadowSectionCell(mContext);
                     break;
                 case 2:
                     view = new TextCell(mContext);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 case 1:
                     view = new TextCheckCell(mContext);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
                 case 0:
                 default:
                     view = new HeaderCell(mContext);
-                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
                     break;
             }
             return new RecyclerListView.Holder(view);
@@ -442,6 +451,17 @@ public class NicegramSettingsActivity extends BaseFragment {
                     }
                     break;
                 }
+                case 4: {
+                    TextDetailSettingsCell detailCell = (TextDetailSettingsCell) holder.itemView;
+                    if (position == voiceTranscribeModelRow) {
+                        String selectedModel = VoiceTranscribeHelper.INSTANCE.getSelectedModelName();
+                        detailCell.setTextAndValue(
+                                LocaleController.getString(R.string.VoiceInput_TranscribeModel),
+                                selectedModel != null ? selectedModel : "",
+                                false);
+                    }
+                    break;
+                }
                 case 3:
                     View sectionCell = holder.itemView;
                     sectionCell.setTag(position);
@@ -466,7 +486,10 @@ public class NicegramSettingsActivity extends BaseFragment {
                 return 1;
             } else if (position == unblockGuideRow || position == quickRepliesRow || position == importAccountRow || position == exportAccountsRow) {
                 return 2;
-            } else if (position == nicegramSectionRow || position == otherSectionRow || position == accountSectionRow) {
+            } else if (position == voiceTranscribeModelRow) {
+                return 4;
+            } else if (position == nicegramSectionRow || position == otherSectionRow || position == accountSectionRow
+                    || position == voiceTranscribeSectionRow) {
                 return 3;
             } else {
                 return 0;

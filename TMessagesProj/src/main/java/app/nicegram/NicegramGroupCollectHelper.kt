@@ -1,9 +1,6 @@
 package app.nicegram
 
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import android.util.Base64
 import app.nicegram.bridge.TgBridgeEntryPoint
 import com.appvillis.core_network.data.body.ChannelInfoRequest
 import com.appvillis.feature_nicegram_client.NicegramClientHelper
@@ -26,7 +23,6 @@ import org.telegram.messenger.MessagesController
 import org.telegram.messenger.MessagesStorage
 import org.telegram.messenger.UserConfig
 import org.telegram.tgnet.ConnectionsManager
-import org.telegram.tgnet.NativeByteBuffer
 import org.telegram.tgnet.TLObject
 import org.telegram.tgnet.TLRPC
 import org.telegram.tgnet.TLRPC.Chat
@@ -43,7 +39,6 @@ import org.telegram.tgnet.TLRPC.TL_messages_getExportedChatInvites
 import org.telegram.tgnet.TLRPC.User
 import org.telegram.ui.ChatActivity
 import timber.log.Timber
-import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
@@ -186,7 +181,6 @@ object NicegramGroupCollectHelper {
             val tlrpcChatFull: TLRPC.TL_messages_chatFull,
             val lang: String?,
             val type: String,
-            val avatarBase64: String?,
             val similarChannels: List<Chat>,
             val messages: List<Message>?,
         ) : MoreChatFull()
@@ -232,7 +226,6 @@ object NicegramGroupCollectHelper {
                             info.tlrpcChatFull.mapToInfo(
                                 lang = info.lang,
                                 type = info.type,
-                                avatarBase64 = info.avatarBase64,
                                 channelRecommendations = info.similarChannels,
                                 messagesInfo = messagesInfo
                             )
@@ -398,9 +391,7 @@ object NicegramGroupCollectHelper {
         messages: List<TLRPC.Message>?,
     ) {
         getSimilarChannels(currentAccount, chat, onSuccess = { channelRecommendations ->
-            addChannelInfoWithAvatar(
-                currentAccount,
-                chat,
+            addChannelInfo(
                 chatFull,
                 lang,
                 type,
@@ -412,9 +403,7 @@ object NicegramGroupCollectHelper {
             )
         }, onError = { error ->
             error.logError()
-            addChannelInfoWithAvatar(
-                currentAccount,
-                chat,
+            addChannelInfo(
                 chatFull,
                 lang,
                 type,
@@ -427,9 +416,7 @@ object NicegramGroupCollectHelper {
         })
     }
 
-    private fun addChannelInfoWithAvatar(
-        currentAccount: Int,
-        chat: TLRPC.Chat,
+    private fun addChannelInfo(
         chatFull: TLRPC.TL_messages_chatFull,
         lang: String?,
         type: String,
@@ -439,32 +426,16 @@ object NicegramGroupCollectHelper {
         channelRecommendations: List<Chat>,
         messages: List<Message>?,
     ) {
-        getAvatarFile(currentAccount, chat, onSuccess = { avatarBase64 ->
-            channelInfoList.add(
-                MoreChatFull.Data(
-                    chatFull,
-                    lang = lang,
-                    type = type,
-                    avatarBase64 = avatarBase64,
-                    similarChannels = channelRecommendations,
-                    messages = messages
-                )
+        channelInfoList.add(
+            MoreChatFull.Data(
+                chatFull,
+                lang = lang,
+                type = type,
+                similarChannels = channelRecommendations,
+                messages = messages
             )
-            requestSet.remove(username)
-        }, onError = { error ->
-            error.logError()
-            channelInfoList.add(
-                MoreChatFull.Data(
-                    chatFull,
-                    lang = lang,
-                    type = type,
-                    avatarBase64 = null,
-                    similarChannels = channelRecommendations,
-                    messages = messages
-                )
-            )
-            requestSet.remove(username)
-        })
+        )
+        requestSet.remove(username)
     }
 
     private fun getMessagesHistory(
@@ -498,50 +469,6 @@ object NicegramGroupCollectHelper {
 
                 } else onError(Error.InternalError("Error getting messages history"), null)
             }
-    }
-
-    private fun getAvatarFile(
-        currentAccount: Int,
-        chat: TLRPC.Chat,
-        onSuccess: (avatarBase64: String?) -> Unit,
-        onError: (Error) -> Unit
-    ) {
-        val photo = chat.photo
-        if (photo is TLRPC.TL_chatPhotoEmpty) {
-            onError(Error.InternalError("Chat photo is empty"))
-            return
-        }
-
-        try {
-            val imLocation = TLRPC.TL_inputPeerPhotoFileLocation().apply {
-                flags = photo.flags
-                big = true
-                peer = TLRPC.TL_inputPeerChannel().apply {
-                    channel_id = chat.id
-                    access_hash = chat.access_hash
-                }
-                photo_id = photo.photo_id
-            }
-            val avatarReq = TLRPC.TL_upload_getFile().apply {
-                flags = photo.flags
-                precise = false
-                cdn_supported = true
-                location = imLocation
-                offset = 0
-                limit = 256 * 256
-            }
-            ConnectionsManager.getInstance(currentAccount)
-                .sendRequest(avatarReq, { response: TLObject?, error: TL_error? ->
-                    if (error != null) {
-                        onError(Error.ServerError(error.code, error.text))
-                    } else if (response is TLRPC.TL_upload_file) {
-                        val avatar = response.bytes.getBase64EncodedString()
-                        onSuccess(avatar)
-                    } else onError(Error.InternalError("Error getting avatar file"))
-                }, null, null, 0, photo.dc_id, ConnectionsManager.ConnectionTypeDownload, true)
-        } catch (e: Exception) {
-            onError(Error.InternalError(e.message ?: "Internal Error"))
-        }
     }
 
     private fun getSimilarChannels(
@@ -656,16 +583,6 @@ object NicegramGroupCollectHelper {
             restrictions.add(reason.mapToData())
         }
 
-        var avatarBase64: String? = null
-        avatarDrawable?.let {
-            val bitmap = (it as? BitmapDrawable)?.bitmap
-            if (bitmap != null) {
-                val stream = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-                avatarBase64 = Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP)
-            }
-        }
-
         val pplCount = getPplCount(currentChat, chatInfo)
 
         try {
@@ -679,7 +596,6 @@ object NicegramGroupCollectHelper {
                 GroupCollectInfoData.CollectInfoData(
                     currentChat.id,
                     invites,
-                    avatarBase64,
                     restrictions,
                     currentChat.verified,
                     if (chatInfo != null) chatInfo.about else "",
@@ -776,7 +692,6 @@ object NicegramGroupCollectHelper {
     private fun TLRPC.TL_messages_chatFull.mapToInfo(
         lang: String?,
         type: String,
-        avatarBase64: String?,
         channelRecommendations: List<Chat>,
         messagesInfo: List<ChannelInfoRequest.MessageInformation>?,
     ): CollectGroupInfoUseCase.GroupCollectInfoData.CollectInfoData {
@@ -790,7 +705,6 @@ object NicegramGroupCollectHelper {
         return CollectGroupInfoUseCase.GroupCollectInfoData.CollectInfoData(
             groupId = chatFull.id,
             inviteLinks = inviteLinks,
-            iconBase64 = avatarBase64,
             restrictions = firstChat.restriction_reason.map { it.mapToData() },
             verified = firstChat.verified,
             about = chatFull.about,
@@ -822,13 +736,6 @@ object NicegramGroupCollectHelper {
     )
 
     private fun TLRPC.RestrictionReason.mapToData() = Restriction(platform, text, reason)
-
-    private fun NativeByteBuffer.getBase64EncodedString(): String? {
-        this.buffer.rewind()
-        val rawBytes = ByteArray(this.buffer.limit())
-        this.buffer.get(rawBytes)
-        return Base64.encodeToString(rawBytes, Base64.NO_WRAP)
-    }
 
     private sealed class Error(val message: String) {
         data class ServerError(val code: Int, val text: String) : Error(message = text)
@@ -870,7 +777,6 @@ object NicegramGroupCollectHelper {
                 GroupCollectInfoData.CollectInfoData(
                     groupId = chat.id,
                     inviteLinks = emptyList(),
-                    iconBase64 = null,
                     restrictions = chat.restriction_reason.map { it.mapToData() },
                     verified = chat.verified,
                     about = null,

@@ -115,6 +115,11 @@ import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.recyclerview.widget.ChatListItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.appvillis.core_ui.domain.ToastMessage;
+import com.appvillis.core_ui.domain.ToastText;
+import com.appvillis.core_ui.widgets.ToastView;
+import com.appvillis.core_ui.widgets.ToastViewHelper;
+import com.appvillis.feature_voice_input.api.VoiceInputView;
 import com.appvillis.nicegram.NicegramTranslator;
 
 import org.telegram.messenger.AccountInstance;
@@ -137,13 +142,13 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.RichMessageLayout;
 import org.telegram.messenger.MessageSuggestionParams;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.RichMessageLayout;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.SharedPrefsHelper;
@@ -227,7 +232,6 @@ import java.util.Locale;
 import app.nicegram.LanguagesToTranslateActivity;
 import app.nicegram.PrefsHelper;
 import kotlin.Unit;
-
 import me.vkryl.android.animator.BoolAnimator;
 import me.vkryl.android.animator.FactorAnimator;
 
@@ -640,6 +644,18 @@ public class ChatActivityEnterView extends FrameLayout implements
     private ImageView attachButton;
     private AiButtonDrawable aiButtonIcon;
     private ImageView aiButton;
+    // region nicegram voice input
+    private ImageView voiceInputButton;
+    private RadialProgressView voiceInputProgress;   // nicegram voice input: shown in place of the icon during autologin
+    private float voiceInputTargetX = Float.NaN;     // nicegram voice input: column the icon is parked in/heading to
+    private VoiceInputView voiceInputView;
+    private boolean voiceInputFieldHidden;
+    private int savedAttachButtonVisibility = -1;   // nicegram voice input: restore attach controls after the transparent bar
+    private int savedAttachLayoutVisibility = -1;
+    private int savedMessageContainerRightMargin = -1; // nicegram voice input: full-width container while the transparent bar is shown
+    private int savedAiButtonVisibility = -1;    // nicegram voice input: restore the AI-editor buttons after the transparent bar
+    private int savedRichButtonVisibility = -1;
+    // endregion nicegram voice input
     private ImageView richButton;
     private float attachButtonAlpha = 1.0f;
     private ImageView suggestButton;
@@ -3219,6 +3235,40 @@ public class ChatActivityEnterView extends FrameLayout implements
         sendButtonContainer.addView(audioVideoButtonContainer, LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.RIGHT | Gravity.BOTTOM));
         audioVideoButtonContainer.setFocusable(true);
         audioVideoButtonContainer.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+
+        // region nicegram voice input — icon sits in messageEditTextContainer, immediately LEFT
+        // of the attach (paperclip) button. NOTE: sendButtonContainer overlaps this container's
+        // right edge, so placing the icon there collided with the attach button ("button cover
+        // button"). attachButton is at messageEditTextContainer BOTTOM|RIGHT margin 0; we sit one
+        // slot left at margin DEFAULT_HEIGHT.
+        voiceInputButton = new ImageView(context);
+        voiceInputButton.setImageResource(R.drawable.ic_sound_wave);
+        voiceInputButton.setScaleType(ImageView.ScaleType.CENTER);
+        voiceInputButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_glass_defaultIcon), PorterDuff.Mode.MULTIPLY));
+        voiceInputButton.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_listSelector), Theme.RIPPLE_MASK_CIRCLE_20DP, dp(16)));
+        voiceInputButton.setContentDescription(getString(R.string.VoiceInput_TooltipTitle));
+        ScaleStateListAnimator.apply(voiceInputButton);
+        messageEditTextContainer.addView(voiceInputButton, LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.RIGHT, 0, 0, DEFAULT_HEIGHT, 0));
+        voiceInputButton.setOnClickListener(v -> {
+            ensureVoiceInputView();
+            if (voiceInputView != null) {
+                voiceInputView.onIconClicked();
+            }
+        });
+        // Spinner shown in the icon's slot while a Nicegram autologin runs (see setVoiceInputAuthLoading).
+        voiceInputProgress = new RadialProgressView(context);
+        voiceInputProgress.setSize(dp(20));
+        voiceInputProgress.setStrokeWidth(2f);
+        voiceInputProgress.setProgressColor(getThemedColor(Theme.key_glass_defaultIcon));
+        voiceInputProgress.setVisibility(GONE);
+        messageEditTextContainer.addView(voiceInputProgress, LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.RIGHT, 0, 0, DEFAULT_HEIGHT, 0));
+        updateVoiceInputButtonVisibility();
+        // A sibling can appear asynchronously — scheduledButton shows up once Telegram has loaded the
+        // chat's scheduled messages, well after our last recompute and with no updateFieldRight behind
+        // it — which would leave the icon parked in a column that is no longer free. Every such change
+        // relayouts this container, so re-check here.
+        messageEditTextContainer.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or2, ob) -> checkVoiceInputButtonSlot());
+        // endregion nicegram voice input
 
 //        audioVideoButtonContainer.setOnTouchListener((view, motionEvent) -> {
 //            createRecordCircle();
@@ -6123,6 +6173,308 @@ public class ChatActivityEnterView extends FrameLayout implements
         }
     }
 
+    // region nicegram voice input
+    // Swaps the voice icon for a spinner while a Nicegram autologin is in flight.
+    private void setVoiceInputAuthLoading(boolean loading) {
+        if (voiceInputProgress != null) {
+            voiceInputProgress.setVisibility(loading ? VISIBLE : GONE);
+        }
+        if (voiceInputButton != null) {
+            voiceInputButton.setEnabled(!loading);
+            if (loading) {
+                voiceInputButton.setVisibility(GONE);
+            } else {
+                updateVoiceInputButtonVisibility(false);
+            }
+        }
+    }
+
+    private void ensureVoiceInputView() {
+        // Stories reuse this enter view inside StoryViewer's own WindowManager window, whose root
+        // has no ViewTreeLifecycleOwner — a ComposeView cannot be hosted there (NCG-13008).
+        if (isStories) {
+            return;
+        }
+        if (voiceInputView == null && parentActivity != null) {
+            VoiceInputView view = new VoiceInputView(parentActivity);
+            view.setDarkTheme(Theme.isCurrentThemeDark());
+            view.setOnRequestMicPermission(() -> {
+                if (PermissionRequest.hasPermission(Manifest.permission.RECORD_AUDIO)) {
+                    view.onMicPermissionResult(true);
+                } else {
+                    PermissionRequest.requestPermission(Manifest.permission.RECORD_AUDIO, view::onMicPermissionResult);
+                }
+            });
+            view.setOnHideInputField(() -> setVoiceInputFieldVisible(false));
+            view.setOnShowInputField(() -> setVoiceInputFieldVisible(true));
+            view.setOnInsertText(text -> appendVoiceInputText(text));
+            view.setOnShowTooltip(() -> showVoiceInputTooltip(voiceInputButton));
+            view.setOnGeoBlockError(() -> {
+                View toastParent = parentFragment != null ? parentFragment.getFragmentView() : getRootView();
+                ToastView toastView = ToastView.Companion.newInstance(
+                        getContext(),
+                        new ToastMessage.Error(new ToastText.Raw(LocaleController.getString(R.string.VoiceInput_TranscribeGeoBlock))));
+                ToastViewHelper.INSTANCE.showViewToast(toastView, toastParent, true, true, AndroidUtilities.dp(24));
+            });
+            view.setOnAuthLoading(loading -> setVoiceInputAuthLoading(loading));
+            view.setOnAuthError(() -> {
+                View toastParent = parentFragment != null ? parentFragment.getFragmentView() : getRootView();
+                ToastView toastView = ToastView.Companion.newInstance(
+                        getContext(),
+                        new ToastMessage.Error(new ToastText.Raw(LocaleController.getString(R.string.Error_Default))));
+                ToastViewHelper.INSTANCE.showViewToast(toastView, toastParent, true, true, AndroidUtilities.dp(24));
+            });
+            // Host lives in messageEditTextContainer so its measured height drives the input-row height
+            // (the bar expands the row instead of being clipped). Full width — and full-width touchability —
+            // comes from dropping the container's right inset while the bar is shown (see
+            // setVoiceInputFieldVisible); touches are never dispatched outside a view's bounds.
+            messageEditTextContainer.addView(view, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM));
+            voiceInputView = view;
+        }
+    }
+
+    // Slots are DEFAULT_HEIGHT-wide columns counted from messageEditTextContainer's right edge:
+    // attachButton owns slot 0, attachLayout's children (notify/gift/suggest/bot) stack leftwards from
+    // slot 1, and scheduledButton sits at 1 + gift + bot (see its setTranslationX override). Park our
+    // icon in the first column none of them claim — pinning it to slot 1 let Telegram's buttons draw
+    // on top of it in Saved Messages (scheduledButton) and bot chats (botButton). NCG-13008.
+    private int voiceInputFreeSlot() {
+        boolean[] taken = new boolean[6];
+        boolean emptyField = messageEditText == null
+            || AndroidUtilities.getTrimmedString(messageEditText.getTextToUse()).length() == 0;
+        // Attach and its stack collapse into the ⋮ menu once the field has text, freeing their columns.
+        // Their own visibility is stale while that collapse is being undone: Telegram restores
+        // attachButton/attachLayout AFTER updateFieldRight runs, so reading it parked us underneath
+        // botButton as soon as the field was cleared. The attach column is owned whenever the field is
+        // empty, and the stack members' own visibility is already correct at that point.
+        if (emptyField) {
+            if (attachButton != null) {
+                taken[0] = true;
+            }
+            int stacked = 0;
+            if (notifyButton != null && notifyButton.getVisibility() == VISIBLE) stacked++;
+            if (giftButton != null && giftButton.getVisibility() == VISIBLE) stacked++;
+            if (suggestButton != null && suggestButton.getVisibility() == VISIBLE) stacked++;
+            if (botButton != null && botButton.getVisibility() == VISIBLE) stacked++;
+            for (int i = 1; i <= stacked && i < taken.length; i++) {
+                taken[i] = true;
+            }
+        }
+        if (scheduledButton != null && scheduledButton.getVisibility() == VISIBLE) {
+            int slot = 1
+                + (giftButton != null && giftButton.getVisibility() == VISIBLE ? 1 : 0)
+                + (botButton != null && botButton.getVisibility() == VISIBLE ? 1 : 0);
+            if (slot < taken.length) {
+                taken[slot] = true;
+            }
+        }
+        for (int i = 0; i < taken.length; i++) {
+            if (!taken[i]) {
+                return i;
+            }
+        }
+        return taken.length;
+    }
+
+    // Re-parks the icon when a sibling button changed the column layout. No-op while the icon already
+    // sits in (or animates towards) the free column, so the typing slide is never restarted.
+    private void checkVoiceInputButtonSlot() {
+        if (voiceInputButton == null || voiceInputButton.getVisibility() != VISIBLE) {
+            return;
+        }
+        float target = dp((1 - voiceInputFreeSlot()) * DEFAULT_HEIGHT);
+        if (!Float.isNaN(voiceInputTargetX) && Math.abs(voiceInputTargetX - target) < 0.5f) {
+            return;
+        }
+        updateVoiceInputButtonVisibility(true);
+    }
+
+    private void updateVoiceInputButtonVisibility() {
+        updateVoiceInputButtonVisibility(true);
+    }
+
+    // The voice icon stays visible while typing and slides into the attach button's slot once the attach
+    // control collapses into the ⋮ menu (i.e. the field has text). It hides only while editing a message,
+    // during Telegram's own audio/video recording, or while our recording bar has replaced the input row —
+    // so it never sits on top of Telegram's own record/send UI. alpha/scale (show/hide) and translationX
+    // (the slide) are animated together (150ms decelerate).
+    private void updateVoiceInputButtonVisibility(boolean animated) {
+        if (voiceInputButton == null) {
+            return;
+        }
+        // Voice input is not offered in the Stories reply bar (see ensureVoiceInputView) — hide the
+        // icon outright so it never sits there as a dead control.
+        if (isStories) {
+            voiceInputButton.animate().cancel();
+            voiceInputButton.setVisibility(GONE);
+            return;
+        }
+        boolean show = editingMessageObject == null
+            && !recordingAudioVideo
+            && !voiceInputFieldHidden;
+        // The icon is laid out in slot 1; shift it to whichever column is actually free, so it slides
+        // into the attach slot when text collapses that stack and steps further left when Telegram
+        // shows its own buttons there. messageEditText's right inset keeps text clear of it.
+        float targetTranslationX = show ? dp((1 - voiceInputFreeSlot()) * DEFAULT_HEIGHT) : 0f;
+        voiceInputTargetX = targetTranslationX;
+        if (voiceInputProgress != null) {
+            voiceInputProgress.setTranslationX(targetTranslationX);   // spinner shares the icon's slot
+        }
+        long duration = animated ? 150 : 0;
+
+        voiceInputButton.animate().cancel();
+        if (show) {
+            if (voiceInputButton.getVisibility() != VISIBLE) {
+                voiceInputButton.setVisibility(VISIBLE);
+                voiceInputButton.setAlpha(0f);
+                voiceInputButton.setScaleX(0.5f);
+                voiceInputButton.setScaleY(0.5f);
+                voiceInputButton.setTranslationX(targetTranslationX);
+            }
+            voiceInputButton.animate()
+                .alpha(1f).scaleX(1f).scaleY(1f).translationX(targetTranslationX)
+                .setDuration(duration)
+                .setInterpolator(new DecelerateInterpolator())
+                .start();
+        } else {
+            voiceInputButton.animate()
+                .alpha(0f).scaleX(0.5f).scaleY(0.5f)
+                .setDuration(duration)
+                .setInterpolator(new DecelerateInterpolator())
+                .withEndAction(() -> {
+                    voiceInputButton.setVisibility(GONE);
+                    voiceInputButton.setAlpha(1f);
+                    voiceInputButton.setScaleX(1f);
+                    voiceInputButton.setScaleY(1f);
+                    voiceInputButton.setTranslationX(0f);
+                })
+                .start();
+        }
+    }
+
+    // Inserts transcribed text at the cursor (appends to the end if there's no selection), preserving
+    // whatever the user already typed.
+    private void appendVoiceInputText(CharSequence text) {
+        if (messageEditText == null || text == null) {
+            return;
+        }
+        int len = messageEditText.getText().length();
+        int start = messageEditText.getSelectionStart();
+        int end = messageEditText.getSelectionEnd();
+        if (start < 0 || end < 0) {
+            start = end = len;
+        }
+        int from = Math.min(start, end);
+        int to = Math.max(start, end);
+        messageEditText.getText().replace(from, to, text);
+        messageEditText.setSelection(from + text.length());
+    }
+
+    // Hides the real input row while the voice recording bar replaces it; restores it afterwards.
+    private void setVoiceInputFieldVisible(boolean visible) {
+        voiceInputFieldHidden = !visible;
+        if (messageEditText != null) {
+            messageEditText.setVisibility(visible ? VISIBLE : GONE);
+        }
+        if (emojiButton != null) {
+            emojiButton.setVisibility(visible ? VISIBLE : GONE);
+        }
+        if (sendButtonContainer != null) {
+            sendButtonContainer.setVisibility(visible ? VISIBLE : GONE);
+        }
+        // The recording bar is transparent, so also hide the trailing attach controls that would
+        // otherwise show through it; restore their prior visibility when the bar goes away.
+        if (!visible) {
+            // Widen the container to the full row width so the transparent bar is both drawn AND
+            // touchable end-to-end (otherwise the right-hand confirm button gets no touches).
+            MarginLayoutParams lp = (MarginLayoutParams) messageEditTextContainer.getLayoutParams();
+            savedMessageContainerRightMargin = lp.rightMargin;
+            lp.rightMargin = 0;
+            messageEditTextContainer.setLayoutParams(lp);
+            if (attachButton != null) {
+                savedAttachButtonVisibility = attachButton.getVisibility();
+                attachButton.setVisibility(GONE);
+            }
+            if (attachLayout != null) {
+                savedAttachLayoutVisibility = attachLayout.getVisibility();
+                attachLayout.setVisibility(GONE);
+            }
+            // The AI-editor buttons (aiButton / richButton) sit in the input row when there's text
+            // and would bleed through the transparent recording bar — hide them too.
+            if (aiButton != null) {
+                savedAiButtonVisibility = aiButton.getVisibility();
+                aiButton.setVisibility(GONE);
+            }
+            if (richButton != null) {
+                savedRichButtonVisibility = richButton.getVisibility();
+                richButton.setVisibility(GONE);
+            }
+        } else {
+            if (attachButton != null && savedAttachButtonVisibility != -1) {
+                attachButton.setVisibility(savedAttachButtonVisibility);
+                savedAttachButtonVisibility = -1;
+            }
+            if (attachLayout != null && savedAttachLayoutVisibility != -1) {
+                attachLayout.setVisibility(savedAttachLayoutVisibility);
+                savedAttachLayoutVisibility = -1;
+            }
+            if (aiButton != null && savedAiButtonVisibility != -1) {
+                aiButton.setVisibility(savedAiButtonVisibility);
+                savedAiButtonVisibility = -1;
+            }
+            if (richButton != null && savedRichButtonVisibility != -1) {
+                richButton.setVisibility(savedRichButtonVisibility);
+                savedRichButtonVisibility = -1;
+            }
+            if (savedMessageContainerRightMargin != -1) {
+                MarginLayoutParams lp = (MarginLayoutParams) messageEditTextContainer.getLayoutParams();
+                lp.rightMargin = savedMessageContainerRightMargin;
+                messageEditTextContainer.setLayoutParams(lp);
+                savedMessageContainerRightMargin = -1;
+            }
+        }
+        updateVoiceInputButtonVisibility();
+    }
+
+    // Builds the first-open tooltip (title bold + subtitle) anchored under the voice icon.
+    private void showVoiceInputTooltip(View anchor) {
+        if (parentActivity == null || anchor == null) {
+            return;
+        }
+        final HintView2 hint = new HintView2(getContext(), HintView2.DIRECTION_BOTTOM);
+        hint.setMultilineText(true);
+        SpannableStringBuilder text = new SpannableStringBuilder();
+        int titleStart = text.length();
+        text.append(getString(R.string.VoiceInput_TooltipTitle));
+        text.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), titleStart, text.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        text.append("\n");
+        text.append(getString(R.string.VoiceInput_TooltipSubtitle));
+        hint.setText(text);
+        float jointPx = anchor.getWidth() / 2f;
+        View v = anchor;
+        while (v != null && v != this) {
+            jointPx += v.getX();
+            v = (v.getParent() instanceof View) ? (View) v.getParent() : null;
+        }
+        hint.setJointPx(0f, jointPx);
+        addView(hint, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 200, Gravity.TOP, 0, -200 + 4, 0, 0));
+        hint.setOnHiddenListener(() -> {
+            removeView(hint);
+            tintVoiceInputButton(Theme.key_glass_defaultIcon); // revert to default once the tooltip is gone
+        });
+        hint.setDuration(5000L);
+        tintVoiceInputButton(Theme.key_windowBackgroundWhiteBlueText); // highlight (primary) while the tooltip is shown
+        hint.show();
+    }
+
+    // Tints the voice icon: primary (accent) while the tooltip is visible, default otherwise.
+    private void tintVoiceInputButton(int colorKey) {
+        if (voiceInputButton != null) {
+            voiceInputButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(colorKey), PorterDuff.Mode.MULTIPLY));
+        }
+    }
+    // endregion nicegram voice input
+
     private boolean shownRichButton;
     private void showRichButton(boolean show_) {
         final boolean show = (richDraftActive || show_) && parentFragment != null && !parentFragment.isSecretChat() && editingMessageObject == null && MessagesController.getInstance(currentAccount).richEditorAvailable();
@@ -6495,6 +6847,12 @@ public class ChatActivityEnterView extends FrameLayout implements
             MediaDataController.getInstance(currentAccount).setDraftVoiceRegion(dialog_id, parentFragment != null && parentFragment.isTopic ? parentFragment.getTopicId() : 0, audioTimelineView == null ? 0.0f : audioTimelineView.getAudioLeft(), audioTimelineView == null ? 1.0f : audioTimelineView.getAudioRight());
         }
         destroyed = true;
+        // region nicegram voice input
+        if (voiceInputView != null) {
+            voiceInputView.destroy();
+            voiceInputView = null;
+        }
+        // endregion nicegram voice input
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.recordStarted);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.recordPaused);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.recordResumed);
@@ -6653,6 +7011,13 @@ public class ChatActivityEnterView extends FrameLayout implements
                 AndroidUtilities.runOnUIThread(openKeyboardRunnable, 100);
             }
         }
+
+        // region nicegram voice input: ensure the host is present so its ViewModel composes on open and
+        // fires the first-open tooltip (gated once-ever inside the ViewModel).
+        ensureVoiceInputView();
+        // The Stories host assigns isStories after createView(), so re-evaluate the icon here.
+        updateVoiceInputButtonVisibility(false);
+        // endregion nicegram voice input
     }
 
     @Override
@@ -7909,6 +8274,9 @@ public class ChatActivityEnterView extends FrameLayout implements
     }
 
     public void checkSendButton(boolean animated) {
+        // region nicegram voice input
+        updateVoiceInputButtonVisibility();
+        // endregion nicegram voice input
         if (editingMessageObject != null || recordingAudioVideo) {
             return;
         }
@@ -8786,6 +9154,16 @@ public class ChatActivityEnterView extends FrameLayout implements
         if (doneButton != null && doneButton.getVisibility() == VISIBLE) {
             layoutParams.rightMargin = Math.max(layoutParams.rightMargin, Math.max(0, doneButton.width() - dp(DEFAULT_HEIGHT)));
         }
+        // region nicegram voice input
+        // Our always-visible voice icon occupies one button slot inside messageEditTextContainer
+        // (it slides into the attach position once text is present). Telegram reclaims that slot for
+        // the text field when the attach button hides — reserve it back so a full line of text never
+        // renders underneath the icon and hides it (voice-input design req. "not covered by text").
+        if (voiceInputButton != null && voiceInputButton.getVisibility() == VISIBLE
+                && editingMessageObject == null && !recordingAudioVideo) {
+            layoutParams.rightMargin += dp(DEFAULT_HEIGHT);
+        }
+        // endregion nicegram voice input
         if (oldRightMargin != layoutParams.rightMargin) {
             messageEditText.setLayoutParams(layoutParams);
         }
@@ -8794,6 +9172,10 @@ public class ChatActivityEnterView extends FrameLayout implements
             layoutParams2.rightMargin = editingMessageObject == null ? Math.max(0, sendButton.width() - dp(DEFAULT_HEIGHT)) : 0;
             recordedAudioPanel.setLayoutParams(layoutParams2);
         }
+        // region nicegram voice input: this method runs on every change to Telegram's right-hand button
+        // stack (attach/bot/notify/scheduled), which is exactly when the icon's free column changes.
+        updateVoiceInputButtonVisibility(true);
+        // endregion nicegram voice input
     }
 
     public void startMessageTransition() {
@@ -8813,6 +9195,9 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     private int lastRecordState;
     protected void updateRecordInterface(int recordState, boolean animated) {
+        // region nicegram voice input: keep the mic icon in sync with Telegram's own record start/stop
+        updateVoiceInputButtonVisibility(true);
+        // endregion nicegram voice input
         if (moveToSendStateRunnable != null) {
             AndroidUtilities.cancelRunOnUIThread(moveToSendStateRunnable);
             moveToSendStateRunnable = null;
