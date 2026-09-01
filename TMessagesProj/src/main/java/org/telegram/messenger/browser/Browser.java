@@ -229,6 +229,7 @@ public class Browser {
             url.matches("^(https://)?t\\.me/iv\\??(/.*|$)") || // t.me/iv?
             url.matches("^(https://)?telegram\\.org/(blog|tour)(/.*|$)") || // telegram.org/blog, telegram.org/tour
             url.matches("^(https://)?fragment\\.com(/.*|$)") || // fragment.com
+            url.contains("https://nicegram.me") ||
             url.contains("https://nicegram.app")
         );
     }
@@ -686,7 +687,8 @@ public class Browser {
     }
 
     public static boolean isInternalUri(Uri uri, boolean all, boolean[] forceBrowser) {
-        if (uri.toString().contains("https://nicegram.app/deeplink")
+        if (uri.toString().contains("https://nicegram.me/deeplink")
+                || uri.toString().contains("https://nicegram.app/deeplink")
                 || uri.toString().contains("ncg://")
         ) return true;
 

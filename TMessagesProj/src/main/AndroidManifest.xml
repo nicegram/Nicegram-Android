@@ -374,6 +374,22 @@
 
                 <data android:scheme="https"/>
                 <data android:scheme="http"/>
+                <data android:host="nicegram.me"/>
+
+                <data android:pathPrefix="/deeplink"/>
+                <data android:pathPrefix="/tc"/>
+                <data android:pathPrefix="/wc"/>
+            </intent-filter>
+            <!-- Legacy host, kept for links already in the wild. Not auto-verified:
+                 nicegram.app no longer resolves, and on Android 11 and below a failed
+                 host invalidates verification for the whole filter. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="https"/>
+                <data android:scheme="http"/>
                 <data android:host="nicegram.app"/>
 
                 <data android:pathPrefix="/deeplink"/>

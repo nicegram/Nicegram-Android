@@ -37,7 +37,7 @@ object NicegramTranslator {
                         .get()
 
                     try {
-                        val data = document.select(RESULT_HTML_ID).first().html()
+                        val data = document.select(RESULT_HTML_ID).first()!!.html()
                         resultText += data.replace("$NEW_LINE_REPLACEMENT ", "\n")
                             .replace(NEW_LINE_REPLACEMENT, "\n")
                     } catch (e: Exception) {

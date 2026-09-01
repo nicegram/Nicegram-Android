@@ -22,6 +22,7 @@ class NicegramDeepLinksHelper @Inject constructor(
         private val ignoredDomains = listOf(
             "github.com",
             "nicegram.app",
+            "nicegram.me",
             "t.me",
             "telegram.me"
         )

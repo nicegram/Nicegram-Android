@@ -11,4 +11,11 @@ object VoiceTranscribeHelper {
 
     fun getSelectedModelName(): String? =
         entryPoint().fetchSelectedTranscriptionModelUseCase().invoke(Unit)?.name
+
+    fun isTextCleanupEnabled(): Boolean =
+        entryPoint().isNeedToCleanupTranscriptUseCase().invoke(Unit)
+
+    fun setTextCleanupEnabled(value: Boolean) {
+        entryPoint().setTextCleanupEnabledUseCase().invoke(value)
+    }
 }

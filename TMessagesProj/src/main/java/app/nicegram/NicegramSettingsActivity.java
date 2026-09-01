@@ -76,7 +76,9 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int doubleBottomRow;
     private int quickRepliesRow;
     private int voiceTranscribeSectionRow;
+    private int voiceTranscribeSectionHeaderRow;
     private int voiceTranscribeModelRow;
+    private int textCleanupRow;
     private int quickTranslateButton;
     private int shareChannelsInfoRow;
     private int shareBotsInfoRow;
@@ -117,7 +119,9 @@ public class NicegramSettingsActivity extends BaseFragment {
         nicegramSectionRow = rowCount++;
         unblockGuideRow = rowCount++;
         voiceTranscribeSectionRow = rowCount++;
+        voiceTranscribeSectionHeaderRow = rowCount++;
         voiceTranscribeModelRow = rowCount++;
+        textCleanupRow = rowCount++;
         accountSectionRow = rowCount++;
         accountSectionHeaderRow = rowCount++;
         maxAccountsRow = rowCount++;
@@ -247,6 +251,9 @@ public class NicegramSettingsActivity extends BaseFragment {
                 presentFragment(new QuickRepliesNgFragment());
             } else if (position == voiceTranscribeModelRow) {
                 presentFragment(new VoiceTranscriptionNgFragment());
+            } else if (position == textCleanupRow) {
+                enabled = VoiceTranscribeHelper.INSTANCE.isTextCleanupEnabled();
+                VoiceTranscribeHelper.INSTANCE.setTextCleanupEnabled(!enabled);
             } else if (position == quickTranslateButton) {
                 enabled = PrefsHelper.INSTANCE.showQuickTranslateButton(currentAccount);
                 PrefsHelper.INSTANCE.enableQuickTranslateButton(currentAccount, !enabled);
@@ -390,6 +397,8 @@ public class NicegramSettingsActivity extends BaseFragment {
                         headerCell.setText(LocaleController.getString(R.string.Nicegram_PinSection));
                     } else if (position == accountSectionHeaderRow) {
                         headerCell.setText(LocaleController.getString(R.string.Ng_AccountsExport_Accounts));
+                    } else if (position == voiceTranscribeSectionHeaderRow) {
+                        headerCell.setText(LocaleController.getString(R.string.VoiceInput_TranscriptionSection));
                     }
                     break;
                 }
@@ -435,6 +444,13 @@ public class NicegramSettingsActivity extends BaseFragment {
                     } else if (position == quickTranslateButton) {
                         boolean checked = PrefsHelper.INSTANCE.showQuickTranslateButton(currentAccount);
                         checkCell.setTextAndCheck(LocaleController.getString(R.string.NicegramQuickTranslateButton), checked, false);
+                    } else if (position == textCleanupRow) {
+                        checkCell.setTextAndValueAndCheck(
+                                LocaleController.getString(R.string.VoiceInput_TextCleanup),
+                                LocaleController.getString(R.string.VoiceInput_TextCleanupDesc),
+                                VoiceTranscribeHelper.INSTANCE.isTextCleanupEnabled(),
+                                true,
+                                false);
                     }
                     break;
                 }
@@ -456,7 +472,7 @@ public class NicegramSettingsActivity extends BaseFragment {
                     if (position == voiceTranscribeModelRow) {
                         String selectedModel = VoiceTranscribeHelper.INSTANCE.getSelectedModelName();
                         detailCell.setTextAndValue(
-                                LocaleController.getString(R.string.VoiceInput_TranscribeModel),
+                                LocaleController.getString(R.string.VoiceInput_Model),
                                 selectedModel != null ? selectedModel : "",
                                 false);
                     }
@@ -472,7 +488,8 @@ public class NicegramSettingsActivity extends BaseFragment {
 
         @Override
         public int getItemViewType(int position) {
-            if (position == pinSectionHeaderRow || position == accountSectionHeaderRow) {
+            if (position == pinSectionHeaderRow || position == accountSectionHeaderRow
+                    || position == voiceTranscribeSectionHeaderRow) {
                 return 0;
             } else if (position == showRegDateRow ||
                     position == startWithRearCameraRow || position == downloadVideosToGallery ||
@@ -481,7 +498,8 @@ public class NicegramSettingsActivity extends BaseFragment {
                     position == shareBotsInfoRow || position == shareStickersInfoRow ||
                     position == showNgBtnInChatRow || position == showKeywordsForFolderRow ||
                     position == showHiddenChatsRow || pinSectionRowsMap.contains(position) ||
-                    position == showAiShortcutsRow || position == quickTranslateButton
+                    position == showAiShortcutsRow || position == quickTranslateButton ||
+                    position == textCleanupRow
             ) {
                 return 1;
             } else if (position == unblockGuideRow || position == quickRepliesRow || position == importAccountRow || position == exportAccountsRow) {
