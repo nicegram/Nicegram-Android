@@ -22,9 +22,16 @@ includeBuild('nicegram-assistant-android') {
 }
 
 dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
     versionCatalogs {
         internalLibs {
             from(files("nicegram-assistant-android/gradle/libs.versions.toml"))
         }
     }
 }
+
+gradle.ext.androidxMediaModulePrefix = 'TMessagesProj_Modules:media3:media-'
+apply from: file("TMessagesProj_Modules/media/core_settings.gradle")

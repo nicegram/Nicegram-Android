@@ -1,7 +1,5 @@
 package app.nicegram.bridge
 
-import android.graphics.Bitmap
-import android.graphics.Color
 import app.nicegram.bridge.att.AttChatListPeersProviderImpl
 import app.nicegram.bridge.att.AttPeerUsernameResolverImpl
 import com.appvillis.core_domain.bridge.TgUserBridge
@@ -13,13 +11,6 @@ import com.appvillis.feature_auth.domain.TelegramBotBridge
 import com.appvillis.feature_keywords.domain.KeywordsSearchRetriever
 import com.appvillis.feature_telegram_session.api.TgLoginBridge
 import com.appvillis.feature_user_activities.domain.UserCommonGroupsMessagesRetriever
-import com.appvillis.nicegram_wallet.module_bridge.ContactMessageSender
-import com.appvillis.nicegram_wallet.module_bridge.QrCodeRenderer
-import com.appvillis.nicegram_wallet.wallet_contacts.domain.ContactsRetriever
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.EncodeHintType
-import com.google.zxing.qrcode.QRCodeWriter
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -32,51 +23,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object TgBridgeModule {
-    @Provides
-    fun provideContactsRetriever(): ContactsRetriever = ContactsRetrieverImpl()
-
-    @Provides
-    fun provideContactMessageSender(): ContactMessageSender = ContactMessageSenderImpl()
-
-    @Provides
-    @Singleton
-    fun provideQrCodeRenderer(): QrCodeRenderer = object : QrCodeRenderer {
-        override fun getQrBitmapByString(s: String, width: Int, height: Int): Bitmap? {
-            try {
-                val writer = QRCodeWriter()
-                val hints = hashMapOf<EncodeHintType, Any>(
-                    EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.H,
-                    EncodeHintType.MARGIN to 0
-                )
-
-                val bitMatrix = writer.encode(s, BarcodeFormat.QR_CODE, width, height, hints)
-                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                val startColor = Color.parseColor("#FFBE55ED")
-                val endColor = Color.parseColor("#FF4EACF3")
-                for (x in 0 until width) {
-                    for (y in 0 until height) {
-                        bitmap.setPixel(
-                            x,
-                            y,
-                            if (bitMatrix[x, y]) calculateGradientColor(
-                                startColor,
-                                endColor,
-                                x,
-                                y,
-                                width,
-                                height
-                            ) else Color.TRANSPARENT
-                        )
-                    }
-                }
-                return bitmap
-            } catch (e: Exception) {
-                e.printStackTrace()
-                return null
-            }
-        }
-    }
-
     @Provides
     @Singleton
     fun provideUserLocaleProvider(): UserLocaleProvider = object : UserLocaleProvider {

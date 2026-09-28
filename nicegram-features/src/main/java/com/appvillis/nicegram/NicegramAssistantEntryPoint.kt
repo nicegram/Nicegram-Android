@@ -3,7 +3,6 @@ package com.appvillis.nicegram
 import com.appvillis.core_domain.repository.user.UserRepository
 import com.appvillis.core_domain.usecase.user.AppSessionControlUseCase
 import com.appvillis.core_domain.usecase.user.FetchNicegramUserLoggedInStatusUseCase
-import com.appvillis.core_domain.usecase.user.SetDemoUserUseCase
 import com.appvillis.core_ui.domain.TgResourceProvider
 import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo
 import com.appvillis.feature_ai_chat.domain.ClearDataUseCase
@@ -18,16 +17,8 @@ import com.appvillis.core_domain.BillingManager
 import com.appvillis.feature_nicegram_billing.domain.RequestInAppsUseCase
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase
 import com.appvillis.feature_nicegram_client.domain.NgClientRemoteConfigRepo
-import com.appvillis.feature_nicegram_client.domain.NgRevLoginUseCase
+import com.appvillis.feature_nicegram_client.domain.IsReviewPhoneUseCase
 import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter
-import com.appvillis.nicegram_wallet.module_bridge.InChatResultManager
-import com.appvillis.nicegram_wallet.wallet_dapps.domain.BrowserResponseManager
-import com.appvillis.nicegram_wallet.wallet_dapps.domain.TgBrowserBridgeFactory
-import com.appvillis.nicegram_wallet.wallet_scanqr.QrResultEmitter
-import com.appvillis.core_domain.VerificationManager
-import com.appvillis.nicegram_wallet.wallet_storage.domain.GetCurrentWalletUseCase
-import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager
-import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.WalletPopupActivityLauncher
 import com.appvillis.core_domain.usecase.placement.GetChatPlacementsUseCase
 import com.appvillis.core_common.DispatchersProvider
 import com.appvillis.core_domain.usecase.telegramsession.IsNeedToShowTelegramSessionBackupUseCase
@@ -53,7 +44,6 @@ interface NicegramAssistantEntryPoint {
     fun getUserStatusUseCase(): FetchNicegramUserLoggedInStatusUseCase
     fun nicegramSessionCounter(): NicegramSessionCounter
     fun appSessionControlUseCase(): AppSessionControlUseCase
-    fun setDemoUserUseCase(): SetDemoUserUseCase
     fun getNicegramOnboardingStatusUseCase(): GetNicegramOnboardingStatusUseCase
     fun getChatPlacementsUseCase(): GetChatPlacementsUseCase
     fun getAllPinChatsPlacementsUseCase(): GetAllPinChatsPlacementsUseCase
@@ -62,7 +52,7 @@ interface NicegramAssistantEntryPoint {
     fun userRepository(): UserRepository
     fun collectGroupInfoUseCase(): CollectGroupInfoUseCase
     fun ngClientRemoteConfigRepo(): NgClientRemoteConfigRepo
-    fun ngRevLoginUseCase(): NgRevLoginUseCase
+    fun isReviewPhoneUseCase(): IsReviewPhoneUseCase
     fun saveUserActionUseCase(): SaveUserActionUseCase
     fun getOngoingActionsUseCase(): GetOngoingActionsUseCase
     fun claimAdsUseCase(): ClaimAdsUseCase
@@ -78,17 +68,6 @@ interface NicegramAssistantEntryPoint {
     // region billing
     fun billingManager(): BillingManager
     fun requestInAppsUseCase(): RequestInAppsUseCase
-    // end region
-
-    // region wallet
-    fun getCurrentWalletUseCase(): GetCurrentWalletUseCase
-    fun tcDeeplinkManager(): TcDeeplinkManager
-    fun verificationManager(): VerificationManager
-    fun qrResultEmitter(): QrResultEmitter
-    fun inChatResultManager(): InChatResultManager
-    fun tgBrowserBridgeFactory(): TgBrowserBridgeFactory
-    fun browserResponseManager(): BrowserResponseManager
-    fun walletPopupActivityLauncher(): WalletPopupActivityLauncher
     // end region
 
     // region ai

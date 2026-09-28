@@ -150,10 +150,7 @@ import app.nicegram.NicegramAttHelper;
 import app.nicegram.NicegramGroupCollectHelper;
 import app.nicegram.NicegramMetadataHelper;
 import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity;
-import com.appvillis.nicegram.NicegramIcWalletHelper;
-import com.appvillis.nicegram_wallet.wallet_inchat.external.TransactionTgMessageView;
 import com.appvillis.rep_user_actions.domain.entities.AttUserAction;
-import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.zxing.common.detector.MathUtils;
 
 import org.telegram.PhoneFormat.PhoneFormat;
@@ -382,7 +379,6 @@ import java.util.stream.Collectors;
 
 import app.nicegram.NicegramUserActionsHelper;
 import app.nicegram.PrefsHelper;
-import app.nicegram.ui.NgWalletTransactionVH;
 import dagger.hilt.EntryPoints;
 
 import me.vkryl.android.animator.BoolAnimator;
@@ -4493,7 +4489,7 @@ public class ChatActivity extends BaseFragment implements
                 headerItem.lazilyAddSubItem(search, R.drawable.msg_search, LocaleController.getString(R.string.Search));
             }
             if (ChatObject.isBoostSupported(currentChat) && (getUserConfig().isPremium() || ChatObject.isBoosted(chatInfo) || ChatObject.hasAdminRights(currentChat))) {
-                RLottieDrawable drawable = new RLottieDrawable(R.raw.boosts, "" + R.raw.boosts, dp(24), dp(24));
+                RLottieDrawable drawable = new RLottieDrawable(R.raw.boosts, dp(24), dp(24));
                 headerItem.lazilyAddSubItem(boost_group, drawable, LocaleController.getString(ChatObject.isChannelAndNotMegaGroup(currentChat) ? R.string.BoostingBoostChannelMenu : R.string.BoostingBoostGroupMenu));
             }
             translateItem = headerItem.lazilyAddSubItem(translate, R.drawable.msg_translate, LocaleController.getString(R.string.TranslateMessage));
@@ -17317,9 +17313,6 @@ public class ChatActivity extends BaseFragment implements
                         if (savedMessagesHint != null) {
                             savedMessagesHint.setTranslationY(y);
                         }
-                        if (topicsTabs != null) {
-                            topicsTabs.setTranslationY(y);
-                        }
                         if (emptyViewContainer != null) {
                             emptyViewContainer.setTranslationY(y / 2);
                         }
@@ -18396,7 +18389,7 @@ public class ChatActivity extends BaseFragment implements
             }*/
         }
 
-        private boolean isFullSizeIgnoreInsersChild(View child) {
+        private boolean isFullSizeIgnoreInsetsChild(View child) {
             return child != null && (child == backgroundView
                 || child == blurredView || child == searchViewPager
                 || child == fireworksOverlay || child == chatActivityFadeView
@@ -18552,7 +18545,7 @@ public class ChatActivity extends BaseFragment implements
                 if (child == null || child.getVisibility() == GONE || child == chatActivityEnterView || child == actionBar) {
                     continue;
                 }
-                if (isFullSizeIgnoreInsersChild(child)) {
+                if (isFullSizeIgnoreInsetsChild(child)) {
                     int contentWidthSpec = View.MeasureSpec.makeMeasureSpec(allWidth, View.MeasureSpec.EXACTLY);
                     int contentHeightSpec = View.MeasureSpec.makeMeasureSpec(allHeight, View.MeasureSpec.EXACTLY);
                     child.measure(contentWidthSpec, contentHeightSpec);
@@ -18733,7 +18726,7 @@ public class ChatActivity extends BaseFragment implements
                         childTop = lp.topMargin;
                 }
 
-                if (isFullSizeIgnoreInsersChild(child)) {
+                if (isFullSizeIgnoreInsetsChild(child)) {
                     childLeft = 0;
                     childTop = 0;
                 } else if (child == messageEnterTransitionContainer || child == quickShareSelectorOverlay || child == chatInputViewsContainer || child instanceof HintView || child instanceof ChecksHintView) {
@@ -18808,9 +18801,6 @@ public class ChatActivity extends BaseFragment implements
             }
             if (savedMessagesHint != null) {
                 savedMessagesHint.setTranslationY(0);
-            }
-            if (topicsTabs != null) {
-                topicsTabs.setTranslationY(0);
             }
             emptyViewContainer.setTranslationY(0);
             progressView.setTranslationY(0);
@@ -37526,11 +37516,6 @@ public class ChatActivity extends BaseFragment implements
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = null;
-            if (viewType == 60066) {
-                NgWalletTransactionVH transactionTgMessageVH = new NgWalletTransactionVH(NgWalletTransactionVH.Companion.createView(mContext, parent));
-                transactionTgMessageVH.getView().setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.WRAP_CONTENT));
-                return transactionTgMessageVH;
-            }
             if (viewType == 0) {
                 view = new ChatMessageCell(mContext, currentAccount, true, sharedResources, themeDelegate);
                 ChatMessageCell chatMessageCell = (ChatMessageCell) view;
@@ -37924,11 +37909,6 @@ public class ChatActivity extends BaseFragment implements
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            if (holder instanceof NgWalletTransactionVH) {
-                MessageObject message = messages.get(position - messagesStartRow);
-                ((NgWalletTransactionVH) holder).onBind(message.messageText.toString(), !message.isOut());
-                return;
-            }
             if (position == botInfoRow || position == botInfoEmptyRow) {
                 BotHelpCell helpView = (BotHelpCell) holder.itemView;
                 if (UserObject.isReplyUser(currentUser)) {
@@ -38552,10 +38532,6 @@ public class ChatActivity extends BaseFragment implements
                     messages = ChatActivity.this.messages;
                 }
 
-                MessageObject msgTmp = messages.get(position - messagesStartRow);
-                if (TransactionTgMessageView.Companion.isThisTxMessage(msgTmp.messageText.toString())) {
-                    return 60066;
-                }
                 return messages.get(position - messagesStartRow).contentType;
             } else if (position == botInfoRow) {
                 return 3;
@@ -45131,40 +45107,6 @@ public class ChatActivity extends BaseFragment implements
                     sendPhotosGroup(photos, true, 0, false);
                 }
             });
-        });
-        ngMenuButton.onWalletBotClick(() -> {
-            FileLoader fileLoader = AccountInstance.getInstance(currentAccount).getFileLoader();
-            if (currentUser != null) {
-                StringBuilder strBuilder = new StringBuilder();
-                AvatarDrawable.getAvatarSymbols(currentUser.first_name, currentUser.last_name, null, strBuilder);
-                String avatarSymbols = strBuilder.toString();
-
-                NicegramIcWalletHelper.INSTANCE.launchInChatWidget(
-                        getParentActivity(),
-                        String.valueOf(currentUser.id),
-                        currentUser.first_name,
-                        currentUser.last_name,
-                        avatarSymbols,
-                        currentUser.username,
-                        currentUser.photo != null ? fileLoader.getPathToAttach(currentUser.photo.photo_small, true).toString() : ""
-                );
-            } else if (currentChat != null) {
-                StringBuilder strBuilder = new StringBuilder();
-                AvatarDrawable.getAvatarSymbols(currentChat.username, null, null, strBuilder);
-                String avatarSymbols = strBuilder.toString();
-
-                NicegramIcWalletHelper.INSTANCE.launchInChatWidget(
-                        getParentActivity(),
-                        String.valueOf(currentChat.id),
-                        currentChat.title,
-                        null,
-                        avatarSymbols,
-                        currentChat.username,
-                        currentChat.photo != null ? fileLoader.getPathToAttach(currentChat.photo.photo_small, true).toString() : ""
-                );
-            }
-
-            NicegramIcWalletHelper.INSTANCE.setUseResultListener(ApplicationLoader.applicationContext, text -> chatActivityEnterView.setFieldText(text));
         });
     }
 

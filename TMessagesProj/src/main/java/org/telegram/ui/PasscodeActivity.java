@@ -23,6 +23,7 @@ import android.text.InputType;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.method.PasswordTransformationMethod;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.ActionMode;
 import android.view.Gravity;
@@ -49,7 +50,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.appvillis.core_ui.domain.ToastMessage;
 import com.appvillis.core_ui.domain.ToastText;
 import com.appvillis.core_ui.widgets.ToastView;
-import com.google.android.exoplayer2.util.Log;
 import com.appvillis.core_ui.widgets.ToastViewHelper;
 
 import app.nicegram.NicegramDoubleBottom;

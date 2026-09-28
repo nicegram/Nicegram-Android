@@ -60,7 +60,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import app.nicegram.PrefsHelper;
-import app.nicegram.bridge.NicegramDeepLinksHelper;
 
 public class Browser {
 
@@ -298,7 +297,6 @@ public class Browser {
             return;
         }
 
-        //if (NicegramDeepLinksHelper.Companion.getInstance() != null && NicegramDeepLinksHelper.Companion.getInstance().tryOpenUrl(uri.toString(), context, UserConfig.getInstance(UserConfig.selectedAccount).clientUserId)) return;
 
         final int currentAccount = UserConfig.selectedAccount;
         boolean[] forceBrowser = new boolean[]{false};

@@ -5,9 +5,13 @@ plugins {
 
 gradlePlugin {
     plugins {
-        register("lottiePreParser") {
-            id = "org.telegram.lottie-meta"
-            implementationClass = "org.telegram.lottie.LottieMetaPlugin"
+        register("telegramBuildPlugin") {
+            id = "org.telegram.build-plugin"
+            implementationClass = "org.telegram.plugin.TelegramBuildPlugin"
+        }
+        register("telegramBuildAppPlugin") {
+            id = "org.telegram.build-app-plugin"
+            implementationClass = "org.telegram.plugin.TelegramBuildAppPlugin"
         }
         register("testGenerator") {
             id = "test-generator"
@@ -36,7 +40,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 
 dependencies {
     implementation(gradleApi())
-    implementation("com.android.tools.build:gradle:8.10.1")
+    implementation("com.android.tools.build:gradle:8.13.2")
     // nicegram: AGP drags in javapoet 1.10.0, and buildSrc's runtime classpath is prepended
     // to the buildscript classloader — that shadows the 1.13.0 Hilt needs for
     // ClassName.canonicalName() and breaks hiltAggregateDeps. Pin the newer one here.

@@ -116,7 +116,6 @@ import com.appvillis.core_analytics.AnalyticsHelper;
 import com.appvillis.nicegram.NgWidgetsTrackerHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.nicegram.NicegramBillingHelper;
-import com.appvillis.nicegram.NicegramLoginHelper;
 import com.appvillis.nicegram.ReviewHelper;
 
 import org.telegram.messenger.AccountInstance;
@@ -303,7 +302,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import app.nicegram.AiAnalysisHelper;
 import app.nicegram.NicegramGroupCollectHelper;
-import app.nicegram.NicegramWalletHelper;
 import app.nicegram.PrefsHelper;
 import app.nicegram.TelegramSessionBackupHelper;
 import dagger.hilt.EntryPoints;
@@ -532,7 +530,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private ActionBarMenuItem downloadsItem;
     private DownloadProgressIcon downloadProgressIcon;
     private boolean downloadsItemVisible;
-    private ActionBarMenuItem nicegramWalletItem;
     public ActionBarMenuItem searchItem;
     private ActionBarMenuItem optionsItem;
     private ActionBarMenuItem speedItem;
@@ -747,7 +744,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private final static int community_ungroup = 111;
 
     private final static int nicegram_hide_chat_id = 2000;
-    private final int nicegram_wallet_menu_id = 2001;
 
     private final static int ARCHIVE_ITEM_STATE_PINNED = 0;
     private final static int ARCHIVE_ITEM_STATE_SHOWED = 1;
@@ -2888,8 +2884,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             HeaderInterceptor.Companion.setFORCE_TEST_TOKEN(true);
         }
 
-        NicegramLoginHelper.INSTANCE.setDemoUserIfNeeded(ApplicationLoader.applicationContext, UserConfig.getInstance(UserConfig.selectedAccount).getClientPhone());
-
         // region ng backup
         TelegramSessionBackupHelper.INSTANCE.showBackupIfNeeded(() -> {
             Activity activity = getParentActivity();
@@ -3347,9 +3341,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
             updateProxyButton(false, false);
         }
-        nicegramWalletItem = menu.addItem(nicegram_wallet_menu_id, R.drawable.ng_wallet_wallet_filled_24);
-        nicegramWalletItem.setOnClickListener(v -> processNicegramWalletClick());
-
         fragmentSearchField = new FragmentSearchField(context, resourceProvider) {
             @Override
             public boolean dispatchTouchEvent(MotionEvent ev) {
@@ -3391,8 +3382,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             @Override
             public void onSearchExpand() {
                 searching = true;
-
-                if (nicegramWalletItem != null) nicegramWalletItem.setVisibility(View.GONE); // ng
 
                 if (switchItem != null) {
                     switchItem.setVisibility(View.GONE);
@@ -3440,8 +3429,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
             @Override
             public boolean canCollapseSearch() {
-                if (nicegramWalletItem != null) nicegramWalletItem.setVisibility(View.VISIBLE); // ng
-
                 if (switchItem != null) {
                     switchItem.setVisibility(View.VISIBLE);
                 }
@@ -5565,8 +5552,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
             @Override
             public void openAnimationStarted(boolean open) {
-                if (open) toggleNgLoggo(false); // ng
-
                 rightFragmentTransitionInProgress = true;
                 rightFragmentTransitionIsOpen = open;
                 contentView.requestLayout();
@@ -5641,7 +5626,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
             @Override
             public void openAnimationFinished(boolean backward) {
-                if (!isOpenned) toggleNgLoggo(true); // ng
                 transitionPage.layoutManager.setNeedFixGap(true);
                 transitionPage.dialogsAdapter.setCollapsedView(hasFragment(), transitionPage.listView);
                 transitionPage.dialogsAdapter.setDialogsListFrozen(false);
@@ -5713,10 +5697,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (fragmentView != null) {
                     fragmentView.invalidate();
                 }
-            }
-
-            void toggleNgLoggo(boolean show) {
-                menu.getItem(nicegram_wallet_menu_id).setAlpha(show ? 1.0f : 0.0f);
             }
         };
         updateFilterTabs(true, false);
@@ -7189,7 +7169,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         NicegramOnboardingHelper.INSTANCE.continueOnboardingIfNeeded(isPaused, getParentActivity(),
                 () -> MainActivity.Companion.launchNgVerificationOnboarding(getParentActivity()),
                 () -> MainActivity.Companion.launchSecondNgOnboarding(getParentActivity()),
-                () -> nicegramWalletItem.postDelayed(() -> {
+                () -> AndroidUtilities.runOnUIThread(() -> {
                         if (!isPaused) {
                             showPopupIfNeeded();
                         }
@@ -12998,13 +12978,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return ColorUtils.calculateLuminance(color) > 0.7f;
     }
 
-    private void processNicegramWalletClick() {
-        AnalyticsHelper.INSTANCE.logEvent(getContext(), "wallet_open_from_icon", null);
-
-        getParentActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        NicegramWalletHelper.INSTANCE.launchWalletIfPossible(getContext());
-    }
-
     private boolean hasSeenNgPopupThisSession;
     private void showPopupIfNeeded() {
         SpecialOffersRepository.SpecialOffer offer = NicegramAssistantHelper.INSTANCE.getSpecialOffer(getContext());
@@ -13019,7 +12992,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         hasSeenNgPopupThisSession = true;
 
         if (offer != null) {
-            nicegramWalletItem.postDelayed(() -> {
+            AndroidUtilities.runOnUIThread(() -> {
                 if (!isPaused) {
                     Activity activity = getParentActivity();
                     if (activity != null) {
@@ -13040,7 +13013,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         KeywordsPreferencesRepository prefs = EntryPoints.get(ApplicationLoader.applicationContext, KeywordsEntryPoint.class).keywordsPreferences();
         if (prefs.getHasSeenHint()) return;
 
-        nicegramWalletItem.postDelayed(() -> {
+        AndroidUtilities.runOnUIThread(() -> {
             if (filterTabsView == null) return;
 
             LaunchActivity parentActivity = (LaunchActivity) getParentActivity();
@@ -14478,7 +14451,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         final float factor3 = 1f - animatorDoneButtonVisible.getFloatValue();
         final float factor = factor1 * factor2 * factor3;
         FragmentFloatingButton.setAnimatedVisibility(optionsItem, factor);
-        FragmentFloatingButton.setAnimatedVisibility(nicegramWalletItem, factor); // nicegram wallet icon
     }
 
     private void checkUi_itemPasscodeVisibility() {

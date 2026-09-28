@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 gradle:8.10.1-jdk17
+FROM --platform=linux/amd64 gradle:8.13-jdk17
 
 USER root
 

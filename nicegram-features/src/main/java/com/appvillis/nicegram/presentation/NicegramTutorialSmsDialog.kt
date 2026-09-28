@@ -9,7 +9,7 @@ import android.text.Html
 import android.util.DisplayMetrics
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.appvillis.core_ui.util.viewBinding
-import com.appvillis.nicegram.R
+import com.appvillis.feature_nicegram_client.R
 import com.appvillis.nicegram.databinding.DialogSmsTutorialBinding
 import kotlin.math.roundToInt
 

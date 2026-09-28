@@ -11,7 +11,6 @@ import com.appvillis.core_ui.util.clearLightStatusBar
 import com.appvillis.core_ui.util.isNightMode
 import com.appvillis.core_ui.util.setLightStatusBar
 import com.appvillis.core_ui.util.setTransparentStatusBar
-import com.appvillis.nicegram.R
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -40,7 +39,7 @@ class NicegramPremiumActivity : AppCompatActivity() {
             setLightStatusBar()
         }
 
-        window.navigationBarColor = ResourcesCompat.getColor(resources, R.color.assistant_bg, null)
+        window.navigationBarColor = ResourcesCompat.getColor(resources, com.appvillis.core_ui.R.color.assistant_bg, null)
     }
 
     private fun setDayNightTheme() {

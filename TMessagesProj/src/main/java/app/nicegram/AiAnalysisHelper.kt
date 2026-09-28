@@ -70,7 +70,7 @@ object AiAnalysisHelper {
 
     private fun openHistory(activity: Activity, chatId: Long) {
         MainActivity.launchRoute(
-            activity, R.id.action_global_sessionsListFragmentPop, SessionsListFragmentArgs(
+            activity, com.appvillis.assistant_core.R.id.action_global_sessionsListFragmentPop, SessionsListFragmentArgs(
                 chatFilter = ChatFilter(setOf(chatId))
             ).toBundle()
         )
@@ -78,7 +78,7 @@ object AiAnalysisHelper {
 
     private fun openSession(activity: Activity, session: Session) {
         MainActivity.launchRoute(
-            activity, R.id.action_global_aiChatAnalysisFragmentPop, AiChatAnalysisFragmentArgs(
+            activity, com.appvillis.assistant_core.R.id.action_global_aiChatAnalysisFragmentPop, AiChatAnalysisFragmentArgs(
                 chat = null,
                 session = AiChatAnalysisSource.Session(session)
             ).toBundle()
@@ -86,7 +86,7 @@ object AiAnalysisHelper {
     }
 
     private fun openNewChat(activity: Activity, bundle: Bundle) {
-        MainActivity.launchRoute(activity, R.id.action_global_aiChatAnalysisFragmentPop, bundle)
+        MainActivity.launchRoute(activity, com.appvillis.assistant_core.R.id.action_global_aiChatAnalysisFragmentPop, bundle)
     }
 
     suspend fun loadMessages(currentAccount: Int, isTopic: Boolean, threadMessageId: Long, chat: Chat?, user: User?): List<Message> {

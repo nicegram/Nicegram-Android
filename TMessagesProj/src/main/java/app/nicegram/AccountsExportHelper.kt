@@ -168,7 +168,7 @@ object AccountsExportHelper {
                     exportEventsBridge(activity).sendEvent(ExportEventsBridge.EVENT_EXPORT_IMPORT_COMPLETED)
                     if (importedMeta.isNotEmpty()) {
                         coreUi(activity).toastMessages()
-                            .showToast(ToastMessage.Success(ToastText.Res(R.string.Common_SuccessNew)))
+                            .showToast(ToastMessage.Success(ToastText.Res(com.appvillis.core_ui.R.string.Common_SuccessNew)))
                         NicegramDoubleBottom.needToReloadDrawer = true
                     }
                     callback?.onSuccess(Unit)
@@ -495,7 +495,7 @@ object AccountsExportHelper {
             }
 
             EntryPoints.get(activity.applicationContext, CoreUiEntryPoint::class.java).toastMessages()
-                .showToast(ToastMessage.Success(ToastText.Res(R.string.Common_SuccessNew)))
+                .showToast(ToastMessage.Success(ToastText.Res(com.appvillis.core_ui.R.string.Common_SuccessNew)))
 
             Timber.d("Exported to $destUri")
         } catch (e: IOException) {

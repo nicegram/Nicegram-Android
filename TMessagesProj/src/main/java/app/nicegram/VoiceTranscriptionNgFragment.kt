@@ -24,7 +24,7 @@ class VoiceTranscriptionNgFragment : BaseFragment() {
     override fun createView(context: Context): View {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back)
         actionBar.setAllowOverlayTitle(true)
-        actionBar.setTitle(LocaleController.getString(R.string.VoiceInput_TranscribeModel))
+        actionBar.setTitle(LocaleController.getString(com.appvillis.feature_voice_input.R.string.VoiceInput_TranscribeModel))
         actionBar.setActionBarMenuOnItemClick(object : ActionBarMenuOnItemClick() {
             override fun onItemClick(id: Int) {
                 if (id == -1) finishFragment()

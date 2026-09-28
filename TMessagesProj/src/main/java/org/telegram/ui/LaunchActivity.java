@@ -8,7 +8,6 @@
 
 package org.telegram.ui;
 
-import static com.appvillis.assistant_core.MainActivity.BROADCAST_ACTION_ON_RESUME;
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.LocaleController.formatPluralString;
 import static org.telegram.messenger.LocaleController.formatString;
@@ -24,7 +23,6 @@ import android.app.ActivityManager;
 import android.app.Dialog;
 import android.app.PictureInPictureParams;
 import android.app.PictureInPictureUiState;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -83,14 +81,12 @@ import androidx.annotation.RequiresApi;
 import androidx.arch.core.util.Function;
 import androidx.collection.LongSparseArray;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 
-import com.appvillis.assistant_core.InChatMainActivity;
 import com.appvillis.assistant_core.MainActivity;
 import com.appvillis.assistant_core.PopupActivity;
 import com.appvillis.feature_attention_economy.presentation.ui.AttOverlayManager;
@@ -105,8 +101,6 @@ import com.appvillis.core_analytics.AnalyticsHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.feature_nicegram_client.presentation.onboarding.NicegramOnboardingActivity;
 import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity;
-import com.appvillis.nicegram_wallet.wallet_contacts.domain.WalletContact;
-import com.appvillis.nicegram_wallet.wallet_tonconnect.domain.TcDeeplinkManager;
 import com.google.android.gms.common.api.Status;
 import com.google.common.primitives.Longs;
 import com.google.firebase.appindexing.Action;
@@ -206,7 +200,6 @@ import org.telegram.ui.Components.EmojiPacksAlert;
 import org.telegram.ui.Components.FireworksOverlay;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugController;
 import org.telegram.ui.Components.FolderBottomSheet;
-import org.telegram.ui.Components.ForegroundDetector;
 import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.GroupCallPip;
 import org.telegram.ui.Components.JoinGroupAlert;
@@ -282,7 +275,6 @@ import app.nicegram.AppIconNicegramBulletinLayout;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramIntroActivity;
 import app.nicegram.NicegramSettingsActivity;
-import app.nicegram.NicegramWalletHelper;
 import app.nicegram.UserHelper;
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -435,7 +427,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             LeakDetector.getInstance().start();
         }
 
-        ContextCompat.registerReceiver(this, assistantResumeReceiver, new IntentFilter(BROADCAST_ACTION_ON_RESUME), ContextCompat.RECEIVER_NOT_EXPORTED); // ng
         instance = this;
         ApplicationLoader.postInitApplication();
         AndroidUtilities.checkDisplaySize(this, getResources().getConfiguration());
@@ -453,7 +444,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     Uri uri = intent.getData();
                     if (uri != null) {
                         String url = uri.toString().toLowerCase();
-                        isProxy = url.startsWith("tg:proxy") || url.startsWith("tg://proxy") || url.startsWith("tg:socks") || url.startsWith("tg://socks");
+                        isProxy = url.startsWith("tg:proxy") || url.startsWith("tg://proxy")
+                                || url.startsWith("tg:webproxy") || url.startsWith("tg://webproxy")
+                                || url.startsWith("tg:socks") || url.startsWith("tg://socks");
                     }
                 }
             }
@@ -2967,7 +2960,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                             } else if (error != null) {
                                 if ("URL_EXPIRED".equalsIgnoreCase(error.text)) {
                                     OAuthSheet.getBulletinFactory()
-                                        .createSimpleBulletin(R.raw.error, getString(R.string.BotAuthLoggedInFailTitle), getString(R.string.BotAuthLoggedInFailNoDomain))
+                                        .createSimpleBulletin(R.raw.error, LocaleController.getString(R.string.BotAuthLoggedInFailTitle), LocaleController.getString(R.string.BotAuthLoggedInFailNoDomain))
                                         .show();
                                 } else {
                                     OAuthSheet.getBulletinFactory().showForError(error);
@@ -3416,7 +3409,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         final LoginActivity loginActivity = new LoginActivity().changeEmail(() -> {
             Bulletin.LottieLayout layout = new Bulletin.LottieLayout(this, null);
             layout.setAnimation(R.raw.email_check_inbox);
-            layout.textView.setText(getString(R.string.YourLoginEmailChangedSuccess));
+            layout.textView.setText(LocaleController.getString(R.string.YourLoginEmailChangedSuccess));
             int duration = Bulletin.DURATION_SHORT;
 
             BaseFragment fragment = getLastFragment();
@@ -3442,9 +3435,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
             new AlertDialog.Builder(this)
                     .setTitle(spannable)
-                    .setMessage(getString(R.string.EmailLoginChangeMessage))
-                    .setPositiveButton(getString(R.string.ChangeEmail), (dialog, which) -> presentFragment(loginActivity))
-                    .setNegativeButton(getString(R.string.Cancel), null)
+                    .setMessage(LocaleController.getString(R.string.EmailLoginChangeMessage))
+                    .setPositiveButton(LocaleController.getString(R.string.ChangeEmail), (dialog, which) -> presentFragment(loginActivity))
+                    .setNegativeButton(LocaleController.getString(R.string.Cancel), null)
                     .show();
         } else {
             presentFragment(loginActivity);
@@ -4150,7 +4143,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             requestId[0] = GiftAuctionController.getInstance(currentAccount).requestGiftAuctionBySlug(stargiftPreviewSlug, (res, err) -> {
                 if (err != null) {
                     BulletinFactory.of(mainFragmentsStack.get(mainFragmentsStack.size() - 1))
-                            .createSimpleBulletin(R.raw.error, getString(R.string.GiftAuctionNotFound))
+                            .createSimpleBulletin(R.raw.error, LocaleController.getString(R.string.GiftAuctionNotFound))
                             .show();
                 } else if (res != null) {
                     GiftAuctionController.Auction auction = GiftAuctionController.getInstance(currentAccount).getAuction(res.gift.id);
@@ -4169,7 +4162,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             requestId[0] = GiftAuctionController.getInstance(currentAccount).requestGiftAuctionBySlug(auctionSlug, (res, err) -> {
                 if (err != null) {
                     BulletinFactory.of(mainFragmentsStack.get(mainFragmentsStack.size() - 1))
-                            .createSimpleBulletin(R.raw.error, getString(R.string.GiftAuctionNotFound))
+                            .createSimpleBulletin(R.raw.error, LocaleController.getString(R.string.GiftAuctionNotFound))
                             .show();
                 } else if (res != null) {
                     AuctionJoinSheet.show(LaunchActivity.this, null, currentAccount, 0, res.gift.id, null);
@@ -4190,11 +4183,11 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     if (lastFragment == null) return;
                     if ("STARGIFT_ALREADY_BURNED".equalsIgnoreCase(error.text)) {
                         BulletinFactory.of(lastFragment)
-                            .createSimpleBulletin(R.raw.fire_on, getString(R.string.UniqueGiftNotFoundBurned))
+                            .createSimpleBulletin(R.raw.fire_on, LocaleController.getString(R.string.UniqueGiftNotFoundBurned))
                             .show();
                     } else {
                         BulletinFactory.of(lastFragment)
-                            .createSimpleBulletin(R.raw.error, getString(R.string.UniqueGiftNotFound))
+                            .createSimpleBulletin(R.raw.error, LocaleController.getString(R.string.UniqueGiftNotFound))
                             .show();
                     }
                 } else if (response instanceof TL_stars.TL_payments_uniqueStarGift) {
@@ -6148,7 +6141,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         editor.putBoolean("proxy_enabled", false);
                         editor.putBoolean("proxy_enabled_calls", false);
                         editor.commit();
-                        ConnectionsManager.setProxySettings(false, "", 1080, "", "", "");
+                        ConnectionsManager.setProxySettings(false, null);
                         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.proxySettingsChanged);
                         proxyErrorDialog = null;
                     }
@@ -6825,7 +6818,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         if (ApplicationLoader.applicationLoaderInstance != null) {
             doNotPause = ApplicationLoader.applicationLoaderInstance.onPause();
         }
-        if (NicegramWalletHelper.INSTANCE.isWalletPopupShowing()) doNotPause = true;
         ConnectionsManager.getInstance(currentAccount).setAppPaused(!doNotPause, false);
         if (PhotoViewer.hasInstance() && PhotoViewer.getInstance().isVisible()) {
             PhotoViewer.getInstance().onPause();
@@ -6919,8 +6911,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @Override
     protected void onDestroy() {
-        unregisterReceiver(assistantResumeReceiver); // ng
-
         isActive = false;
         activeInstanceCount--;
         unregisterReceiver(batteryReceiver);
@@ -7124,8 +7114,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             MessagesController.getInstance(currentAccount).checkPromoInfo(true);
         }
 
-        processTcLinkOnResume();
-        processWcLinkOnResume();
     }
 
     public static Runnable whenResumed;
@@ -7768,10 +7756,10 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 AlertDialog.Builder builder = new AlertDialog.Builder(this, null);
                 builder.setTitle("TL Error");
                 builder.setMessage(messageToShow);
-                builder.setNegativeButton(getString(R.string.Copy), (d, i) -> {
+                builder.setNegativeButton(LocaleController.getString(R.string.Copy), (d, i) -> {
                     AndroidUtilities.addToClipboard(messageToCopy);
                 });
-                builder.setPositiveButton(getString(R.string.OK), null);
+                builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
                 builder.setOnDismissListener(d -> {
                     AndroidUtilities.runOnUIThread(() -> {
                         tlErrorAlertDialog = null;
@@ -7796,7 +7784,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 AlertDialog.Builder builder = new AlertDialog.Builder(this, null);
                 builder.setTitle("Memory Leak Found");
                 builder.setMessage(messageToShow);
-                builder.setPositiveButton(getString(R.string.OK), null);
+                builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
                 builder.setOnDismissListener(d -> {
                     AndroidUtilities.runOnUIThread(() -> {
                         memoryLeakErrorAlertDialog = null;
@@ -9239,53 +9227,17 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         String url = data.getQueryParameter("url");
                         processDeeplinkUrl(url, data);
                         return true;
-                    } else if (path.startsWith("tc")) {
-                        pendingTcLink = data.toString();
-                    } else if (path.startsWith("wc")) {
-                        String dataS = data.toString();
-                        int startIndex = dataS.indexOf("uri=");
-                        if (startIndex != -1) pendingWcLink = dataS.substring(startIndex + 4);
                     }
                 }
             } else if (scheme != null) {
                 if (scheme.equals("ncg")) {
                     processDeeplinkUrl(data.toString(), data);
                     return true;
-                } else if (scheme.equals("tc") || scheme.equals("nicegram-tc")) {
-                    pendingTcLink = data.toString();
-                } else if (scheme.equals("wc")) {
-                    pendingWcLink = data.toString();
                 }
             }
         }
 
         return false;
-    }
-
-    private String pendingWcLink;
-    private void processWcLinkOnResume() {
-        if (pendingWcLink == null || pendingWcLink.isEmpty() || pendingWcLink.contains("requestId")) return;
-        String link = pendingWcLink;
-        pendingWcLink = null;
-
-        NicegramWalletHelper.INSTANCE.openWcLink(link, this);
-    }
-
-    private String pendingTcLink;
-    private void processTcLinkOnResume() {
-        if (pendingTcLink == null || pendingTcLink.isEmpty()) return;
-        String link = pendingTcLink;
-        pendingTcLink = null;
-
-        TcDeeplinkManager tcDeeplinkManager = NicegramWalletHelper.INSTANCE.getTcDeeplinkManager();
-        if (!NicegramWalletHelper.INSTANCE.isLoggedInAndHasWallet()) {
-            NicegramWalletHelper.INSTANCE.launchWalletIfPossible(this);
-            return;
-        }
-
-        if (tcDeeplinkManager != null) {
-            tcDeeplinkManager.processLink(link);
-        }
     }
 
     private void processDeeplinkUrl(String url, Uri data) {
@@ -9330,15 +9282,10 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             if (info == null) return;
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
             MainActivity.Companion.launchWebViewPopup(this, info.getUrl());
-        } else if (url.equals("ncg://wallet/home")) {
-            NicegramWalletHelper.INSTANCE.launchWalletIfPossible(this);
         } else if (url.equals("ncg://tgAuthSuccess")) {
             PopupActivity.Companion.launchRoute(this, AuthLoadingPopupScreenDestination.INSTANCE.getRoute());
         } else if (url.equals("ncg://attention-economy")) {
             MainActivity.Companion.launchAtt(this);
-        } else if (url.equals("ncg://wallet/inchat")) {
-            InChatMainActivity.Companion.launch(this, WalletContact.Companion.getPREVIEW(), null);
-            WalletContact.Companion.setCloseInChatAfterWallet(true); // todo remove next release
         } else if (url.equals("ncg://aiAgents")) {
             MainActivity.Companion.launchAiMarketplace(this);
         } else if (url.startsWith("ncg://tgOpenChat")) {
@@ -9363,18 +9310,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         });
         UserHelper.INSTANCE.observeFirstUserSignIn();
     }
-
-    private BroadcastReceiver assistantResumeReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals(MainActivity.BROADCAST_ACTION_ON_RESUME)) {
-                if (SharedConfig.passcodeHash.length() == 0 && ForegroundDetector.getInstance().isWasInBackground(false)) {
-                    ForegroundDetector.getInstance().resetBackgroundVar();
-                    sendBroadcast(new Intent(MainActivity.BROADCAST_ACTION_SHOW_PASSCODE));
-                }
-            }
-        }
-    };
 
 
 

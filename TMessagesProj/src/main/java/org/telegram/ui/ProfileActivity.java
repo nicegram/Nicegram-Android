@@ -130,7 +130,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
-import com.appvillis.assistant_core.InChatMainActivity;
 import com.appvillis.core_ui.NicegramUrlConstants;
 import com.appvillis.core_ui.BuildConfig;
 import com.appvillis.feature_gods_eye.GodsEyeEntryPoint;
@@ -142,11 +141,6 @@ import com.appvillis.core_analytics.AnalyticsHelper;
 import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.network.NicegramNetwork;
 import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity;
-import com.appvillis.nicegram_wallet.destinations.SendSelectICScreenDestination;
-import com.appvillis.nicegram_wallet.module_bridge.NgWalletEntryPoint;
-import com.appvillis.nicegram_wallet.wallet_contacts.domain.WalletContact;
-import com.appvillis.nicegram_wallet.wallet_contacts.presentation.ContactWalletWidgetView;
-import com.appvillis.nicegram_wallet.wallet_settings.domain.UserBlockchainsRepository;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
@@ -680,8 +674,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int emptyRow;
     private int emptyRow2;
     private int bottomPaddingRow;
-    private int walletHeaderRow;
-    private int walletInfoRow;
     private int infoHeaderRow;
     private int infoHeaderRowEmpty;
     private int infoEndRowEmpty;
@@ -4754,8 +4746,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (position == versionRow) {
                     pressCount++;
                     if (pressCount >= 2 || BuildVars.DEBUG_PRIVATE_VERSION) {
-                        UserBlockchainsRepository rep = EntryPoints.get(context.getApplicationContext(), NgWalletEntryPoint.class).getUserBlockchainsRepository();
-
                         AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity(), resourcesProvider);
                         builder.setTitle(getString(R.string.DebugMenu));
                         CharSequence[] items;
@@ -4798,8 +4788,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 "Reload app config",
                                 !SharedConfig.forceForumTabs ? "Force Forum Tabs" : "Do Not Force Forum Tabs",
                                 "Make Memory Dump",
-                                BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.fastWallpaperDisabled ? "enable wallpaper shader" : "disable wallpaper shader") : null,
-                                rep.getMultichainEnabled() ? "Disable Multichain wallet" : "Enable Multichain wallet"
+                                BuildVars.DEBUG_PRIVATE_VERSION ? (SharedConfig.fastWallpaperDisabled ? "enable wallpaper shader" : "disable wallpaper shader") : null
                         };
 
                         builder.setItems(items, (dialog, which) -> {
@@ -5096,9 +5085,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 FileLog.getInstance().dumpMemory(true);
                             } else if (which == 38) {
                                 SharedConfig.toggleFastWallpaperDisabled();
-                            } else if (which == 39) {
-                                boolean enabled = rep.getMultichainEnabled();
-                                rep.setMutlichainEnabled(!enabled);
                             }
                         });
                         builder.setNegativeButton(getString("Cancel", R.string.Cancel), null);
@@ -5803,8 +5789,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         writeButtonSetBackground();
         if (userId != 0) {
             if (imageUpdater != null) {
-                cameraDrawable = new RLottieDrawable(R.raw.camera_outline, String.valueOf(R.raw.camera_outline), AndroidUtilities.dp(56), AndroidUtilities.dp(56), false, null);
-                cellCameraDrawable = new RLottieDrawable(R.raw.camera_outline, R.raw.camera_outline + "_cell", AndroidUtilities.dp(42), AndroidUtilities.dp(42), false, null);
+                cameraDrawable = new RLottieDrawable(R.raw.camera_outline, AndroidUtilities.dp(56), AndroidUtilities.dp(56), false, null);
+                cellCameraDrawable = new RLottieDrawable(R.raw.camera_outline, AndroidUtilities.dp(42), AndroidUtilities.dp(42), false, null);
 
                 if (actionsView != null) {
                     actionsView.beginApplyingActions();
@@ -10629,8 +10615,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         addToContactsRow = -1;
         emptyRow = -1;
         emptyRow2 = -1;
-        walletHeaderRow = -1;
-        walletInfoRow = -1;
         infoHeaderRow = -1;
         infoHeaderRowEmpty = -1;
         infoEndRowEmpty = -1;
@@ -10832,10 +10816,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         channelRow = rowCount++;
                         channelDividerRow = rowCount++;
                     }
-                }
-                if (!isBot && !UserObject.isUserSelf(user)) {
-                    walletHeaderRow = rowCount++;
-                    walletInfoRow = rowCount++;
                 }
                 infoStartRow = rowCount;
                 // region ng show reg date
@@ -13261,8 +13241,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 VIEW_TYPE_LINKED_COMMUNITY = 33
                         ;
 
-        private final static int NG_VIEW_TYPE_WALLET_INFO = 100000,
-                NG_VIEW_TYPE_ID = 100001;
+        private final static int NG_VIEW_TYPE_ID = 100001;
 
         private Context mContext;
 
@@ -13274,11 +13253,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view;
             switch (viewType) {
-                case NG_VIEW_TYPE_WALLET_INFO: {
-                    view = new ContactWalletWidgetView(mContext);
-                    view.setOnClickListener(null);
-                    break;
-                }
                 case NG_VIEW_TYPE_ID: {
                     view = new UserIdView(mContext);
                     view.setOnClickListener(null);
@@ -13585,34 +13559,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             switch (holder.getItemViewType()) {
-                case NG_VIEW_TYPE_WALLET_INFO:
-                    ContactWalletWidgetView contactWalletView = (ContactWalletWidgetView) holder.itemView;
-                    TLRPC.User userContact = getMessagesController().getUser(userId);
-
-                    StringBuilder strBuilder = new StringBuilder();
-                    AvatarDrawable.getAvatarSymbols(userContact.first_name, userContact.last_name, null, strBuilder);
-                    String avatarSymbols = strBuilder.toString();
-                    WalletContact walletContact = WalletContact.Companion.create(
-                            String.valueOf(userContact.id),
-                            userContact.first_name,
-                            userContact.last_name,
-                            avatarSymbols,
-                            userContact.username,
-                            userContact.photo != null ? getFileLoader().getPathToAttach(userContact.photo.photo_small, true).toString() : ""
-                    );
-                    contactWalletView.setData(walletContact, Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider), getThemedColor(Theme.key_switch2TrackChecked), new ContactWalletWidgetView.Events() {
-                        @Override
-                        public void onCopyClick(@NonNull String text) {
-                            AndroidUtilities.addToClipboard(text);
-                            BulletinFactory.of(ProfileActivity.this).createCopyBulletin(LocaleController.getString("NicegramWalletAddressCopied", R.string.NicegramWalletAddressCopied)).show();
-                        }
-
-                        @Override
-                        public void onSendClick() {
-                            InChatMainActivity.Companion.launch(contactWalletView.getContext(), walletContact, SendSelectICScreenDestination.INSTANCE);
-                        }
-                    });
-                    break;
                 case NG_VIEW_TYPE_ID:
                     UserIdView userIdView = (UserIdView) holder.itemView;
                     String id;
@@ -13643,8 +13589,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         } else {
                             headerCell.setText(LocaleController.getString(R.string.Info));
                         }
-                    } else if (position == walletHeaderRow) {
-                        headerCell.setText(LocaleController.getString(R.string.NicegramAssistant_Wallet));
                     } else if (position == membersHeaderRow) {
                         headerCell.setText(LocaleController.getString(R.string.ChannelMembers));
                     } else if (position == settingsSectionRow2) {
@@ -14558,7 +14502,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         @Override
         public int getItemViewType(int position) {
             if (position == infoHeaderRow || position == membersHeaderRow || position == settingsSectionRow2 ||
-                    position == numberSectionRow || position == helpHeaderRow || position == debugHeaderRow || position == botPermissionsHeader || position == walletHeaderRow) {
+                    position == numberSectionRow || position == helpHeaderRow || position == debugHeaderRow || position == botPermissionsHeader) {
                 return VIEW_TYPE_HEADER;
             } else if (position == phoneRow || position == locationRow ||
                     position == numberRow || position == birthdayRow || position == regDateRow) {
@@ -14636,8 +14580,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return VIEW_TYPE_COLORFUL_TEXT;
             } else if (position == infoHeaderRowEmpty || position == infoEndRowEmpty) {
                 return VIEW_TYPE_HEADER_EMPTY;
-            } else if (position == walletInfoRow) {
-                return NG_VIEW_TYPE_WALLET_INFO;
             } else if (position == userIdRow) {
                 return NG_VIEW_TYPE_ID;
             }
@@ -15973,8 +15915,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, emptyRow, sparseIntArray);
             put(++pointer, emptyRow2, sparseIntArray);
             put(++pointer, bottomPaddingRow, sparseIntArray);
-            put(++pointer, walletHeaderRow, sparseIntArray);
-            put(++pointer, walletInfoRow, sparseIntArray);
             put(++pointer, infoHeaderRow, sparseIntArray);
             put(++pointer, infoHeaderRowEmpty, sparseIntArray);
             put(++pointer, infoEndRowEmpty, sparseIntArray);
