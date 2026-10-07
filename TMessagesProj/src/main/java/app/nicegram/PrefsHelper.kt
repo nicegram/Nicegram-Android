@@ -3,6 +3,7 @@ package app.nicegram
 import android.content.Context
 import android.content.SharedPreferences
 import com.appvillis.core_analytics.AnalyticsHelper.logEvent
+import com.appvillis.core_analytics.AnalyticsTrackEvent
 import com.appvillis.nicegram.NicegramAssistantEntryPoint
 import com.appvillis.nicegram.NicegramPrefs
 import com.appvillis.nicegram.NicegramPrefs.PREF_FOREVER_COOL_DOWN
@@ -156,7 +157,7 @@ object PrefsHelper {
     }
 
     fun setShowFoldersForKeywords(currentAccount: Int, show: Boolean) {
-        if (!show) logEvent(ApplicationLoader.applicationContext, "keywords_folder_disabled", null)
+        if (!show) logEvent(ApplicationLoader.applicationContext, AnalyticsTrackEvent("keywords_folder_disabled"))
 
         MessagesController.getNicegramSettings(currentAccount)
             .edit()

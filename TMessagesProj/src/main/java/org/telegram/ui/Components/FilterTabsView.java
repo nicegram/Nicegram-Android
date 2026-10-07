@@ -54,6 +54,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.appvillis.assistant_core.MainActivity;
 import com.appvillis.core_analytics.AnalyticsHelper;
+import com.appvillis.core_analytics.AnalyticsTrackEvent;
 import com.appvillis.feature_keywords.domain.KeywordsConsts;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -1114,7 +1115,7 @@ public class FilterTabsView extends FrameLayout {
             }
             TabView tabView = (TabView) view;
             if (tabView.currentTab.id == KeywordsConsts.FOLDER_FOR_KEYWORDS_ID) {
-                AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, "keywords_folder_open", null);
+                AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, new AnalyticsTrackEvent("keywords_folder_open"));
                 MainActivity.Companion.launchRoute(context, R.id.action_global_keywordsFolderListFragmentPop, null);
                 return;
             }

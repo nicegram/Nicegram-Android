@@ -4,6 +4,7 @@ import android.app.Activity
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import com.appvillis.assistant_core.MainActivity
+import com.appvillis.core_analytics.AnalyticsTrackEvent
 import com.appvillis.feature_ai_chat_analysis.AiAnalysisEntryPoint
 import com.appvillis.feature_ai_chat_analysis.domain.entities.Session
 import com.appvillis.feature_ai_chat_analysis.domain.entities.SourceData
@@ -31,7 +32,10 @@ import kotlin.coroutines.suspendCoroutine
 
 object AiAnalysisHelper {
     fun onChatAnalysisClick(fromContextMenu: Boolean, activity: Activity, currentAccount: Int, isTopic: Boolean, threadMessageId: Long, currentChat: Chat?, currentUser: User?, messages: List<MessageObject>) {
-        AnalyticsHelper.logEvent(activity, if (fromContextMenu) "chat_ai_open_from_menu" else "chat_ai_open_from_chat", null)
+        AnalyticsHelper.logEvent(
+            activity,
+            AnalyticsTrackEvent(if (fromContextMenu) "chat_ai_open_from_menu" else "chat_ai_open_from_chat")
+        )
 
         val currentId: Long = currentChat?.id ?: (currentUser?.id ?: 0)
         GlobalScope.launch(Dispatchers.IO) {

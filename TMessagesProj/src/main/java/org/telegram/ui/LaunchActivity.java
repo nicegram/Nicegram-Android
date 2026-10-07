@@ -98,6 +98,7 @@ import com.appvillis.feature_nicegram_client.domain.NgClientRemoteConfigRepo;
 import com.appvillis.core_ui.Intents;
 import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.core_analytics.AnalyticsHelper;
+import com.appvillis.core_analytics.AnalyticsTrackEvent;
 import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.feature_nicegram_client.presentation.onboarding.NicegramOnboardingActivity;
 import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity;
@@ -187,6 +188,7 @@ import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Cells.LanguageCell;
 import org.telegram.ui.Components.ActivityWindowEmptyBackgroundDrawable;
 import org.telegram.ui.Components.AlertsCreator;
+import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AttachBotIntroTopView;
 import org.telegram.ui.Components.AudioPlayerAlert;
 import org.telegram.ui.Components.BatteryDrawable;
@@ -6139,7 +6141,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
                         SharedPreferences.Editor editor = MessagesController.getGlobalMainSettings().edit();
                         editor.putBoolean("proxy_enabled", false);
-                        editor.putBoolean("proxy_enabled_calls", false);
                         editor.commit();
                         ConnectionsManager.setProxySettings(false, null);
                         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.proxySettingsChanged);
@@ -7000,6 +7001,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             editorView.destroy();
         }
         FloatingDebugController.onDestroy();
+        AnimatedEmojiDrawable.dropGlobalEmojiCache();
         if (BuildConfig.DEBUG_PRIVATE_VERSION) {
             LeakDetector.getInstance().stop();
         }
@@ -9245,7 +9247,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             actionBarLayout.closeLastFragment();
             Intents.INSTANCE.openUrl(this, url, null, true);
         } else if (url.equals("ncg://assistant")) {
-            AnalyticsHelper.INSTANCE.logEvent(this, "assistant_open_from_deeplink", null);
+            AnalyticsHelper.INSTANCE.logEvent(this, new AnalyticsTrackEvent("assistant_open_from_deeplink"));
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
             MainActivity.Companion.launchAssistant(this);
         } else if (url.startsWith("ncg://assistant-auth")) {
@@ -9259,7 +9261,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             actionBarLayout.closeLastFragment();
             MainActivity.Companion.launchAiGreetings(this);
         } else if (url.equals("ncg://aiLily")) {
-            AnalyticsHelper.INSTANCE.logEvent(this, "chatbot_open_from_deeplink", null);
+            AnalyticsHelper.INSTANCE.logEvent(this, new AnalyticsTrackEvent("chatbot_open_from_deeplink"));
             AiChatBotHelper.INSTANCE.launchAiBot(this, false);
         } else if (url.startsWith("ncg://deeplink")) {
             String internalUrl = data.getQueryParameter("url");
@@ -9271,6 +9273,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             try {
                 SpecialOffersRepository.SpecialOffer specialOffer = NicegramAssistantHelper.INSTANCE.findSpecialOffer(this, Integer.parseInt(data.getQueryParameter("id")));
                 if (specialOffer != null) {
+                    AnalyticsHelper.INSTANCE.logEvent(this, new AnalyticsTrackEvent("special_offer_deeplink_with_id_" + specialOffer.getId()));
                     MainActivity.Companion.launchSpecialOffer(this, specialOffer.getUrl(), specialOffer.getId());
                 }
             } catch (Exception e) {

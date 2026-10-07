@@ -138,6 +138,7 @@ import com.appvillis.feature_gods_eye.presentation.GodsEyeHelper;
 import com.appvillis.feature_gods_eye.presentation.ui.UserIdView;
 import com.appvillis.feature_nicegram_client.NicegramClientHelper;
 import com.appvillis.core_analytics.AnalyticsHelper;
+import com.appvillis.core_analytics.AnalyticsTrackEvent;
 import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.network.NicegramNetwork;
 import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity;
@@ -13575,7 +13576,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         return null;
                     });
                     userIdView.setGodsEyeClick(() -> {
-                        AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, "eog_click", new HashMap<>());
+                        AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, new AnalyticsTrackEvent("eog_click"));
 
                         GodsEyeHelper.INSTANCE.openGodsEye(ApplicationLoader.applicationContext, userId);
                         return null;
@@ -14829,7 +14830,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     new SearchResult(218, getString(R.string.VoipUseLessData), "useLessDataForCallsRow", getString(R.string.DataSettings), R.drawable.msg2_data, () -> f.presentFragment(new DataSettingsActivity())).withLink("tg://settings/data/use-less-data"),
                     new SearchResult(219, getString(R.string.VoipQuickReplies), "quickRepliesRow", getString(R.string.DataSettings), R.drawable.msg2_data, () -> f.presentFragment(new DataSettingsActivity())),
                     new SearchResult(220, getString(R.string.ProxySettings), getString(R.string.DataSettings), R.drawable.msg2_data, () -> f.presentFragment(new ProxyListActivity())).withLink("tg://settings/data/proxy"),
-                    new SearchResult(221, getString(R.string.UseProxyForCalls), "callsRow", getString(R.string.DataSettings), getString(R.string.ProxySettings), R.drawable.msg2_data, () -> f.presentFragment(new ProxyListActivity())).withLink("tg://settings/data/proxy/use-for-calls"),
                     new SearchResult(111, getString(R.string.PrivacyDeleteCloudDrafts), "clearDraftsRow", getString(R.string.DataSettings), R.drawable.msg2_data, () -> f.presentFragment(new DataSettingsActivity())).withLink("tg://settings/privacy/data-settings/delete-cloud-drafts"),
                     new SearchResult(222, getString(R.string.SaveToGallery), "saveToGallerySectionRow", getString(R.string.DataSettings), R.drawable.msg2_data, () -> f.presentFragment(new DataSettingsActivity())),
                     new SearchResult(223, getString(R.string.SaveToGalleryPrivate), "saveToGalleryPeerRow", getString(R.string.DataSettings), getString(R.string.SaveToGallery), R.drawable.msg2_data, () -> f.presentFragment(new DataSettingsActivity())).withLink("tg://settings/data/save-to-photos/chats"),

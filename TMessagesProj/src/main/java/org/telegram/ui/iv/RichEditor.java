@@ -2604,6 +2604,12 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
                         new ToastMessage.Error(new ToastText.Raw(LocaleController.getString(R.string.VoiceInput_TranscribeGeoBlock))));
                 ToastViewHelper.INSTANCE.showViewToast(toastView, bulletinContainer, true, true, AndroidUtilities.dp(24));
             });
+            view.setOnModelSubstituted(modelName -> {
+                ToastView toastView = ToastView.Companion.newInstance(
+                        getContext(),
+                        new ToastMessage.Warning(new ToastText.Raw(LocaleController.formatString(R.string.VoiceInput_ModelSubstituted, modelName))));
+                ToastViewHelper.INSTANCE.showViewToast(toastView, bulletinContainer, true, true, AndroidUtilities.dp(24));
+            });
             view.setOnAuthLoading(loading -> setVoiceInputAuthLoading(loading));
             view.setOnAuthError(() -> {
                 ToastView toastView = ToastView.Companion.newInstance(

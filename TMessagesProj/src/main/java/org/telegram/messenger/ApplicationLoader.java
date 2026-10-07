@@ -39,11 +39,11 @@ import com.appvillis.core_domain.usecase.user.AppSessionControlUseCase;
 import com.appvillis.core_domain.usecase.user.FetchNicegramUserLoggedInStatusUseCase;
 import com.appvillis.core_ui.MarketConsts;
 import com.appvillis.core_ui.domain.TgResourceProvider;
-import com.appvillis.core_analytics.AnalyticsValue;
 import com.appvillis.feature_nicegram_assistant.QrCodeHelper;
 import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter;
 import com.appvillis.core_ui.Intents;
 import com.appvillis.core_analytics.AnalyticsHelper;
+import com.appvillis.core_analytics.AnalyticsTrackEvent;
 import com.appvillis.nicegram.NicegramPrefs;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -53,6 +53,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 
 import org.json.JSONObject;
 import org.telegram.messenger.browser.Browser;
+import org.telegram.messenger.utils.Choreographer60FpsContent;
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -63,9 +64,7 @@ import org.telegram.ui.IUpdateLayout;
 import org.telegram.ui.LauncherIconController;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -406,7 +405,15 @@ public class ApplicationLoader extends Application {
 
         LauncherIconController.tryFixLauncherIconIfNeeded();
         ProxyRotationController.init();
+
+        //if (BuildConfig.DEBUG_PRIVATE_VERSION) {
+        //    Choreographer60FpsContent.getInstance().addFrameCallback(debugEverySecondChecks, 1);
+        //}
     }
+
+    private final Runnable debugEverySecondChecks = () -> AndroidUtilities.runOnUIThread(() -> {
+        NotificationCenter.sanitize();
+    });
 
     public static void startPushService() {
         SharedPreferences preferences = MessagesController.getGlobalNotificationsSettings();
@@ -671,7 +678,8 @@ public class ApplicationLoader extends Application {
             return null;
         });
 
-        AnalyticsHelper.INSTANCE.logEvent(this, fetchNicegramUserLoggedInStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon", null);
+        AnalyticsHelper.INSTANCE.logEvent(this, new AnalyticsTrackEvent(fetchNicegramUserLoggedInStatusUseCase.isUserLoggedIn() ? "nicegram_session_authenticated" : "nicegram_session_anon"));
+        AnalyticsHelper.INSTANCE.logEvent(this, new AnalyticsTrackEvent(appSessionControlUseCase.getAppSessionNumber() > 1 ? "nicegram_open_again" : "nicegram_open_first_time"));
         new Handler().postDelayed(() -> {
             int accountCount = 0;
             for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
@@ -679,15 +687,10 @@ public class ApplicationLoader extends Application {
                     accountCount++;
                 }
             }
-            int accountCountToLog = accountCount;
-            if (accountCount > 1 && accountCount <= 5) {
-                accountCountToLog = 5;
-            } else if (accountCount > 1 && accountCount <= 100) {
-                accountCountToLog = (int) Math.round(accountCount / 10.0) * 10;
-            }
-            Map<String, AnalyticsValue> paramsMap = new HashMap<>();
-            paramsMap.put("profiles_count", new AnalyticsValue.IntVal(accountCount));
-            AnalyticsHelper.INSTANCE.logEvent(this, "user_set_" + accountCountToLog + "_profiles", paramsMap);
+            int accountCountToLog = accountCount < 10
+                    ? accountCount
+                    : (int) Math.round(accountCount / 10.0) * 10;
+            AnalyticsHelper.INSTANCE.logEvent(this, new AnalyticsTrackEvent("user_set_" + accountCountToLog + "_profiles"));
         }, 5000);
 
         setQrRenderer();

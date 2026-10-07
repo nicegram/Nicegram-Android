@@ -4314,6 +4314,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                         }
                         if (MessagesController.getInstance(botWebViewContainer.currentAccount).webAppAllowedProtocols != null &&
                                 MessagesController.getInstance(botWebViewContainer.currentAccount).webAppAllowedProtocols.contains(uriNew.getScheme())) {
+                            final BotWebViewContainer botWebViewContainerLocal = botWebViewContainer;
                             if (opener != null) {
                                 if (botWebViewContainer.delegate != null) {
                                     botWebViewContainer.delegate.onInstantClose();
@@ -4325,7 +4326,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                                     opener.botWebViewContainer.delegate.onCloseToTabs();
                                 }
                             }
-                            botWebViewContainer.onOpenUri(uriNew);
+                            botWebViewContainerLocal.onOpenUri(uriNew);
                         }
                         d("shouldOverrideUrlLoading(" + url + ") = true");
                         return true;

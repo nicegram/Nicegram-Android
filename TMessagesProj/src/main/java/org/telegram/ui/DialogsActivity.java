@@ -113,6 +113,7 @@ import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
 import com.appvillis.feature_nicegram_client.NicegramOnboardingHelper;
 import com.appvillis.feature_nicegram_client.NicegramSessionPrefs;
 import com.appvillis.core_analytics.AnalyticsHelper;
+import com.appvillis.core_analytics.AnalyticsTrackEvent;
 import com.appvillis.nicegram.NgWidgetsTrackerHelper;
 import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.nicegram.NicegramBillingHelper;
@@ -2873,7 +2874,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
 
     private NotificationCenter.ObserversGroup observersGroup;
-    private NotificationCenter.ObserversGroup globalObserversGroup;
 
     @Override
     public boolean onFragmentCreate() {
@@ -2948,15 +2948,14 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
 
         observersGroup = getNotificationCenter().createObserversGroup(this);
-        globalObserversGroup = NotificationCenter.getGlobalInstance().createObserversGroup(this);
 
         if (searchString == null) {
             currentConnectionState = getConnectionsManager().getConnectionState();
 
-            globalObserversGroup.add(NotificationCenter.emojiLoaded);
+            observersGroup.addGlobal(NotificationCenter.emojiLoaded);
             if (!onlySelect) {
-                globalObserversGroup.add(NotificationCenter.closeSearchByActiveAction);
-                globalObserversGroup.add(NotificationCenter.proxySettingsChanged);
+                observersGroup.addGlobal(NotificationCenter.closeSearchByActiveAction);
+                observersGroup.addGlobal(NotificationCenter.proxySettingsChanged);
                 observersGroup.add(NotificationCenter.filterSettingsUpdated);
                 observersGroup.add(NotificationCenter.dialogsUnreadCounterChanged);
             }
@@ -2987,7 +2986,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     .add(NotificationCenter.userEmojiStatusUpdated)
                     .add(NotificationCenter.currentUserPremiumStatusChanged);
 
-            globalObserversGroup.add(NotificationCenter.didSetPasscode);
+            observersGroup.addGlobal(NotificationCenter.didSetPasscode);
         }
         observersGroup
                 .add(NotificationCenter.messagesDeleted)
@@ -3134,10 +3133,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (observersGroup != null) {
             observersGroup.removeAllObservers();
             observersGroup = null;
-        }
-        if (globalObserversGroup != null) {
-            globalObserversGroup.removeAllObservers();
-            globalObserversGroup = null;
         }
 
         if (commentView != null) {
@@ -13030,7 +13025,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         View contentView = new KeywordsHintView(getContext(), bgColor, Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
                         contentView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
                         bubble.show(tabView, contentView, () -> {
-                            AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, "keywords_folder_open", null);
+                            AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, new AnalyticsTrackEvent("keywords_folder_open"));
 
                             MainActivity.Companion.launchRoute(getContext(), R.id.action_global_keywordsFolderListFragmentPop, null);
                             return null;

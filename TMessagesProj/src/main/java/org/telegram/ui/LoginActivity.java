@@ -113,6 +113,7 @@ import com.appvillis.feature_account_export.ExportAccountsBottomSheetFragment;
 import com.appvillis.feature_account_export.domain.Account;
 import com.appvillis.feature_auth.analytics.NicegramTgAuthEvents;
 import com.appvillis.core_analytics.AnalyticsHelper;
+import com.appvillis.core_analytics.AnalyticsTrackEvent;
 import com.appvillis.feature_telegram_session.api.BannerTelegramSessionView;
 import com.appvillis.feature_telegram_session.api.TelegramSessionSource;
 import com.appvillis.nicegram.NicegramAssistantHelper;
@@ -1521,6 +1522,15 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
     }
 
     public void setPage(@ViewNumber int page, boolean animated, Bundle params, boolean back) {
+        // region NG analytics
+        if (page != currentViewNum) {
+            if (page == VIEW_PHONE_INPUT) {
+                AnalyticsHelper.INSTANCE.logEvent(getContext(), new AnalyticsTrackEvent("nicegram_tgauth_enter_phone"));
+            } else if ((page >= VIEW_CODE_MESSAGE && page <= VIEW_CODE_CALL) || page == VIEW_CODE_MISSED_CALL || page == VIEW_CODE_FRAGMENT_SMS) {
+                AnalyticsHelper.INSTANCE.logEvent(getContext(), new AnalyticsTrackEvent("nicegram_tgauth_enter_code"));
+            }
+        }
+        // endregion NG analytics
         boolean needFloatingButton = page == VIEW_PHONE_INPUT || page == VIEW_REGISTER || page == VIEW_PASSWORD ||
                 page == VIEW_NEW_PASSWORD_STAGE_1 || page == VIEW_NEW_PASSWORD_STAGE_2 || page == VIEW_ADD_EMAIL || page == VIEW_CODE_PHRASE || page == VIEW_CODE_WORD;
         if (page == currentViewNum) {
@@ -1691,6 +1701,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         MessagesController.getInstance(currentAccount).checkPeerColors(false);
 
         AnalyticsHelper.INSTANCE.logEvent(getContext(), NicegramTgAuthEvents.INSTANCE.nicegramTgauthSuccess());
+        AnalyticsHelper.INSTANCE.logEvent(getContext(), new AnalyticsTrackEvent("telegram_profile_added"));
         // region NG Gold theme
         Theme.setNicegramGoldNightTheme();
         // endregion NG Gold theme
