@@ -68,6 +68,7 @@ import java.util.Locale;
 
 import javax.inject.Inject;
 
+import app.nicegram.NgActivityLocale;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.PrefsHelper;
 import app.nicegram.TgThemeProxyImpl;
@@ -664,6 +665,7 @@ public class ApplicationLoader extends Application {
     }
 
     private void initNicegram() {
+        NgActivityLocale.register(this);
         NicegramDoubleBottom.INSTANCE.init(this);
 
         nicegramSessionCounter.increaseSessionCount();

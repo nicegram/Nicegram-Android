@@ -99,7 +99,7 @@ import com.appvillis.core_ui.domain.ToastMessage;
 import com.appvillis.core_ui.domain.ToastText;
 import com.appvillis.core_ui.widgets.ToastView;
 import com.appvillis.core_ui.widgets.ToastViewHelper;
-import com.appvillis.feature_voice_input.api.VoiceInputView; // nicegram voice input
+import com.appvillis.feature_transcription.api.voiceinput.VoiceInputView; // nicegram voice input
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.ScaleStateListAnimator;

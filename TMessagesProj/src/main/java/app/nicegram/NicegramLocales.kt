@@ -27,6 +27,7 @@ object NicegramLocales {
         "TelegramFeatures",
         "TelegramFeaturesUrl",
         "NicegramDialogPolicyText",
+        "Nicegram_TelegramSession_Settings",
         // region Telegram premium
         "UnlockPremiumReactionsDescription",
         "UnlockPremiumTranscriptionHint",

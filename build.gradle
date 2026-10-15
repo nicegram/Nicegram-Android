@@ -22,6 +22,14 @@ repositories {
     google()
 }
 
+def nicegramLocaleFilters = fileTree(rootDir) {
+    include 'nicegram-assistant-android/**/src/main/res/values-*/*.xml'
+    include 'nicegram-features/src/main/res/values-*/*.xml'
+    exclude '**/build/**'
+}.files.collect { it.parentFile.name - 'values-' }
+        .findAll { it ==~ /[a-z]{2,3}(-r[A-Z]{2})?/ }
+        .toSet()
+
 // Strip JLatexMath fonts we don't ship (transitive AAR assets from
 // io.noties.markwon:ext-latex -> ru.noties:jlatexmath-android, ~764 KB total under
 // assets/org/scilab/forge/jlatexmath/fonts/). Has to live in the APK modules — a
@@ -35,6 +43,7 @@ subprojects {
         android {
             androidResources {
                 ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~:!optional:!licences:!*stmary*:!*eufb*'
+                localeFilters += nicegramLocaleFilters
             }
         }
     }

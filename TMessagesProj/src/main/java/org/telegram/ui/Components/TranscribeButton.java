@@ -27,6 +27,9 @@ import androidx.core.graphics.ColorUtils;
 import androidx.core.math.MathUtils;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
+// ng transcription
+import app.nicegram.NgVoiceMessageTranscription;
+//
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
@@ -207,9 +210,14 @@ public class TranscribeButton {
         }
         clickedToOpen = false;
         boolean processClick, toOpen = !shouldBeOpen;
+        // ng transcription
+        boolean ngTranscription = toOpen && NgVoiceMessageTranscription.shouldHandle(parent.getMessageObject());
+        //
         if (!shouldBeOpen) {
             processClick = !loading;
-            if ((premium || canTranscribeTrial(parent.getMessageObject())) && parent.getMessageObject().isSent()) {
+            // ng transcription
+            if ((premium || ngTranscription || canTranscribeTrial(parent.getMessageObject())) && parent.getMessageObject().isSent()) {
+            //
                 setLoading(true, true);
             }
         } else {
@@ -223,6 +231,13 @@ public class TranscribeButton {
         }
         pressed = false;
         if (processClick) {
+            // ng transcription
+            if (ngTranscription) {
+                clickedToOpen = true;
+                NgVoiceMessageTranscription.start(parent.getMessageObject());
+                return;
+            }
+            //
             if (!premium && toOpen) {
                 if (canTranscribeTrial(parent.getMessageObject()) || parent.getMessageObject() != null && parent.getMessageObject().messageOwner != null && !TextUtils.isEmpty(parent.getMessageObject().messageOwner.voiceTranscription)) {
                     transcribePressed(parent.getMessageObject(), toOpen, parent.getDelegate());
@@ -666,6 +681,21 @@ public class TranscribeButton {
         );
     }
 
+    // ng transcription
+    public static void ngBeginTranscription(MessageObject messageObject) {
+        if (transcribeOperationsByDialogPosition == null) {
+            transcribeOperationsByDialogPosition = new HashMap<>();
+        }
+        transcribeOperationsByDialogPosition.put((Integer) reqInfoHash(messageObject), messageObject);
+    }
+
+    public static void ngEndTranscription(MessageObject messageObject) {
+        if (transcribeOperationsByDialogPosition != null) {
+            transcribeOperationsByDialogPosition.remove((Integer) reqInfoHash(messageObject));
+        }
+    }
+    //
+
     private static void transcribePressed(MessageObject messageObject, boolean open, ChatMessageCell.ChatMessageCellDelegate delegate) {
         if (messageObject == null || messageObject.messageOwner == null || !messageObject.isSent()) {
             return;
@@ -857,6 +887,11 @@ public class TranscribeButton {
         if (messageObject == null || messageObject.messageOwner == null) {
             return false;
         }
+        // ng transcription
+        if (NgVoiceMessageTranscription.canShowButton(messageObject)) {
+            return false;
+        }
+        //
         if (isFreeTranscribeInChat(messageObject)) {
             return false;
         }

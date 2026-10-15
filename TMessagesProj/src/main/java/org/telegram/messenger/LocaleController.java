@@ -63,6 +63,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
 
+import app.nicegram.NgActivityLocale;
 import app.nicegram.NicegramLocales;
 
 public class LocaleController {
@@ -1399,6 +1400,7 @@ public class LocaleController {
             android.content.res.Configuration config = new android.content.res.Configuration();
             config.locale = currentLocale;
             ApplicationLoader.applicationContext.getResources().updateConfiguration(config, ApplicationLoader.applicationContext.getResources().getDisplayMetrics());
+            NgActivityLocale.applyAll();
             changingConfiguration = false;
             FileLog.d("applyLanguage: reloadLastFile=" + reloadLastFile + " force=" + force + " isLoadingRemote=" + isLoadingRemote);
             if (reloadLastFile || !isLoadingRemote && !force && shouldReinstallLangpack(localeInfo.shortName)) {
@@ -3134,6 +3136,7 @@ public class LocaleController {
                         Configuration config = new Configuration();
                         config.locale = currentLocale;
                         ApplicationLoader.applicationContext.getResources().updateConfiguration(config, ApplicationLoader.applicationContext.getResources().getDisplayMetrics());
+                        NgActivityLocale.applyAll();
                         changingConfiguration = false;
 
                         RestrictedLanguagesSelectActivity.invalidateRestrictedLanguages();

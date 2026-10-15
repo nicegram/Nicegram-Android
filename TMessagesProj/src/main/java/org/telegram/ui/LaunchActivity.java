@@ -274,9 +274,11 @@ import java.util.zip.ZipInputStream;
 
 import app.nicegram.AccountsExportHelper;
 import app.nicegram.AppIconNicegramBulletinLayout;
+import app.nicegram.NgActivityLocale;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramIntroActivity;
 import app.nicegram.NicegramSettingsActivity;
+import app.nicegram.TelegramSessionActivity;
 import app.nicegram.UserHelper;
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -7175,6 +7177,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
+        NgActivityLocale.apply(this);
         AndroidUtilities.checkDisplaySize(this, newConfig);
         AndroidUtilities.setPreferredMaxRefreshRate(getWindow());
         super.onConfigurationChanged(newConfig);
@@ -9298,7 +9301,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         } else if (url.startsWith("ncg://tgOpenSettings")) {
             presentFragment(new NicegramSettingsActivity());
         } else if (url.startsWith("ncg://tgAccountShop")) {
-            MainActivity.Companion.launchTelegramSession(this, TelegramSessionSource.LINK);
+            if (NicegramAssistantHelper.INSTANCE.isTelegramSessionEnabled(this)) {
+                presentFragment(new TelegramSessionActivity(TelegramSessionSource.LINK));
+            }
         }
     }
 

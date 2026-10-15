@@ -151,7 +151,6 @@ import app.nicegram.NicegramAttHelper;
 import app.nicegram.NicegramGroupCollectHelper;
 import app.nicegram.NicegramMetadataHelper;
 import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity;
-import com.appvillis.rep_user_actions.domain.entities.AttUserAction;
 import com.google.zxing.common.detector.MathUtils;
 
 import org.telegram.PhoneFormat.PhoneFormat;
@@ -378,7 +377,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import app.nicegram.NicegramUserActionsHelper;
 import app.nicegram.PrefsHelper;
 import dagger.hilt.EntryPoints;
 
@@ -2768,8 +2766,6 @@ public class ChatActivity extends BaseFragment implements
         }
 
         if (chatId != 0) {
-           NicegramUserActionsHelper.INSTANCE.saveActionIfAllowed(chatId, AttUserAction.AttUserActionType.Open); // ng
-
             currentChat = getMessagesController().getChat(chatId);
             if (currentChat == null) {
                 final CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -7614,6 +7610,7 @@ public class ChatActivity extends BaseFragment implements
                     topPanelLayout.setViewVisible(fragmentContextViewWrapper, visibility == VISIBLE);
                 }
             };
+            fragmentContextView.setSpeedHintViewParent(contentView);
             topPanelLayout.setCallFragmentContextView(fragmentContextView);
             fragmentContextViewWrapper.addView(fragmentContextView);
             fragmentLocationContextViewWrapper.addView(fragmentLocationContextView);
@@ -12383,8 +12380,8 @@ public class ChatActivity extends BaseFragment implements
                     try {
                         intent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", file));
                         intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    } catch (Exception ignore) {
-                        intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
+                    } catch (Exception e) {
+                        FileLog.e(e);
                     }
                 } else {
                     intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
@@ -20347,6 +20344,8 @@ public class ChatActivity extends BaseFragment implements
                     size[0] = thumb.size;
                     if (size[0] == 0) size[0] = -1;
                     return thumb;
+                } else {
+                    size[0] = -1;
                 }
             }
             return null;
@@ -26029,7 +26028,11 @@ public class ChatActivity extends BaseFragment implements
                         if (notPushedSponsoredMessages == null) {
                             notPushedSponsoredMessages = new ArrayList<>();
                         }
-                        notPushedSponsoredMessages.add(obj);
+                        // When retrying, arr is notPushedSponsoredMessages itself: obj is already queued,
+                        // and appending to the list being iterated would loop forever.
+                        if (arr != notPushedSponsoredMessages) {
+                            notPushedSponsoredMessages.add(obj);
+                        }
                         continue;
                     }
                 }

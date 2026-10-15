@@ -61,9 +61,9 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.appvillis.assistant_core.MainActivity;
 import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity;
 import com.appvillis.feature_telegram_session.api.TelegramSessionSource;
+import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.nicegram.NicegramBillingHelper;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AndroidUtilities;
@@ -153,6 +153,7 @@ import app.nicegram.AiBotSettingsActivity;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramPremiumSettingsActivity;
 import app.nicegram.NicegramSettingsActivity;
+import app.nicegram.TelegramSessionActivity;
 import me.vkryl.android.animator.BoolAnimator;
 import me.vkryl.android.animator.FactorAnimator;
 
@@ -928,8 +929,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 break;
             case NG_TELEGRAM_SESSION_ID:
                 Activity activity = getParentActivity();
-                if (activity != null) {
-                    MainActivity.Companion.launchTelegramSession(activity, TelegramSessionSource.SETTINGS);
+                if (activity != null && NicegramAssistantHelper.INSTANCE.isTelegramSessionEnabled(activity)) {
+                    presentFragment(new TelegramSessionActivity(TelegramSessionSource.SETTINGS));
                 }
                 break;
         }

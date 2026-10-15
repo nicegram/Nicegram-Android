@@ -25,7 +25,6 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.ActivityNotFoundException;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
@@ -106,7 +105,6 @@ import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.QueryProductDetailsParams;
-import com.appvillis.assistant_core.MainActivity;
 import com.appvillis.core_network.data.HeaderInterceptor;
 import com.appvillis.core_domain.repository.user.UserRepository;
 import com.appvillis.feature_account_export.ExportAccountsBottomSheetFragment;
@@ -234,6 +232,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicReference;
 
+import app.nicegram.TelegramSessionActivity;
 import app.nicegram.AccountsExportHelper;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramTestPhoneHelper;
@@ -2095,18 +2094,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 BannerTelegramSessionView bannerTelegramSessionView = new BannerTelegramSessionView(context);
                 bannerTelegramSessionView.setData(Theme.isCurrentThemeDark());
                 addView(bannerTelegramSessionView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.START, 16, 16, 16, 16));
-                bannerTelegramSessionView.setOnClickListener(view -> {
-                    Context nullableContext = view.getContext();
-                    try {
-                        if (nullableContext != null) {
-                            MainActivity.Companion.launchTelegramSession(nullableContext, TelegramSessionSource.TG_LOGIN);
-                        }
-                    } catch (ActivityNotFoundException e) {
-                        if (nullableContext != null) {
-                            Toast.makeText(nullableContext, LocaleController.getString(R.string.Error_Default), Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+                bannerTelegramSessionView.setOnClickListener(view ->
+                        presentFragment(new TelegramSessionActivity(TelegramSessionSource.TG_LOGIN)));
             }
 
             ImportAccountLoginView importAccountsView = new ImportAccountLoginView(context, () -> {

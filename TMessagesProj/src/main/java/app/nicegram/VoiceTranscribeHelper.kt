@@ -1,13 +1,13 @@
 package app.nicegram
 
-import com.appvillis.feature_voice_input.api.VoiceInputEntryPoint
+import com.appvillis.feature_transcription.api.TranscriptionEntryPoint
 import dagger.hilt.EntryPoints
 import org.telegram.messenger.ApplicationLoader
 
 object VoiceTranscribeHelper {
 
-    private fun entryPoint(): VoiceInputEntryPoint =
-        EntryPoints.get(ApplicationLoader.applicationContext, VoiceInputEntryPoint::class.java)
+    private fun entryPoint(): TranscriptionEntryPoint =
+        EntryPoints.get(ApplicationLoader.applicationContext, TranscriptionEntryPoint::class.java)
 
     fun getSelectedModelName(): String? =
         entryPoint().fetchSelectedTranscriptionModelUseCase().invoke(Unit)?.name

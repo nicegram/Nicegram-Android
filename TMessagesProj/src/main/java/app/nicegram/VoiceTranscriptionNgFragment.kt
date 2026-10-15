@@ -6,8 +6,8 @@ import com.appvillis.core_ui.util.HostScopedViewModelStoreOwner
 import com.appvillis.core_ui.util.composeView
 import com.appvillis.core_ui.util.hostScopedViewModelStoreOwner
 import com.appvillis.core_ui.util.setHostViewTreeOwners
-import com.appvillis.feature_voice_input.api.VoiceTranscribeScreen
-import com.appvillis.feature_voice_input.api.VoiceTranscriptionModelColors
+import com.appvillis.feature_transcription.api.VoiceTranscribeScreen
+import com.appvillis.feature_transcription.api.VoiceTranscriptionModelColors
 import org.telegram.messenger.LocaleController
 import org.telegram.messenger.R
 import org.telegram.ui.ActionBar.ActionBar.ActionBarMenuOnItemClick
@@ -24,7 +24,7 @@ class VoiceTranscriptionNgFragment : BaseFragment() {
     override fun createView(context: Context): View {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back)
         actionBar.setAllowOverlayTitle(true)
-        actionBar.setTitle(LocaleController.getString(com.appvillis.feature_voice_input.R.string.VoiceInput_TranscribeModel))
+        actionBar.setTitle(LocaleController.getString(com.appvillis.feature_transcription.R.string.VoiceInput_TranscribeModel))
         actionBar.setActionBarMenuOnItemClick(object : ActionBarMenuOnItemClick() {
             override fun onItemClick(id: Int) {
                 if (id == -1) finishFragment()

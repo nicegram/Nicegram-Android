@@ -121,7 +121,7 @@ import com.appvillis.core_ui.domain.ToastMessage;
 import com.appvillis.core_ui.domain.ToastText;
 import com.appvillis.core_ui.widgets.ToastView;
 import com.appvillis.core_ui.widgets.ToastViewHelper;
-import com.appvillis.feature_voice_input.api.VoiceInputView;
+import com.appvillis.feature_transcription.api.voiceinput.VoiceInputView;
 import com.appvillis.nicegram.NicegramTranslator;
 
 import org.telegram.messenger.AccountInstance;

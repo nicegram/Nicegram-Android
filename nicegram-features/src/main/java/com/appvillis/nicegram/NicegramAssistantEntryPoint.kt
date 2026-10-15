@@ -7,16 +7,12 @@ import com.appvillis.core_ui.domain.TgResourceProvider
 import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo
 import com.appvillis.feature_ai_chat.domain.ClearDataUseCase
 import com.appvillis.feature_ai_chat.domain.UseResultManager
-import com.appvillis.feature_ai_chat.domain.usecases.GetChatCommandsUseCase
 import com.appvillis.feature_attention_economy.domain.usecases.ClaimAdsUseCase
 import com.appvillis.feature_attention_economy.domain.usecases.GetOngoingActionsUseCase
 import com.appvillis.feature_auth.domain.CheckIfNeedToCompleteAutoLoginUseCase
-import com.appvillis.feature_nicegram_assistant.domain.GetNicegramOnboardingStatusUseCase
 import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase
 import com.appvillis.core_domain.BillingManager
-import com.appvillis.feature_nicegram_billing.domain.RequestInAppsUseCase
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase
-import com.appvillis.feature_nicegram_client.domain.NgClientRemoteConfigRepo
 import com.appvillis.feature_nicegram_client.domain.IsReviewPhoneUseCase
 import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter
 import com.appvillis.core_domain.usecase.placement.GetChatPlacementsUseCase
@@ -28,7 +24,6 @@ import com.appvillis.core_domain.usecase.translate.TranslateTextUseCase
 import com.appvillis.core_domain.usecase.placement.GetAllPinChatsPlacementsUseCase
 import com.appvillis.core_domain.usecase.placement.IsPinChatsPlacementHiddenUseCase
 import com.appvillis.core_domain.usecase.placement.SetPinChatsPlacementHiddenUseCase
-import com.appvillis.rep_user_actions.domain.usecases.SaveUserActionUseCase
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -44,16 +39,13 @@ interface NicegramAssistantEntryPoint {
     fun getUserStatusUseCase(): FetchNicegramUserLoggedInStatusUseCase
     fun nicegramSessionCounter(): NicegramSessionCounter
     fun appSessionControlUseCase(): AppSessionControlUseCase
-    fun getNicegramOnboardingStatusUseCase(): GetNicegramOnboardingStatusUseCase
     fun getChatPlacementsUseCase(): GetChatPlacementsUseCase
     fun getAllPinChatsPlacementsUseCase(): GetAllPinChatsPlacementsUseCase
     fun isPinChatsPlacementHiddenUseCase(): IsPinChatsPlacementHiddenUseCase
     fun setPinChatsPlacementHiddenUseCase(): SetPinChatsPlacementHiddenUseCase
     fun userRepository(): UserRepository
     fun collectGroupInfoUseCase(): CollectGroupInfoUseCase
-    fun ngClientRemoteConfigRepo(): NgClientRemoteConfigRepo
     fun isReviewPhoneUseCase(): IsReviewPhoneUseCase
-    fun saveUserActionUseCase(): SaveUserActionUseCase
     fun getOngoingActionsUseCase(): GetOngoingActionsUseCase
     fun claimAdsUseCase(): ClaimAdsUseCase
     fun isTelegramSessionEnabledUseCase(): IsTelegramSessionEnabledUseCase
@@ -67,11 +59,9 @@ interface NicegramAssistantEntryPoint {
 
     // region billing
     fun billingManager(): BillingManager
-    fun requestInAppsUseCase(): RequestInAppsUseCase
     // end region
 
     // region ai
-    fun getChatCommandsUseCase(): GetChatCommandsUseCase
     fun clearDataUseCase(): ClearDataUseCase
     fun useResultManager(): UseResultManager
     fun aiChatRemoteConfigRepo(): AiChatRemoteConfigRepo
