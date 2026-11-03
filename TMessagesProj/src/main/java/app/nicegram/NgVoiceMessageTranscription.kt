@@ -1,8 +1,8 @@
 package app.nicegram
 
-import androidx.annotation.StringRes
 import com.appvillis.core_domain.entry.openrouter.VoiceMessageTranscriptionAccessEntry
 import com.appvillis.core_domain.entry.openrouter.VoiceMessageTranscriptionEntry
+import com.appvillis.core_domain.entry.openrouter.errorText
 import com.appvillis.core_ui.domain.ToastMessage
 import com.appvillis.core_ui.domain.ToastText
 import com.appvillis.core_ui.widgets.ToastView
@@ -39,7 +39,7 @@ object NgVoiceMessageTranscription {
 
     private sealed interface Outcome {
         data class Done(val text: String, val substitutedModelName: String?) : Outcome
-        data class Failed(@StringRes val messageRes: Int?) : Outcome
+        data class Failed(val message: String?) : Outcome
     }
 
     @JvmStatic
@@ -75,7 +75,7 @@ object NgVoiceMessageTranscription {
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Voice message transcription failed")
-            Outcome.Failed(R.string.Error_Default)
+            Outcome.Failed(LocaleController.getString(R.string.Error_Default))
         }
         when (outcome) {
             is Outcome.Done -> {
@@ -86,8 +86,8 @@ object NgVoiceMessageTranscription {
             }
             is Outcome.Failed -> {
                 fail(messageObject)
-                outcome.messageRes?.let {
-                    showToast(ToastMessage.Error(ToastText.Raw(LocaleController.getString(it))))
+                outcome.message?.let {
+                    showToast(ToastMessage.Error(ToastText.Raw(it)))
                 }
             }
         }
@@ -97,21 +97,24 @@ object NgVoiceMessageTranscription {
         val entryPoint = transcriptionEntryPoint()
         when (entryPoint.checkVoiceMessageTranscriptionAccessUseCase()(Unit)) {
             VoiceMessageTranscriptionAccessEntry.Allowed -> Unit
-            VoiceMessageTranscriptionAccessEntry.SignInFailed -> return Outcome.Failed(R.string.Error_Default)
+            VoiceMessageTranscriptionAccessEntry.SignInFailed -> return Outcome.Failed(LocaleController.getString(R.string.Error_Default))
             VoiceMessageTranscriptionAccessEntry.NoSubscription -> {
                 entryPoint.voiceInputBillingNavigator().openSpeechToTextPaywall()
                 return Outcome.Failed(null)
             }
         }
-        val file = awaitVoiceFile(messageObject) ?: return Outcome.Failed(R.string.Error_Default)
+        val file = awaitVoiceFile(messageObject) ?: return Outcome.Failed(LocaleController.getString(R.string.Error_Default))
         return when (val result = entryPoint.transcribeVoiceMessageUseCase()(file.absolutePath)) {
             is VoiceMessageTranscriptionEntry.Text -> Outcome.Done(result.text, result.substitutedModelName)
             VoiceMessageTranscriptionEntry.NotEnoughBalance -> {
                 entryPoint.voiceInputBillingNavigator().openAiTokensTopUp()
                 Outcome.Failed(null)
             }
-            VoiceMessageTranscriptionEntry.ModelUnavailable -> Outcome.Failed(R.string.VoiceInput_TranscribeGeoBlock)
-            VoiceMessageTranscriptionEntry.Error -> Outcome.Failed(R.string.Error_Default)
+            VoiceMessageTranscriptionEntry.ModelUnavailable -> Outcome.Failed(LocaleController.getString(R.string.VoiceInput_TranscribeGeoBlock))
+            is VoiceMessageTranscriptionEntry.Error -> Outcome.Failed(
+                result.failure?.errorText(LocaleController.getString(R.string.Error_Default))
+                    ?: LocaleController.getString(R.string.Error_Default)
+            )
         }
     }
 

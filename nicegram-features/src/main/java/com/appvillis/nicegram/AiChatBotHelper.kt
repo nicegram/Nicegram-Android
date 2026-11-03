@@ -20,7 +20,6 @@ object AiChatBotHelper {
     fun launchAiBot(activity: Activity, dialog: Boolean) {
         val getUserStatusUseCase = entryPoint(activity).getUserStatusUseCase()
         if (getUserStatusUseCase.isUserLoggedIn) {
-            //if (dialog) MainActivity.launchAiBotDialog(null, null, activity, telegramId)
             if (dialog) MainActivity.launchAiBot(activity)
             else MainActivity.launchAiBot(activity)
         } else {

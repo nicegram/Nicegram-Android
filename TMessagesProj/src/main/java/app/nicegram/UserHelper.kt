@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.telegram.messenger.ApplicationLoader
 
-object UserHelper { // TODO [TECH_DEBT] need to think how to manage such class in pretty way
+object UserHelper {
 
     private fun entryPoint() =
         EntryPoints.get(ApplicationLoader.applicationContext, NicegramAssistantEntryPoint::class.java)

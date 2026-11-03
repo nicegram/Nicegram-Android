@@ -3,7 +3,7 @@ package app.nicegram.bridge
 import android.text.TextUtils
 import androidx.collection.LongSparseArray
 import com.appvillis.feature_keywords.domain.KeywordsSearchRetriever
-import com.appvillis.feature_keywords.domain.entities.KeywordsMessage
+import com.appvillis.feature_keywords.domain.entry.KeywordsMessageEntry
 import org.telegram.messenger.ContactsController
 import org.telegram.messenger.DialogObject
 import org.telegram.messenger.MessageObject
@@ -23,8 +23,8 @@ import timber.log.Timber
 import kotlin.coroutines.suspendCoroutine
 
 class KeywordsSearchRetrieverImpl : KeywordsSearchRetriever {
-    override suspend fun getMessages(keyword: String): List<KeywordsMessage> {
-        val keywordMessages: MutableList<KeywordsMessage> = ArrayList()
+    override suspend fun getMessages(keyword: String): List<KeywordsMessageEntry> {
+        val keywordMessages: MutableList<KeywordsMessageEntry> = ArrayList()
 
         val query = keyword
 
@@ -114,7 +114,7 @@ class KeywordsSearchRetrieverImpl : KeywordsSearchRetriever {
                             }
 
                             keywordMessages.add(
-                                KeywordsMessage(
+                                KeywordsMessageEntry(
                                     msg.id.toString(),
                                     text,
                                     name,

@@ -7,7 +7,7 @@ object NicegramLocales {
     val locales = listOf(
         LocaleInfo().apply {
             name = "简体中文 (聪聪)"
-            nameEnglish = "Chinese (Simplified) @congcong"
+            nameEnglish = "Chinese (Simplified, community)"
             shortName = "zh_hans_raw"
             pluralLangCode = "zh"
             pathToFile = "unofficial"
@@ -28,6 +28,15 @@ object NicegramLocales {
         "TelegramFeaturesUrl",
         "NicegramDialogPolicyText",
         "Nicegram_TelegramSession_Settings",
+        "WalletFeePaidByTelegram",
+        "WalletInvalidRecoveryPhraseInfo",
+        "WalletBackupEnabledDescription",
+        "WalletBackupDisabledDescription",
+        "WalletRecoveryPhraseSupportWarning",
+        "WalletBackupEnabledInfo",
+        "WalletNetworkFeeInfo",
+        "WalletAddressLinkedToUser",
+        "WalletAddressNoLinkedAccount",
         // region Telegram premium
         "UnlockPremiumReactionsDescription",
         "UnlockPremiumTranscriptionHint",
@@ -106,6 +115,9 @@ object NicegramLocales {
         "AccountFrozen1Text",
         "UnlockPremiumEmojiHint",
         "UnlockPremiumEmojiReaction",
+        "CreateManagedBotUsernameSuffixesInfo",
+        "CreateManagedBotUsernamePremiumRequired",
+        "CreateManagedBotUsernamePremiumRequiredGeneric",
         // endregion
     )
 

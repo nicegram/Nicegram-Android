@@ -12200,7 +12200,7 @@ public class MessagesStorage extends BaseController {
                             name = chat.title;
                         }
 
-                        if (name != null) keywordsProcessor.addMessageToFolderIfNeeded(String.valueOf(msg.id), msg.message, name, dialogId, msg.date * 1000L);
+                        if (name != null) keywordsProcessor.addMessageToFolderIfNeeded(UserConfig.getInstance(currentAccount).clientUserId, String.valueOf(msg.id), msg.message, name, dialogId, msg.date * 1000L);
                     }
                 } catch (Exception e) {
                     Timber.e(e);

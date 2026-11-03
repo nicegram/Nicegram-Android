@@ -33,7 +33,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.appvillis.core_ui.CoreUiEntryPoint;
 import com.appvillis.core_ui.domain.TgResourceProvider;
 import com.appvillis.core_ui.widgets.ToastViewHelper;
-import com.appvillis.feature_keywords.domain.entities.KeywordsMessage;
+import com.appvillis.feature_keywords.domain.entry.KeywordsMessageEntry;
 import com.appvillis.feature_keywords.presentation.ui.EnableTrackingToastView;
 
 import org.telegram.PhoneFormat.PhoneFormat;
@@ -662,7 +662,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                             }
                         }
 
-                        List<KeywordsMessage> keywordMessages = new ArrayList<>();
+                        List<KeywordsMessageEntry> keywordMessages = new ArrayList<>();
                         for (MessageObject msg : searchResultMessages) {
                             if (msg.isOut() || msg.isSaved) continue;
 
@@ -685,7 +685,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                                 }
 
                                 if (text.toLowerCase().contains(query.toLowerCase())) {
-                                    keywordMessages.add(new KeywordsMessage(
+                                    keywordMessages.add(new KeywordsMessageEntry(
                                             String.valueOf(msg.getId()),
                                             text,
                                             name,
@@ -909,6 +909,10 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         recentSearchObject.date = (int) (System.currentTimeMillis() / 1000);
         filterRecent(lastSearchText != null ? lastSearchText.trim() : null);
         notifyDataSetChanged();
+        putRecentSearch(currentAccount, did);
+    }
+
+    public static void putRecentSearch(int currentAccount, long did) {
         MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
             try {
                 SQLitePreparedStatement state = MessagesStorage.getInstance(currentAccount).getDatabase().executeFast("REPLACE INTO search_recent VALUES(?, ?)");
@@ -917,6 +921,16 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 state.bindInteger(2, (int) (System.currentTimeMillis() / 1000));
                 state.step();
                 state.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public static void clearRecentSearch(int currentAccount) {
+        MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
+            try {
+                MessagesStorage.getInstance(currentAccount).getDatabase().executeFast("DELETE FROM search_recent WHERE 1").stepThis().dispose();
             } catch (Exception e) {
                 FileLog.e(e);
             }
@@ -953,6 +967,10 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         final StringBuilder finalQueryFilter = queryFilter;
         filterRecent(lastSearchText != null ? lastSearchText.trim() : null);
         notifyDataSetChanged();
+        if (!searchWas) {
+            clearRecentSearch(currentAccount);
+            return;
+        }
         MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
             try {
                 finalQueryFilter.insert(0, "DELETE FROM search_recent WHERE ");

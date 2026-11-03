@@ -9,7 +9,6 @@ import org.telegram.messenger.MessagesController
 import org.telegram.messenger.UserConfig
 import org.telegram.tgnet.TLRPC
 import org.telegram.tgnet.TLRPC.TL_messageMediaPhoto
-import timber.log.Timber
 import java.io.File
 
 object TgImagesHelper {
@@ -28,21 +27,17 @@ object TgImagesHelper {
 
         if (user != null) {
             val imageLocation = ImageLocation.getForUserOrChat(user, ImageLocation.TYPE_SMALL)
-            Timber.d("avatarsDebug imageLocation " + (if (imageLocation == null) "nul" else imageLocation.path))
             var attachPath: File? = null
             if (user.photo != null) {
                 attachPath = fileLoader.getPathToAttach(user.photo.photo_small, true)
-                Timber.d("avatarsDebug user attachPath$attachPath")
                 if (!attachPath.exists()) fileLoader.loadFile(imageLocation, user, "jpg", 1, 1)
             }
             image = attachPath?.toString() ?: ""
         } else if (chat != null) {
             val imageLocation = ImageLocation.getForUserOrChat(chat, ImageLocation.TYPE_SMALL)
-            Timber.d("avatarsDebug chat imageLocation " + (imageLocation ?: "nul"))
             var attachPath: File? = null
             if (chat.photo != null) {
                 attachPath = fileLoader.getPathToAttach(chat.photo.photo_small, true)
-                Timber.d("avatarsDebug chat attachPath$attachPath")
                 if (!attachPath.exists()) fileLoader.loadFile(imageLocation, chat, "jpg", 1, 1)
             }
             image = attachPath?.toString() ?: ""
@@ -65,8 +60,6 @@ object TgImagesHelper {
                     val imageLocation = ImageLocation.getForPhoto(photoSize, photo)
 
                     val file: File = fileLoader.getPathToAttach(photoSize, true)
-                    Timber.d("TelegramImage: image path=${file.absolutePath}")
-                    Timber.d("TelegramImage: image attachFileName=${FileLoader.getAttachFileName(photoSize)}")
 
                     if (!file.exists() && withLoad) {
                         fileLoader.loadFile(
@@ -76,7 +69,6 @@ object TgImagesHelper {
                             FileLoader.PRIORITY_NORMAL,
                             ImageLoader.CACHE_TYPE_CACHE
                         )
-                        Timber.d("TelegramImage: image not found locally, started loading...")
                     }
 
                     return file

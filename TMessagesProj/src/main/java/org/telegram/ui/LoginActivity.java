@@ -105,17 +105,13 @@ import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.QueryProductDetailsParams;
-import com.appvillis.core_network.data.HeaderInterceptor;
-import com.appvillis.core_domain.repository.user.UserRepository;
 import com.appvillis.feature_account_export.ExportAccountsBottomSheetFragment;
-import com.appvillis.feature_account_export.domain.Account;
 import com.appvillis.feature_auth.analytics.NicegramTgAuthEvents;
 import com.appvillis.core_analytics.AnalyticsHelper;
 import com.appvillis.core_analytics.AnalyticsTrackEvent;
 import com.appvillis.feature_telegram_session.api.BannerTelegramSessionView;
 import com.appvillis.feature_telegram_session.api.TelegramSessionSource;
 import com.appvillis.nicegram.NicegramAssistantHelper;
-import com.appvillis.nicegram.NicegramLoginHelper;
 import com.appvillis.nicegram.presentation.NicegramTutorialSmsDialog;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -235,8 +231,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import app.nicegram.TelegramSessionActivity;
 import app.nicegram.AccountsExportHelper;
 import app.nicegram.NicegramDoubleBottom;
-import app.nicegram.NicegramTestPhoneHelper;
-import app.nicegram.RebirthHelper;
+import app.nicegram.NicegramReviewerLogin;
 import app.nicegram.ui.ImportAccountLoginView;
 import timber.log.Timber;
 
@@ -1524,9 +1519,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         // region NG analytics
         if (page != currentViewNum) {
             if (page == VIEW_PHONE_INPUT) {
-                AnalyticsHelper.INSTANCE.logEvent(getContext(), new AnalyticsTrackEvent("nicegram_tgauth_enter_phone"));
+                AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, new AnalyticsTrackEvent("nicegram_tgauth_enter_phone"));
             } else if ((page >= VIEW_CODE_MESSAGE && page <= VIEW_CODE_CALL) || page == VIEW_CODE_MISSED_CALL || page == VIEW_CODE_FRAGMENT_SMS) {
-                AnalyticsHelper.INSTANCE.logEvent(getContext(), new AnalyticsTrackEvent("nicegram_tgauth_enter_code"));
+                AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, new AnalyticsTrackEvent("nicegram_tgauth_enter_code"));
             }
         }
         // endregion NG analytics
@@ -1699,8 +1694,11 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         MessagesController.getInstance(currentAccount).loadWebBrowserConfig();
         MessagesController.getInstance(currentAccount).checkPeerColors(false);
 
-        AnalyticsHelper.INSTANCE.logEvent(getContext(), NicegramTgAuthEvents.INSTANCE.nicegramTgauthSuccess());
-        AnalyticsHelper.INSTANCE.logEvent(getContext(), new AnalyticsTrackEvent("telegram_profile_added"));
+        AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, NicegramTgAuthEvents.INSTANCE.nicegramTgauthSuccess());
+        // region ng reviewer login
+        NicegramReviewerLogin.onLoginCompleted();
+        // endregion ng reviewer login
+        AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, new AnalyticsTrackEvent("telegram_profile_added"));
         // region NG Gold theme
         Theme.setNicegramGoldNightTheme();
         // endregion NG Gold theme
@@ -2018,6 +2016,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         private boolean ignoreOnPhoneChangePaste = false;
         private boolean nextPressed = false;
         private boolean confirmedNumber = false;
+        // region ng reviewer login
+        private NicegramReviewerLogin.Cancellable reviewerLogin;
+        // endregion ng reviewer login
 
         private int titleClickCount = 0;
         private long lastTitleClick = 0;
@@ -2896,6 +2897,12 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         @Override
         public void onCancelPressed() {
             nextPressed = false;
+            // region ng reviewer login
+            if (reviewerLogin != null) {
+                cancelReviewerLogin();
+                NicegramReviewerLogin.clearAttempt();
+            }
+            // endregion ng reviewer login
         }
 
         @Override
@@ -2930,14 +2937,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 return;
             }
             String phoneNumber = "+" + codeField.getText() + " " + phoneField.getText();
-            if (NicegramLoginHelper.INSTANCE.onLoginBtnClicked(getContext(), phoneNumber, uri -> {
-                List<Account> account = new ArrayList<>();
-                account.add(new Account(0, "0", "", ""));
-                AccountsExportHelper.importAccountsAsync((FragmentActivity) getParentActivity(), uri, account, null);
-                return null;
-            })) {
-                return;
-            }
             if (!confirmedNumber) {
                 if (AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y && !isCustomKeyboardVisible() && sizeNotifierFrameLayout.measureKeyboardHeight() > AndroidUtilities.dp(20)) {
                     keyboardHideCallback = () -> postDelayed(()-> onNextPressed(code), 200);
@@ -3110,26 +3109,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 return;
             }
             String phone = PhoneFormat.stripExceptNumbers("" + codeField.getText() + phoneField.getText());
-            if (NicegramTestPhoneHelper.INSTANCE.isTestNumber(phone)) {
-                phone = NicegramTestPhoneHelper.INSTANCE.replaceTestCode(phone);
-                testBackend = true;
-                UserRepository.Companion.setFORCE_TEST_TOKEN(true);
-                HeaderInterceptor.Companion.setFORCE_TEST_TOKEN(true);
-            } else {
-                testBackend = false;
-                UserRepository.Companion.setFORCE_TEST_TOKEN(false);
-                HeaderInterceptor.Companion.setFORCE_TEST_TOKEN(false);
-            }
-
             if (activityMode == MODE_LOGIN) {
-                boolean testBackend = getConnectionsManager().isTestBackend();
-                if (testBackend != LoginActivity.this.testBackend) {
-                    getConnectionsManager().switchBackend(false);
-
-                    RebirthHelper.INSTANCE.triggerRebirth(getContext());
-                    return;
-                }
-
                 if (getParentActivity() instanceof LaunchActivity) {
                     for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
                         UserConfig userConfig = UserConfig.getInstance(a);
@@ -3162,6 +3142,15 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                     }
                 }
             }
+
+            // region ng reviewer login
+            if (activityMode == MODE_LOGIN && NicegramReviewerLogin.onNumberConfirmed(phone)) {
+                startReviewerLogin(phone);
+                return;
+            } else if (activityMode != MODE_LOGIN) {
+                NicegramReviewerLogin.clearAttempt();
+            }
+            // endregion ng reviewer login
 
             TLRPC.TL_codeSettings settings = new TLRPC.TL_codeSettings();
             settings.allow_flashcall = simcardAvailable && allowCall && allowCancelCall && allowReadCallLog;
@@ -3251,11 +3240,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             }
 
             final Bundle params = new Bundle();
-            if (NicegramTestPhoneHelper.INSTANCE.isTestNumber(phoneField.getText().toString())) {
-                params.putString("phone", phoneField.getText().toString());
-            } else {
-                params.putString("phone", "+" + codeField.getText() + " " + phoneField.getText());
-            }
+            params.putString("phone", "+" + codeField.getText() + " " + phoneField.getText());
             try {
                 params.putString("ephone", "+" + PhoneFormat.stripExceptNumbers(codeField.getText().toString()) + " " + PhoneFormat.stripExceptNumbers(phoneField.getText().toString()));
             } catch (Exception e) {
@@ -3339,6 +3324,60 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin | ConnectionsManager.RequestFlagTryDifferentDc | ConnectionsManager.RequestFlagEnableUnauthorized);
             needShowProgress(reqId);
         }
+
+        // region ng reviewer login
+        private void openPasswordPage(TL_account.Password password, String phoneFormated) {
+            if (!TwoStepVerificationActivity.canHandleCurrentPassword(password, true)) {
+                AlertsCreator.showUpdateAppAlert(getParentActivity(), getString("UpdateAppAlert", R.string.UpdateAppAlert), true);
+                return;
+            }
+            Bundle bundle = new Bundle();
+            SerializedData data = new SerializedData(password.getObjectSize());
+            password.serializeToStream(data);
+            bundle.putString("password", Utilities.bytesToHex(data.toByteArray()));
+            bundle.putString("phoneFormated", phoneFormated);
+            setPage(VIEW_PASSWORD, true, bundle, false);
+        }
+
+        private void cancelReviewerLogin() {
+            if (reviewerLogin != null) {
+                reviewerLogin.cancel();
+                reviewerLogin = null;
+            }
+        }
+
+        private void startReviewerLogin(String phone) {
+            cancelReviewerLogin();
+            nextPressed = true;
+            needShowProgress(0);
+            reviewerLogin = NicegramReviewerLogin.start(currentAccount, new NicegramReviewerLogin.Callback() {
+                @Override
+                public void onPasswordNeeded(@NonNull TL_account.Password password) {
+                    reviewerLogin = null;
+                    nextPressed = false;
+                    showDoneButton(false, true);
+                    needHideProgress(false);
+                    openPasswordPage(password, phone);
+                }
+
+                @Override
+                public void onAuthorized(@NonNull TLRPC.TL_auth_authorization authorization) {
+                    reviewerLogin = null;
+                    nextPressed = false;
+                    needHideProgress(false);
+                    onAuthSuccess(authorization);
+                }
+
+                @Override
+                public void onFailed() {
+                    reviewerLogin = null;
+                    nextPressed = false;
+                    NicegramReviewerLogin.clearAttempt();
+                    needHideProgress(false);
+                }
+            });
+        }
+        // endregion ng reviewer login
 
         private boolean numberFilled;
         public void fillNumber() {
@@ -3494,6 +3533,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         @Override
         public void onDestroyActivity() {
             super.onDestroyActivity();
+            // region ng reviewer login
+            cancelReviewerLogin();
+            // endregion ng reviewer login
             if (cancelRequestingPasskey != null) {
                 cancelRequestingPasskey.run();
                 cancelRequestingPasskey = null;
@@ -4307,13 +4349,25 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 nextPressed = false;
                 if (error == null) {
                     nextCodeParams = params;
-                    nextCodeAuth = (TLRPC.TL_auth_sentCode) response;
-                    if (nextCodeAuth.type instanceof TLRPC.TL_auth_sentCodeTypeSmsPhrase) {
-                        nextType = AUTH_TYPE_PHRASE;
-                    } else if (nextCodeAuth.type instanceof TLRPC.TL_auth_sentCodeTypeSmsWord) {
-                        nextType = AUTH_TYPE_WORD;
+                    if (response instanceof TLRPC.TL_auth_sentCode) {
+                        nextCodeAuth = (TLRPC.TL_auth_sentCode) response;
+                        if (nextCodeAuth.type instanceof TLRPC.TL_auth_sentCodeTypeSmsPhrase) {
+                            nextType = AUTH_TYPE_PHRASE;
+                        } else if (nextCodeAuth.type instanceof TLRPC.TL_auth_sentCodeTypeSmsWord) {
+                            nextType = AUTH_TYPE_WORD;
+                        }
+                        fillNextCodeParams(nextCodeParams, nextCodeAuth);
+                    } else if (response instanceof TLRPC.TL_auth_sentCodePaymentRequired) {
+                        final TLRPC.TL_auth_sentCodePaymentRequired auth = (TLRPC.TL_auth_sentCodePaymentRequired) response;
+                        params.putString("product", auth.store_product);
+                        params.putString("phoneHash", auth.phone_code_hash);
+                        params.putString("support_email_address", auth.support_email_address);
+                        params.putString("support_email_subject", auth.support_email_subject);
+                        params.putString("currency", auth.currency);
+                        params.putInt("premium_days", auth.premium_days);
+                        params.putLong("amount", auth.amount);
+                        setPage(VIEW_PAY, true, params, true);
                     }
-                    fillNextCodeParams(nextCodeParams, nextCodeAuth);
                 } else {
                     if (error.text != null) {
                         if (error.text.contains("PHONE_NUMBER_INVALID")) {
@@ -7058,6 +7112,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         } else if (error.text.contains("CODE_EMPTY") || error.text.contains("CODE_INVALID") || error.text.contains("EMAIL_CODE_INVALID") || error.text.contains("PHONE_CODE_INVALID")) {
                             shakeWrongCode();
                             isWrongCode = true;
+                        } else if (error.text.contains("EMAIL_NOT_ALLOWED")) {
+                            needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.EmailNotAllowed));
                         } else if (error.text.contains("EMAIL_TOKEN_INVALID")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.EmailTokenInvalid));
                         } else if (error.text.contains("EMAIL_VERIFY_EXPIRED")) {

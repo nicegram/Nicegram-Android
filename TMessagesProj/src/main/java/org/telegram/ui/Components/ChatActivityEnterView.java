@@ -3654,9 +3654,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
                 oldSendButton.setVisibility(View.GONE);
             }
-            if (paidMessagesPrice > 0 || isLiveComment) {
-                sendButton.setStarsPrice(paidMessagesPrice, 1);
-            }
+            sendButton.setStarsPrice(paidMessagesPrice, 1);
             updateFieldRight(lastAttachVisible);
         }
         if (isLiveComment) {
@@ -6252,7 +6250,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     private void ensureVoiceInputView() {
         // Stories reuse this enter view inside StoryViewer's own WindowManager window, whose root
-        // has no ViewTreeLifecycleOwner — a ComposeView cannot be hosted there (NCG-13008).
+        // has no ViewTreeLifecycleOwner — a ComposeView cannot be hosted there.
         if (isStories) {
             return;
         }
@@ -6292,6 +6290,13 @@ public class ChatActivityEnterView extends FrameLayout implements
                         new ToastMessage.Error(new ToastText.Raw(LocaleController.getString(R.string.Error_Default))));
                 ToastViewHelper.INSTANCE.showViewToast(toastView, toastParent, true, true, AndroidUtilities.dp(24));
             });
+            view.setOnError(text -> {
+                View toastParent = parentFragment != null ? parentFragment.getFragmentView() : getRootView();
+                ToastView toastView = ToastView.Companion.newInstance(
+                        getContext(),
+                        new ToastMessage.Error(new ToastText.Raw(text)));
+                ToastViewHelper.INSTANCE.showViewToast(toastView, toastParent, true, true, AndroidUtilities.dp(24));
+            });
             // Host lives in messageEditTextContainer so its measured height drives the input-row height
             // (the bar expands the row instead of being clipped). Full width — and full-width touchability —
             // comes from dropping the container's right inset while the bar is shown (see
@@ -6305,7 +6310,7 @@ public class ChatActivityEnterView extends FrameLayout implements
     // attachButton owns slot 0, attachLayout's children (notify/gift/suggest/bot) stack leftwards from
     // slot 1, and scheduledButton sits at 1 + gift + bot (see its setTranslationX override). Park our
     // icon in the first column none of them claim — pinning it to slot 1 let Telegram's buttons draw
-    // on top of it in Saved Messages (scheduledButton) and bot chats (botButton). NCG-13008.
+    // on top of it in Saved Messages (scheduledButton) and bot chats (botButton).
     private int voiceInputFreeSlot() {
         boolean[] taken = new boolean[6];
         boolean emptyField = messageEditText == null
@@ -6505,6 +6510,9 @@ public class ChatActivityEnterView extends FrameLayout implements
             }
         }
         updateVoiceInputButtonVisibility();
+        if (visible) {
+            updateFieldRight(lastAttachVisible);
+        }
     }
 
     // Builds the first-open tooltip (title bold + subtitle) anchored under the voice icon.
@@ -13598,6 +13606,13 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     public boolean isPopupShowing() {
         return emojiViewVisible || botKeyboardViewVisible;
+    }
+
+    public boolean canHidePopupByBackButton() {
+        if (!isPopupShowing()) {
+            return false;
+        }
+        return !(currentPopupContentType == POPUP_CONTENT_BOT_KEYBOARD && botReplyMarkup != null && botReplyMarkup.is_persistent && botButtonsMessageObject != null);
     }
 
     public boolean closeCreationLinkDialog(boolean invoked) {

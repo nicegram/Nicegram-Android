@@ -550,7 +550,7 @@ object AccountsExportHelper {
             if (!onlyReturn && !selectedNs.contains(archiveN)) return@forEach
             val jsonObj = readSessionJson(accountDir) ?: return@forEach
 
-            Timber.d("Loaded JSON for ${accountDir.name}: $jsonObj")
+            Timber.d("Loaded JSON for ${accountDir.name}")
 
             try {
                 val userData = jsonObj.getString("user")
@@ -560,7 +560,7 @@ object AccountsExportHelper {
                 // already logged in?
                 for (a in 0..<UserConfig.MAX_ACCOUNT_COUNT) {
                     if (UserConfig.getInstance(a).clientUserId.toString() == id) {
-                        Timber.w("Skip import: user already logged in (id=$id)")
+                        Timber.w("Skip import: user already logged in")
                         return@forEach // account already logged in
                     }
                 }
@@ -620,7 +620,7 @@ object AccountsExportHelper {
                 val uc = UserConfig.getInstance(accountIndex)
                 uc.setCurrentUser(user)
                 uc.saveConfig(true)
-                Timber.d("After setCurrentUser: slot=$accountIndex currentUser=${uc.currentUser?.id} isClientActivated=${uc.isClientActivated} clientUserId=${uc.clientUserId}")
+                Timber.d("After setCurrentUser: slot=$accountIndex isClientActivated=${uc.isClientActivated} clientUserId=${uc.clientUserId}")
                 MessagesController.getInstance(accountIndex).putUser(user, false)
 
                 exportAccountsEp(activity).saveExportedAccountsUseCase().invoke(listOf(id))

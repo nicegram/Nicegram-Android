@@ -131,7 +131,6 @@ public class LanguagesToTranslateActivity extends BaseFragment implements Notifi
     }
 
     private void fillLanguages() {
-        // Пытаемся достать из префов по shortName страну собеседника
         LocaleController.LocaleInfo finalTranslateLocale = getTranslateToLocaleInfo();
         Comparator<LocaleController.LocaleInfo> comparator = (o, o2) -> {
             if (o == finalTranslateLocale) {

@@ -576,7 +576,7 @@ object NicegramGroupCollectHelper {
         var geo: Geo? = null
         if (chatInfo != null && chatInfo.location is TL_channelLocation) {
             val loc = chatInfo.location as TL_channelLocation
-            geo = Geo(loc.address, loc.geo_point.lat, loc.geo_point.lat)
+            geo = Geo(loc.address, loc.geo_point._long, loc.geo_point.lat)
         }
         val restrictions = mutableListOf<Restriction>()
         for (reason in currentChat.restriction_reason) {
@@ -685,7 +685,7 @@ object NicegramGroupCollectHelper {
     private fun getGeo(chatInfo: ChatFull?): Geo? {
         return if (chatInfo != null && chatInfo.location is TL_channelLocation) {
             val loc = chatInfo.location as TL_channelLocation
-            Geo(loc.address, loc.geo_point.lat, loc.geo_point.lat)
+            Geo(loc.address, loc.geo_point._long, loc.geo_point.lat)
         } else null
     }
 

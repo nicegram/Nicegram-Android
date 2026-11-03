@@ -30,6 +30,10 @@
     @android.webkit.JavascriptInterface <methods>;
 }
 
+-keep class org.telegram.utils.code.highlight.PrismaHighlighter {
+    private static native <methods>;
+}
+
 # https://developers.google.com/ml-kit/known-issues#android_issues
 -keep class com.google.mlkit.nl.languageid.internal.LanguageIdentificationJni { *; }
 
@@ -76,7 +80,7 @@
     *;
 }
 
-# R8 obfuscation was enabled in 1.60.0 (NCG-13132). Gson binds JSON keys to *field names*, so a
+# R8 obfuscation was enabled in 1.60.0. Gson binds JSON keys to *field names*, so a
 # renamed field silently breaks both Firebase remote-config parsing and anything persisted to
 # prefs. The hand-written per-class keep list below already existed and still missed 15 models,
 # so field names are kept across our own packages instead. Classes and methods stay obfuscated.

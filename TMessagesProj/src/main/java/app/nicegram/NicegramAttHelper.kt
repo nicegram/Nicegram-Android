@@ -35,10 +35,7 @@ object NicegramAttHelper {
         val publicUsername = chat?.username ?: user?.username
         val ongoingActions = entryPoint().getOngoingActionsUseCase().invoke().value
 
-        Timber.d("ongoing actions $ongoingActions, public username: $publicUsername")
         val foundAction = ongoingActions.find { it.type is AttOngoingActionType.Subscribe && it.type.getId() == publicUsername }
-
-        Timber.d("found action $foundAction")
 
         return foundAction
     }

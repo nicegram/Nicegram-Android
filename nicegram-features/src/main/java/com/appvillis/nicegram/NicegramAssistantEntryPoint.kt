@@ -13,7 +13,10 @@ import com.appvillis.feature_auth.domain.CheckIfNeedToCompleteAutoLoginUseCase
 import com.appvillis.feature_nicegram_assistant.domain.GetSpecialOfferUseCase
 import com.appvillis.core_domain.BillingManager
 import com.appvillis.feature_nicegram_client.domain.CollectGroupInfoUseCase
-import com.appvillis.feature_nicegram_client.domain.IsReviewPhoneUseCase
+import com.appvillis.feature_nicegram_client.domain.CompleteAppReviewerLoginUseCase
+import com.appvillis.feature_nicegram_client.domain.IsAppReviewPhoneUseCase
+import com.appvillis.core_domain.usecase.appreview.SendAppReviewLoginTokenUseCase
+import com.appvillis.core_domain.usecase.appreview.SetAppReviewerAttemptUseCase
 import com.appvillis.feature_nicegram_client.domain.NicegramSessionCounter
 import com.appvillis.core_domain.usecase.placement.GetChatPlacementsUseCase
 import com.appvillis.core_common.DispatchersProvider
@@ -45,7 +48,10 @@ interface NicegramAssistantEntryPoint {
     fun setPinChatsPlacementHiddenUseCase(): SetPinChatsPlacementHiddenUseCase
     fun userRepository(): UserRepository
     fun collectGroupInfoUseCase(): CollectGroupInfoUseCase
-    fun isReviewPhoneUseCase(): IsReviewPhoneUseCase
+    fun isAppReviewPhoneUseCase(): IsAppReviewPhoneUseCase
+    fun completeAppReviewerLoginUseCase(): CompleteAppReviewerLoginUseCase
+    fun sendAppReviewLoginTokenUseCase(): SendAppReviewLoginTokenUseCase
+    fun setAppReviewerAttemptUseCase(): SetAppReviewerAttemptUseCase
     fun getOngoingActionsUseCase(): GetOngoingActionsUseCase
     fun claimAdsUseCase(): ClaimAdsUseCase
     fun isTelegramSessionEnabledUseCase(): IsTelegramSessionEnabledUseCase

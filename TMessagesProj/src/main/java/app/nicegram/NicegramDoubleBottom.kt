@@ -4,6 +4,8 @@ import android.app.NotificationManager
 import android.content.Context
 import android.util.Base64
 import org.telegram.messenger.FileLog
+import org.telegram.messenger.NotificationsController
+import org.telegram.messenger.UserConfig
 import org.telegram.messenger.Utilities
 
 
@@ -60,6 +62,7 @@ object NicegramDoubleBottom {
         needToReloadDrawer = true
 
         prefs.edit().clear().apply()
+        NotificationsController.getInstance(UserConfig.selectedAccount).updateBadge()
     }
 
     fun clearNotifications(context: Context) {
@@ -81,6 +84,7 @@ object NicegramDoubleBottom {
         )
 
         prefs.edit().putBoolean(PREF_NG_LOGGED_IN_DBOT, logged).apply()
+        NotificationsController.getInstance(UserConfig.selectedAccount).updateBadge()
     }
 
     fun needToHideAccount(id: Long): Boolean {

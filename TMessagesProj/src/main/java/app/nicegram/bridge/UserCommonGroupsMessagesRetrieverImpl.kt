@@ -33,7 +33,7 @@ class UserCommonGroupsMessagesRetrieverImpl :
                     }
                     var requestsFinished = 0
                     chats.chats.forEach { chat ->
-                        Timber.d("common chat id:${chat.id} title:${chat.title}")
+                        Timber.d("common chat id:${chat.id}")
                         val msgReq = TLRPC.TL_messages_search().apply {
                             this.limit = 50
                             this.from_id = messagesController.getInputPeer(userId)
@@ -42,7 +42,6 @@ class UserCommonGroupsMessagesRetrieverImpl :
                             this.filter = TL_inputMessagesFilterEmpty()
                         }
                         ConnectionsManager.getInstance(currentAccount).sendRequest(msgReq) { response, error ->
-                            Timber.d("response for chat ${chat.title} " + response)
                             requestsFinished++
                             if (error == null) {
                                 if (response is messages_Messages) {

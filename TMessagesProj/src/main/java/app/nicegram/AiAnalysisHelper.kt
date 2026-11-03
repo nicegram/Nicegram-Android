@@ -94,7 +94,7 @@ object AiAnalysisHelper {
     }
 
     suspend fun loadMessages(currentAccount: Int, isTopic: Boolean, threadMessageId: Long, chat: Chat?, user: User?): List<Message> {
-        Timber.d("loadMessages for currentAccount: $currentAccount chat:${chat?.id} user:${user?.id}")
+        Timber.d("loadMessages for currentAccount: $currentAccount")
         val messages = suspendCoroutine<List<Message>> { continuation ->
             val id = (if (chat != null) -chat.id else user?.id) ?: 0
             MessagesStorage.getInstance(currentAccount).getMessagesInternal(
@@ -114,7 +114,7 @@ object AiAnalysisHelper {
                 null,
                 object : MessagesStorage.GetMessagesValueCallback {
                     override fun onResult(res: TLRPC.TL_messages_messages) {
-                        Timber.d("loaded messages ${res.messages?.size ?: -1}, first msg is: ${res.messages?.getOrNull(0)?.message ?: "NULL"}")
+                        Timber.d("loaded messages ${res.messages?.size ?: -1}")
                         continuation.resumeWith(Result.success(res.messages))
                     }
                 }

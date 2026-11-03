@@ -1582,6 +1582,9 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
     public static Drawable withShadow(Drawable inner) {
         return new ShadowWrapperDrawable(inner);
     }
+    public static Drawable withShadow(Drawable inner, float r, float x, float y, int color) {
+        return new ShadowWrapperDrawable(inner, r, x, y, color);
+    }
 
     public static class RequiresPremiumDrawable extends Drawable {
 
@@ -1685,6 +1688,12 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
             } else {
                 shadowPaint.setShadowLayer(dp(12), 0, dp(4), Theme.multAlpha(0xFF000000, .10f));
             }
+        }
+        ShadowWrapperDrawable(Drawable inner, float r, float x, float y, int color) {
+            this.inner = inner;
+            inner.setCallback(this);
+            shadowPaint.setColor(0x00000000);
+            shadowPaint.setShadowLayer(r, x, y, color);
         }
 
         @Override
@@ -2615,6 +2624,12 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
                 ToastView toastView = ToastView.Companion.newInstance(
                         getContext(),
                         new ToastMessage.Error(new ToastText.Raw(LocaleController.getString(R.string.Error_Default))));
+                ToastViewHelper.INSTANCE.showViewToast(toastView, bulletinContainer, true, true, AndroidUtilities.dp(24));
+            });
+            view.setOnError(text -> {
+                ToastView toastView = ToastView.Companion.newInstance(
+                        getContext(),
+                        new ToastMessage.Error(new ToastText.Raw(text)));
                 ToastViewHelper.INSTANCE.showViewToast(toastView, bulletinContainer, true, true, AndroidUtilities.dp(24));
             });
             bottomInnerContainer.addView(view, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 8 + 44 + 8, Gravity.FILL_HORIZONTAL | Gravity.BOTTOM));
