@@ -52,6 +52,14 @@ import dagger.hilt.EntryPoints;
 
 public class NicegramSettingsActivity extends BaseFragment {
 
+    /**
+     * Nicegram's own legal documents, live and verified (both answer 200). They are NOT
+     * Telegram's: telegram.org/tos and /privacy govern the account and stay where upstream puts
+     * them, while these govern this client. The same two addresses are used by Nicegram VR.
+     */
+    private static final String TERMS_OF_USE_URL = "https://nicegram.me/terms-of-use";
+    private static final String PRIVACY_POLICY_URL = "https://nicegram.me/privacy-policy";
+
     private RecyclerListView listView;
     private ListAdapter adapter;
 
@@ -84,6 +92,15 @@ public class NicegramSettingsActivity extends BaseFragment {
     private int shareBotsInfoRow;
     private int shareStickersInfoRow;
     private int showHiddenChatsRow;
+
+    // The app's own legal documents. Nicegram is a separate product with its own terms and its
+    // own privacy policy, and until now neither was reachable from inside the app - only
+    // Telegram's, which govern the account rather than this client. Both rows use resource keys
+    // that already exist and are already translated, so they read correctly in every language
+    // the cloud pack serves rather than waiting on a localisation release.
+    private int legalSectionRow;
+    private int termsOfUseRow;
+    private int privacyPolicyRow;
     private int showNgBtnInChatRow;
     private int showKeywordsForFolderRow;
     private int showAiShortcutsRow;
@@ -143,6 +160,10 @@ public class NicegramSettingsActivity extends BaseFragment {
         //shareBotsInfoRow = rowCount++;
         //shareStickersInfoRow = rowCount++;
         showHiddenChatsRow = rowCount++;
+
+        legalSectionRow = rowCount++;
+        termsOfUseRow = rowCount++;
+        privacyPolicyRow = rowCount++;
 
         return super.onFragmentCreate();
     }
@@ -236,6 +257,10 @@ public class NicegramSettingsActivity extends BaseFragment {
                 }
             } else if (position == unblockGuideRow) {
                 Browser.openUrl(getParentActivity(), NicegramConsts.UNBLOCK_URL);
+            } else if (position == termsOfUseRow) {
+                Browser.openUrl(getParentActivity(), TERMS_OF_USE_URL);
+            } else if (position == privacyPolicyRow) {
+                Browser.openUrl(getParentActivity(), PRIVACY_POLICY_URL);
             } else if (position == doubleBottomRow) {
                 if (NicegramDoubleBottom.INSTANCE.hasDbot()) {
                     NicegramDoubleBottom.INSTANCE.disableDbot(getParentActivity());
@@ -356,7 +381,8 @@ public class NicegramSettingsActivity extends BaseFragment {
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
             return !(position == nicegramSectionRow || position == otherSectionRow
-                    || position == accountSectionRow || position == voiceTranscribeSectionRow);
+                    || position == accountSectionRow || position == voiceTranscribeSectionRow
+                    || position == legalSectionRow);
         }
 
         @Override
@@ -464,6 +490,10 @@ public class NicegramSettingsActivity extends BaseFragment {
                         textCell.setText(LocaleController.getString(R.string.Ng_AccountsExport_ImportFromFile), false);
                     } else if (position == exportAccountsRow) {
                         textCell.setText(LocaleController.getString(R.string.Ng_AccountsExport_ExportAsFile), false);
+                    } else if (position == termsOfUseRow) {
+                        textCell.setText(LocaleController.getString(R.string.TermsOfUse), true);
+                    } else if (position == privacyPolicyRow) {
+                        textCell.setText(LocaleController.getString(R.string.PrivacyPolicy), false);
                     }
                     break;
                 }
@@ -502,12 +532,13 @@ public class NicegramSettingsActivity extends BaseFragment {
                     position == textCleanupRow
             ) {
                 return 1;
-            } else if (position == unblockGuideRow || position == quickRepliesRow || position == importAccountRow || position == exportAccountsRow) {
+            } else if (position == unblockGuideRow || position == quickRepliesRow || position == importAccountRow || position == exportAccountsRow
+                    || position == termsOfUseRow || position == privacyPolicyRow) {
                 return 2;
             } else if (position == voiceTranscribeModelRow) {
                 return 4;
             } else if (position == nicegramSectionRow || position == otherSectionRow || position == accountSectionRow
-                    || position == voiceTranscribeSectionRow) {
+                    || position == voiceTranscribeSectionRow || position == legalSectionRow) {
                 return 3;
             } else {
                 return 0;
