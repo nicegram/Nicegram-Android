@@ -87,21 +87,12 @@ import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 
-import com.appvillis.assistant_core.MainActivity;
-import com.appvillis.assistant_core.PopupActivity;
 import com.appvillis.feature_attention_economy.presentation.ui.AttOverlayManager;
-import com.appvillis.feature_auth.presentation.destinations.AuthLoadingPopupScreenDestination;
 import com.appvillis.feature_nicegram_assistant.domain.SpecialOffersRepository;
-import com.appvillis.feature_telegram_session.api.TelegramSessionSource;
-import com.appvillis.feature_nicegram_client.NicegramClientHelper;
-import com.appvillis.feature_nicegram_client.domain.NgClientRemoteConfigRepo;
 import com.appvillis.core_ui.Intents;
-import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.core_analytics.AnalyticsHelper;
 import com.appvillis.core_analytics.AnalyticsTrackEvent;
 import com.appvillis.nicegram.NicegramAssistantHelper;
-import com.appvillis.feature_nicegram_client.presentation.onboarding.NicegramOnboardingActivity;
-import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity;
 import com.google.android.gms.common.api.Status;
 import com.google.common.primitives.Longs;
 import com.google.firebase.appindexing.Action;
@@ -278,10 +269,10 @@ import java.util.zip.ZipInputStream;
 import app.nicegram.AccountsExportHelper;
 import app.nicegram.AppIconNicegramBulletinLayout;
 import app.nicegram.NgActivityLocale;
+import app.nicegram.NgNavigation;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramIntroActivity;
 import app.nicegram.NicegramSettingsActivity;
-import app.nicegram.TelegramSessionActivity;
 import app.nicegram.UserHelper;
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -1541,7 +1532,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @SuppressLint("Range")
     private boolean handleIntent(Intent intent, boolean isNew, boolean restore, boolean fromPassword, Browser.Progress progress, boolean rebuildFragments, boolean openedTelegram) {
-        if (handleNicegramDeeplink(intent)) return true;
+        // region ng navigation
+        if (handleNicegramDeeplink(intent, restore, fromPassword)) return true;
+        // endregion
 
         if (GiftInfoBottomSheet.handleIntent(intent, progress)) {
             return true;
@@ -8372,6 +8365,15 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         overlayPasscodeViews.remove(overlay);
     }
 
+    // region ng navigation
+    public void ngCancelPasscodeLock() {
+        if (lockRunnable != null) {
+            AndroidUtilities.cancelRunOnUIThread(lockRunnable);
+            lockRunnable = null;
+        }
+    }
+    // endregion
+
     private void onPasscodeResume() {
         if (lockRunnable != null) {
             if (BuildVars.LOGS_ENABLED) {
@@ -9370,107 +9372,145 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     }
 
     // ng
-    private boolean handleNicegramDeeplink(Intent intent) {
-        if (intent == null || intent.getAction() == null) return false;
-
-        if (intent.getAction().equals(Intent.ACTION_VIEW)) {
-            Uri data = intent.getData();
-            if (data == null) return false;
-            String scheme = data.getScheme();
-            String host = data.getHost();
-            String path = data.getPath();
-
-            if (host != null && (host.equals("nicegram.me") || host.equals("nicegram.app"))) {
-                if (path != null && path.length() > 1) {
-                    path = path.substring(1);
-                    if (path.startsWith("deeplink")) {
-                        String url = data.getQueryParameter("url");
-                        processDeeplinkUrl(url, data);
-                        return true;
-                    }
-                }
-            } else if (scheme != null) {
-                if (scheme.equals("ncg")) {
-                    processDeeplinkUrl(data.toString(), data);
-                    return true;
-                }
-            }
+    // region ng navigation
+    private boolean handleNicegramDeeplink(Intent intent, boolean restore, boolean fromPassword) {
+        if (intent == null || restore) return false;
+        if ((intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0) return false;
+        if (!Intent.ACTION_VIEW.equals(intent.getAction())) return false;
+        Uri data = intent.getData();
+        if (data == null) return false;
+        String link = data.toString();
+        boolean ncgScheme = "ncg".equalsIgnoreCase(data.getScheme());
+        String inner = NgNavigation.unwrapLink(link);
+        if (inner == null) {
+            if (!ncgScheme) return false;
+            intent.setAction(null);
+            return true;
         }
-
-        return false;
+        if (!ncgScheme && inner.equals(link)) return false;
+        if (!fromPassword && (AndroidUtilities.needShowPasscode() || SharedConfig.isWaitingForPasscodeEnter)) return false;
+        intent.setAction(null);
+        processDeeplinkUrl(inner, Uri.parse(inner), false);
+        return true;
     }
 
-    private void processDeeplinkUrl(String url, Uri data) {
-        if (url.startsWith("https://t.me/")) {
+    public void openNicegramLink(String url) {
+        if (url == null) return;
+        String inner = NgNavigation.unwrapLink(url);
+        if (inner == null) return;
+        if ("ncg".equalsIgnoreCase(Uri.parse(inner).getScheme())) {
+            processDeeplinkUrl(inner, Uri.parse(inner), false);
+        } else {
+            openNonNicegramLink(inner);
+        }
+    }
+
+    private void openNonNicegramLink(String url) {
+        if (UserConfig.getInstance(currentAccount).isClientActivated()) {
+            Browser.openUrl(this, url);
+            return;
+        }
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (android.content.ActivityNotFoundException e) {
+            FileLog.e(e);
+        }
+    }
+    // endregion
+
+    // region ng assistant
+    public void openNicegramAssistantTab() {
+        if (actionBarLayout == null) {
+            return;
+        }
+        final List<BaseFragment> stack = actionBarLayout.getFragmentStack();
+        int mainTabsIndex = -1;
+        for (int a = stack.size() - 1; a >= 0; a--) {
+            if (stack.get(a) instanceof MainTabsActivity) {
+                mainTabsIndex = a;
+                break;
+            }
+        }
+        if (mainTabsIndex < 0) {
+            NgNavigation.openAssistantHome(this);
+            return;
+        }
+        final MainTabsActivity mainTabsActivity = (MainTabsActivity) stack.get(mainTabsIndex);
+        for (int a = stack.size() - 2; a > mainTabsIndex; a--) {
+            actionBarLayout.removeFragmentFromStack(stack.get(a));
+        }
+        if (stack.size() - 1 > mainTabsIndex) {
+            actionBarLayout.closeLastFragment(true);
+        }
+        mainTabsActivity.selectNicegramTab();
+    }
+    // endregion
+
+    // region ng navigation
+    private void processDeeplinkUrl(String url, Uri data, boolean restore) {
+    // endregion
+        // region ng navigation
+        String ngTarget = NgNavigation.deeplinkTarget(url);
+        if (!restore && "aiAuth".equals(ngTarget) && actionBarLayout.getFragmentStack().size() > 1) {
             actionBarLayout.closeLastFragment();
-            Intents.INSTANCE.openUrl(this, url, null, true);
-        } else if (url.equals("ncg://assistant")) {
+        }
+        if (!restore && "assistant".equals(ngTarget)) {
             AnalyticsHelper.INSTANCE.logEvent(this, new AnalyticsTrackEvent("assistant_open_from_deeplink"));
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            MainActivity.Companion.launchAssistant(this);
-        } else if (url.startsWith("ncg://assistant-auth")) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            MainActivity.Companion.launchAssistantAuth(this);
-        } else if (url.equals("ncg://nicegramPremium")) {
-            startActivity(new Intent(this, NicegramPremiumActivity.class));
-        } else if (url.equals("ncg://onboarding")) {
-            startActivity(new Intent(this, NicegramOnboardingActivity.class));
-        } else if (url.equals("ncg://aiAuth")) {
-            actionBarLayout.closeLastFragment();
-            MainActivity.Companion.launchAiGreetings(this);
-        } else if (url.equals("ncg://aiLily")) {
+        }
+        if (!restore && "aiLily".equals(ngTarget)) {
             AnalyticsHelper.INSTANCE.logEvent(this, new AnalyticsTrackEvent("chatbot_open_from_deeplink"));
-            AiChatBotHelper.INSTANCE.launchAiBot(this, false);
-        } else if (url.startsWith("ncg://deeplink")) {
-            String internalUrl = data.getQueryParameter("url");
-            Intents.INSTANCE.openUrl(this, internalUrl, null, true);
-        } else if (url.startsWith("ncg://resolve")) {
-            String domain = data.getQueryParameter("domain");
-            Intents.INSTANCE.openUrl(this, "https://t.me/" + domain, null, true);
-        } else if (url.startsWith("ncg://specialOffer")) {
+        }
+        if (!restore && "specialOffer".equals(ngTarget)) {
             try {
-                SpecialOffersRepository.SpecialOffer specialOffer = NicegramAssistantHelper.INSTANCE.findSpecialOffer(this, Integer.parseInt(data.getQueryParameter("id")));
+                SpecialOffersRepository.SpecialOffer specialOffer = NicegramAssistantHelper.INSTANCE.findSpecialOffer(this, Integer.parseInt(Uri.parse(url).getQueryParameter("id")));
                 if (specialOffer != null) {
                     AnalyticsHelper.INSTANCE.logEvent(this, new AnalyticsTrackEvent("special_offer_deeplink_with_id_" + specialOffer.getId()));
-                    MainActivity.Companion.launchSpecialOffer(this, specialOffer.getUrl(), specialOffer.getId());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } else if (url.equals("ncg://refferaldraw")) {
-            if (NicegramClientHelper.INSTANCE.getReferralDrawDataUseCase() == null) return;
-            NgClientRemoteConfigRepo.ReferralDrawInfo info = NicegramClientHelper.INSTANCE.getReferralDrawDataUseCase().invoke();
-            if (info == null) return;
+        }
+        if (NgNavigation.openDeeplink(this, url, restore)) return;
+        if (!"ncg".equalsIgnoreCase(data.getScheme())) {
+            openNonNicegramLink(url);
+            return;
+        }
+        // endregion
+        if (url.equals("ncg://assistant")) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            MainActivity.Companion.launchWebViewPopup(this, info.getUrl());
-        } else if (url.equals("ncg://tgAuthSuccess")) {
-            PopupActivity.Companion.launchRoute(this, AuthLoadingPopupScreenDestination.INSTANCE.getRoute());
-        } else if (url.equals("ncg://attention-economy")) {
-            MainActivity.Companion.launchAtt(this);
-        } else if (url.equals("ncg://aiAgents")) {
-            MainActivity.Companion.launchAiMarketplace(this);
+            // region ng assistant
+            openNicegramAssistantTab();
+            // endregion
+        } else if (url.startsWith("ncg://assistant-auth")) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            // region ng assistant
+            openNicegramAssistantTab();
+            // endregion
+        } else if (url.startsWith("ncg://resolve")) {
+            String domain = data.getQueryParameter("domain");
+            // region ng navigation
+            if (domain == null || domain.isEmpty()) return;
+            // endregion
+            Intents.INSTANCE.openUrl(this, "https://t.me/" + domain, null, true);
         } else if (url.startsWith("ncg://tgOpenChat")) {
             String msgId = data.getQueryParameter("msgId");
             String dialogId = data.getQueryParameter("dialogId");
-            presentFragment(ChatActivity.of(Long.parseLong(dialogId), Integer.parseInt(msgId)));
+            // region ng navigation
+            if (msgId == null || dialogId == null) return;
+            try {
+                presentFragment(ChatActivity.of(Long.parseLong(dialogId), Integer.parseInt(msgId)));
+            } catch (NumberFormatException e) {
+                FileLog.e(e);
+            }
+            // endregion
         } else if (url.startsWith("ncg://tgOpenSettings")) {
             presentFragment(new NicegramSettingsActivity());
-        } else if (url.startsWith("ncg://tgAccountShop")) {
-            if (NicegramAssistantHelper.INSTANCE.isTelegramSessionEnabled(this)) {
-                presentFragment(new TelegramSessionActivity(TelegramSessionSource.LINK));
-            }
         }
     }
 
     private void initNg() {
         AccountsExportHelper.INSTANCE.registerResultCallbacks(this);
 
-        AttOverlayManager.INSTANCE.setNavigator(new AttOverlayManager.AttOverlayNavigator() {
-            @Override
-            public void openAtt() {
-                MainActivity.Companion.launchAtt(LaunchActivity.this);
-            }
-        });
         UserHelper.INSTANCE.observeFirstUserSignIn();
     }
 

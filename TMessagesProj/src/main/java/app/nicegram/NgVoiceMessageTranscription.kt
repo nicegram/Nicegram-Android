@@ -1,12 +1,15 @@
 package app.nicegram
 
+import android.content.Context
 import com.appvillis.core_domain.entry.openrouter.VoiceMessageTranscriptionAccessEntry
 import com.appvillis.core_domain.entry.openrouter.VoiceMessageTranscriptionEntry
 import com.appvillis.core_domain.entry.openrouter.errorText
+import com.appvillis.core_navigation.BillingRoute
 import com.appvillis.core_ui.domain.ToastMessage
 import com.appvillis.core_ui.domain.ToastText
 import com.appvillis.core_ui.widgets.ToastView
 import com.appvillis.core_ui.widgets.ToastViewHelper
+import com.appvillis.feature_nicegram_billing.presentation.PremiumSource
 import com.appvillis.feature_transcription.api.TranscriptionEntryPoint
 import com.appvillis.feature_transcription.api.voicemessage.VoiceMessageRouting
 import com.appvillis.nicegram.NicegramAssistantEntryPoint
@@ -93,13 +96,15 @@ object NgVoiceMessageTranscription {
         }
     }
 
+    private fun navigationContext(): Context = LaunchActivity.instance ?: ApplicationLoader.applicationContext
+
     private suspend fun transcribe(messageObject: MessageObject): Outcome {
         val entryPoint = transcriptionEntryPoint()
         when (entryPoint.checkVoiceMessageTranscriptionAccessUseCase()(Unit)) {
             VoiceMessageTranscriptionAccessEntry.Allowed -> Unit
             VoiceMessageTranscriptionAccessEntry.SignInFailed -> return Outcome.Failed(LocaleController.getString(R.string.Error_Default))
             VoiceMessageTranscriptionAccessEntry.NoSubscription -> {
-                entryPoint.voiceInputBillingNavigator().openSpeechToTextPaywall()
+                NgNavigation.open(navigationContext(), BillingRoute.PremiumScreen(PremiumSource.SPEECH_TO_TEXT.value))
                 return Outcome.Failed(null)
             }
         }
@@ -107,7 +112,7 @@ object NgVoiceMessageTranscription {
         return when (val result = entryPoint.transcribeVoiceMessageUseCase()(file.absolutePath)) {
             is VoiceMessageTranscriptionEntry.Text -> Outcome.Done(result.text, result.substitutedModelName)
             VoiceMessageTranscriptionEntry.NotEnoughBalance -> {
-                entryPoint.voiceInputBillingNavigator().openAiTokensTopUp()
+                NgNavigation.open(navigationContext(), BillingRoute.PremiumBottomSheet(PremiumSource.SPEECH_TO_TEXT.value))
                 Outcome.Failed(null)
             }
             VoiceMessageTranscriptionEntry.ModelUnavailable -> Outcome.Failed(LocaleController.getString(R.string.VoiceInput_TranscribeGeoBlock))

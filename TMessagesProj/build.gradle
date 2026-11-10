@@ -137,10 +137,6 @@ dependencies {
     implementation(internalLibs.hilt.android)
     ksp(internalLibs.hilt.compiler)
 
-    // Compose Destinations
-    implementation(internalLibs.raamcosta.destination.animations)
-    ksp(internalLibs.raamcosta.destinations.ksp)
-
     // nicegram compose
     implementation(platform(internalLibs.androidx.compose.bom))
     implementation(internalLibs.androidx.compose.ui)

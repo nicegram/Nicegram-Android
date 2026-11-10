@@ -36,7 +36,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.math.MathUtils;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.appvillis.assistant_core.MainActivity;
 import com.appvillis.nicegram.NicegramPrefs;
 
 import com.appvillis.core_analytics.AnalyticsHelper;
@@ -92,6 +91,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import app.nicegram.NicegramDoubleBottom;
+import app.nicegram.NicegramAssistantTabFragment;
 import app.nicegram.PrefsHelper;
 import app.nicegram.RebirthHelper;
 import me.vkryl.android.animator.BoolAnimator;
@@ -99,11 +99,14 @@ import me.vkryl.android.animator.FactorAnimator;
 
 public class MainTabsActivity extends ViewPagerActivity implements NotificationCenter.NotificationCenterDelegate, FactorAnimator.Target {
 
-    public static final int TABS_COUNT = 4;
+    // region ng assistant
+    public static final int TABS_COUNT = 5;
     private static final int POSITION_CHATS = 0;
     private static final int POSITION_CONTACTS = 1;
-    private static final int POSITION_CALLS_OR_SETTINGS = 2;
-    private static final int POSITION_PROFILE = 3;
+    private static final int POSITION_NICEGRAM = 2;
+    private static final int POSITION_CALLS_OR_SETTINGS = 3;
+    private static final int POSITION_PROFILE = 4;
+    // endregion
 
     private static final int INDEX_CHATS = 0;
     private static final int INDEX_CONTACTS = 1;
@@ -113,9 +116,9 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
     private static final int INDEX_PROFILE = 5;
 
     private static int indexToPosition(int index) {
-        int normalized = index > INDEX_NICEGRAM ? index - 1 : index; // ng
-        return normalized > 2 ? normalized - 1 : normalized; // ng
-//        return index > 2 ? index - 1 : index;
+        // region ng assistant
+        return index > INDEX_SETTINGS ? index - 1 : index;
+        // endregion
     }
 
 
@@ -347,35 +350,28 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         for (int index = 0; index < tabs.length; index++) {
             final GlassTabView view = tabs[index];
 
-            // region ng assistant
-            if (index == INDEX_NICEGRAM) {
-                view.setOnClickListener(v -> {
-                    if (viewPager.isManualScrolling() || viewPager.isTouch()) {
-                        return;
-                    }
+            final int position = indexToPosition(index);
+            tabs[index].setOnClickListener(v -> {
+                if (viewPager.isManualScrolling() || viewPager.isTouch()) {
+                    return;
+                }
 
+                if (viewPager.getCurrentPosition() == position) {
+                    final BaseFragment fragment = getCurrentVisibleFragment();
+                    if (fragment instanceof MainTabsActivity.TabFragmentDelegate) {
+                        ((MainTabsActivity.TabFragmentDelegate) fragment).onParentScrollToTop();
+                    }
+                    return;
+                }
+
+                // region ng assistant
+                if (position == POSITION_NICEGRAM) {
                     AnalyticsHelper.INSTANCE.logEvent(context, new AnalyticsTrackEvent("assistant_open_from_bottombar"));
-                    MainActivity.Companion.launchAssistant(context);
-                });
-            } else {    // endregion
-                final int position = indexToPosition(index);
-                tabs[index].setOnClickListener(v -> {
-                    if (viewPager.isManualScrolling() || viewPager.isTouch()) {
-                        return;
-                    }
-
-                    if (viewPager.getCurrentPosition() == position) {
-                        final BaseFragment fragment = getCurrentVisibleFragment();
-                        if (fragment instanceof MainTabsActivity.TabFragmentDelegate) {
-                            ((MainTabsActivity.TabFragmentDelegate) fragment).onParentScrollToTop();
-                        }
-                        return;
-                    }
-
-                    selectTab(position, true);
-                    viewPager.scrollToPosition(position);
-                });
-            }   // region ng assistant
+                }
+                // endregion
+                selectTab(position, true);
+                viewPager.scrollToPosition(position);
+            });
             tabsView.addView(tabs[index]);
             tabsView.setViewVisible(view, true, false);
         }
@@ -422,6 +418,13 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
 
         updateLayout();
         checkUnreadCount(false);
+        // region ng assistant
+        if (pendingSelectNicegramTab) {
+            pendingSelectNicegramTab = false;
+            viewPager.setPosition(POSITION_NICEGRAM);
+            selectTab(POSITION_NICEGRAM, false);
+        }
+        // endregion
         return contentView;
     }
 
@@ -878,6 +881,10 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             Bundle args = new Bundle();
             args.putBoolean("hasMainTabs", true);
             return new SettingsActivity(args);
+        // region ng assistant
+        } else if (position == POSITION_NICEGRAM) {
+            return new NicegramAssistantTabFragment();
+        // endregion
         } else if (position == POSITION_CHATS) {
             Bundle args = new Bundle();
             args.putBoolean("hasMainTabs", true);
@@ -899,6 +906,19 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         return dialogsActivity;
     }
 
+    // region ng assistant
+    private boolean pendingSelectNicegramTab;
+
+    public void selectNicegramTab() {
+        if (viewPager == null || tabs == null || fragmentView == null) {
+            pendingSelectNicegramTab = true;
+            return;
+        }
+        selectTab(POSITION_NICEGRAM, true);
+        viewPager.scrollToPosition(POSITION_NICEGRAM);
+    }
+    // endregion
+
     /* */
 
     public GlassTabView[] tabs;
@@ -906,24 +926,12 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
     public void selectTab(int position, boolean animated) {
         for (int a = 0; a < tabs.length; a++) {
             GlassTabView tab = tabs[a];
-            // region ng assistant
-            if (a == INDEX_NICEGRAM) {
-                tabs[a].setSelected(false, animated);
-                continue;
-            }
-            // endregion
             tab.setSelected(indexToPosition(a) == position, animated);
         }
     }
 
     public void setGestureSelectedOverride(float animatedPosition, boolean allow) {
         for (int index = 0; index < tabs.length; index++) {
-            // region ng assistant
-            if (index == INDEX_NICEGRAM) {
-                tabs[index].setGestureSelectedOverride(0f, false);
-                continue;
-            }
-            // endregion
             final int position = indexToPosition(index);
             final float visibility = Math.max(0, 1f - Math.abs(position - animatedPosition));
             tabs[index].setGestureSelectedOverride(visibility, allow);

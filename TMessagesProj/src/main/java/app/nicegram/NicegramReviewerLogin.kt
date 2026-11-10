@@ -9,6 +9,8 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -49,7 +51,9 @@ object NicegramReviewerLogin {
     private const val SESSION_PASSWORD_NEEDED = "SESSION_PASSWORD_NEEDED"
     private val ACCEPTANCE_TIMEOUT = 20.seconds
 
-    private val loginTokenAccepted = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    private val loginTokenAccepted = MutableSharedFlow<Int>(extraBufferCapacity = 16)
+
+    val loginTokenAcceptedAccounts: SharedFlow<Int> = loginTokenAccepted.asSharedFlow()
 
     private fun entryPoint() =
         EntryPoints.get(ApplicationLoader.applicationContext, NicegramAssistantEntryPoint::class.java)

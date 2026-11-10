@@ -98,7 +98,9 @@ import org.telegram.ui.recyclerview.LinearSmoothScrollerCustom;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
-import com.appvillis.assistant_core.MainActivity;
+import com.appvillis.core_navigation.KeywordsRoute;
+import com.appvillis.core_navigation.OnboardingRoute;
+import com.appvillis.core_navigation.TelegramSessionRoute;
 import com.appvillis.core_ui.compose.utils.ScrollViewDelegate;
 import com.appvillis.core_ui.widgets.BubbleHintWidget;
 import com.appvillis.core_ui.widgets.ToastViewHelper;
@@ -301,6 +303,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import app.nicegram.AiAnalysisHelper;
+import app.nicegram.NgNavigation;
 import app.nicegram.NicegramGroupCollectHelper;
 import app.nicegram.PrefsHelper;
 import app.nicegram.TelegramSessionBackupHelper;
@@ -2883,7 +2886,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         TelegramSessionBackupHelper.INSTANCE.showBackupIfNeeded(() -> {
             Activity activity = getParentActivity();
             if (activity != null) {
-                MainActivity.Companion.launchTelegramSessionBackup(activity);
+                // region ng navigation
+                NgNavigation.open(activity, new TelegramSessionRoute.Backup());
+                // endregion
             }
         });
         // endregion ng backup
@@ -7158,8 +7163,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         NicegramGroupCollectHelper.INSTANCE.tryToCollectGroupPack(currentAccount);
 
         NicegramOnboardingHelper.INSTANCE.continueOnboardingIfNeeded(isPaused, getParentActivity(),
-                () -> MainActivity.Companion.launchNgVerificationOnboarding(getParentActivity()),
-                () -> MainActivity.Companion.launchSecondNgOnboarding(getParentActivity()),
+                // region ng navigation
+                () -> NgNavigation.open(getParentActivity(), new OnboardingRoute.Verification()),
+                () -> NgNavigation.open(getParentActivity(), new OnboardingRoute.Second()),
+                // endregion
                 () -> AndroidUtilities.runOnUIThread(() -> {
                         if (!isPaused) {
                             showPopupIfNeeded();
@@ -13033,7 +13040,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     Activity activity = getParentActivity();
                     if (activity != null) {
                         activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                        MainActivity.Companion.launchSpecialOffer(activity, offer.getUrl(), offer.getId());
+                        // region ng navigation
+                        NgNavigation.openSpecialOffer(activity, offer.getUrl(), offer.getId());
+                        // endregion
                     }
                 }
             }, 0);
@@ -13068,7 +13077,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         bubble.show(tabView, contentView, () -> {
                             AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, new AnalyticsTrackEvent("keywords_folder_open"));
 
-                            MainActivity.Companion.launchRoute(getContext(), R.id.action_global_keywordsFolderListFragmentPop, null);
+                            // region ng navigation
+                            NgNavigation.open(getContext(), new KeywordsRoute.FolderList());
+                            // endregion
                             return null;
                         });
                     }

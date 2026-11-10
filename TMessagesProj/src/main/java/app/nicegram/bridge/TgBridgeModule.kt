@@ -2,6 +2,8 @@ package app.nicegram.bridge
 
 import app.nicegram.bridge.att.AttChatListPeersProviderImpl
 import app.nicegram.bridge.att.AttPeerUsernameResolverImpl
+import com.appvillis.core_domain.bridge.TgAppLockBridge
+import com.appvillis.core_domain.bridge.TgNavigationBridge
 import com.appvillis.core_domain.bridge.TgUserBridge
 import com.appvillis.core_network.UserLocaleProvider
 import com.appvillis.core_ui.domain.TgImagesLoader
@@ -73,4 +75,12 @@ interface TgBridgeBindsModule {
     @Binds
     @Singleton
     fun bindTgUserBridge(impl: TgUserBridgeImpl): TgUserBridge
+
+    @Binds
+    @Singleton
+    fun bindTgNavigationBridge(impl: TgNavigationBridgeImpl): TgNavigationBridge
+
+    @Binds
+    @Singleton
+    fun bindTgAppLockBridge(impl: TgAppLockBridgeImpl): TgAppLockBridge
 }

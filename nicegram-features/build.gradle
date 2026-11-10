@@ -88,10 +88,6 @@ dependencies {
     // Dagger Hilt
     implementation(internalLibs.hilt.android)
     ksp(internalLibs.hilt.compiler)
-
-    // Compose Destinations
-    implementation(internalLibs.raamcosta.destination.animations)
-    ksp(internalLibs.raamcosta.destinations.ksp)
 }
 repositories {
     mavenCentral()

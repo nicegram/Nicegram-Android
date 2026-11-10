@@ -57,6 +57,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
+import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.Lifecycle;
 import androidx.core.content.ContextCompat;
 import androidx.dynamicanimation.animation.FloatValueHolder;
 import androidx.dynamicanimation.animation.SpringAnimation;
@@ -1395,17 +1397,27 @@ public class PasscodeView extends FrameLayout implements NotificationCenter.Noti
         pinAnimator.start();
     }
 
+    // region ng navigation
+    public boolean ngPromptOnHostActivity;
+    // endregion
+
     protected void checkFingerprint() {
         if (dismissing) return;
         if (Build.VERSION.SDK_INT < 23) {
             return;
         }
         Activity parentActivity = AndroidUtilities.findActivity(getContext());
-        if (parentActivity != null && fingerprintView.getVisibility() == VISIBLE && !ApplicationLoader.mainInterfacePaused && (!(parentActivity instanceof LaunchActivity) || ((LaunchActivity) parentActivity).allowShowFingerprintDialog(this))) {
+        // region ng navigation
+        FragmentActivity ngPromptHost = ngPromptOnHostActivity && parentActivity instanceof FragmentActivity ? (FragmentActivity) parentActivity : null;
+        boolean ngInterfaceActive = ngPromptHost != null ? ngPromptHost.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED) : !ApplicationLoader.mainInterfacePaused;
+        if (parentActivity != null && fingerprintView.getVisibility() == VISIBLE && ngInterfaceActive && (!(parentActivity instanceof LaunchActivity) || ((LaunchActivity) parentActivity).allowShowFingerprintDialog(this))) {
+        // endregion
             try {
                 if (BiometricManager.from(getContext()).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS && FingerprintController.isKeyReady() && !FingerprintController.checkDeviceFingerprintsChanged()) {
                     final Executor executor = ContextCompat.getMainExecutor(getContext());
-                    BiometricPrompt prompt = new BiometricPrompt(LaunchActivity.instance, executor, new BiometricPrompt.AuthenticationCallback() {
+                    // region ng navigation
+                    BiometricPrompt prompt = new BiometricPrompt(ngPromptHost != null ? ngPromptHost : LaunchActivity.instance, executor, new BiometricPrompt.AuthenticationCallback() {
+                    // endregion
                         @Override
                         public void onAuthenticationError(int errMsgId, @NonNull CharSequence errString) {
                             FileLog.d("PasscodeView onAuthenticationError " + errMsgId + " \"" + errString + "\"");

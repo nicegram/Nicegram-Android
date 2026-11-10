@@ -22,13 +22,13 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.appvillis.feature_account_export.ExportAccountsEntryPoint;
-import com.appvillis.feature_account_export.LogoutConfirmBottomSheetFragment;
 import com.appvillis.feature_account_export.domain.ExportedAccountsRepository;
+
+import app.nicegram.NgNavigation;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DownloadController;
@@ -201,16 +201,15 @@ public class LogoutActivity extends BaseFragment {
                 ExportedAccountsRepository rep = EntryPoints.get(context.getApplicationContext(), ExportAccountsEntryPoint.class).exportedAccountsRepository();
                 String id = String.valueOf(UserConfig.getInstance(currentAccount).clientUserId);
                 if (rep.getAccounts().contains(id)) {
-                    LogoutConfirmBottomSheetFragment frag = LogoutConfirmBottomSheetFragment.Companion.create(() -> {
+                    // region ng navigation
+                    NgNavigation.openLogoutConfirm(context, () -> {
                         rep.removeAccountAsExported(id);
                         MessagesController.getInstance(currentAccount).performLogout(0);
-                        return null;
                     }, () -> {
                         rep.removeAccountAsExported(id);
                         MessagesController.getInstance(currentAccount).performLogout(1);
-                        return null;
                     });
-                    frag.show(((FragmentActivity) context).getSupportFragmentManager(), "logout_confirm");
+                    // endregion
                 } else {
                     rep.removeAccountAsExported(id);
                     MessagesController.getInstance(currentAccount).performLogout(1);

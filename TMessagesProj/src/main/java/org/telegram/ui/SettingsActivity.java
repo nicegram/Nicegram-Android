@@ -63,7 +63,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity;
 import com.appvillis.feature_telegram_session.api.TelegramSessionSource;
 import com.appvillis.nicegram.NicegramAssistantHelper;
 import com.appvillis.nicegram.NicegramBillingHelper;
@@ -156,10 +155,10 @@ import java.util.Locale;
 import java.util.Set;
 
 import app.nicegram.AiBotSettingsActivity;
+import app.nicegram.NgNavigation;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramPremiumSettingsActivity;
 import app.nicegram.NicegramSettingsActivity;
-import app.nicegram.TelegramSessionActivity;
 import me.vkryl.android.animator.BoolAnimator;
 import me.vkryl.android.animator.FactorAnimator;
 
@@ -948,7 +947,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                     presentFragment(new NicegramPremiumSettingsActivity());
                 } else {
                     Activity activity = getParentActivity();
-                    activity.startActivity(new Intent(activity, NicegramPremiumActivity.class));
+                    // region ng navigation
+                    NgNavigation.openPremium(activity);
+                    // endregion
                 }
                 break;
             }
@@ -958,7 +959,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             case NG_TELEGRAM_SESSION_ID:
                 Activity activity = getParentActivity();
                 if (activity != null && NicegramAssistantHelper.INSTANCE.isTelegramSessionEnabled(activity)) {
-                    presentFragment(new TelegramSessionActivity(TelegramSessionSource.SETTINGS));
+                    // region ng navigation
+                    NgNavigation.openTelegramSession(activity, TelegramSessionSource.SETTINGS.getValue());
+                    // endregion
                 }
                 break;
             case 26: {

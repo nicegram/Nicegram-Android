@@ -139,22 +139,21 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
-import com.appvillis.feature_ai_chat.domain.UseResultManager;
+import com.appvillis.assistant_core.navigation.telegram.ResultSubscription;
 import com.appvillis.feature_ai_chat.domain.TgPendingMessage;
 import com.appvillis.feature_ai_shortcuts.AiShortcutsEntryPoint;
 import com.appvillis.feature_ai_shortcuts.presentation.AiShortcutsHelper;
 import com.appvillis.feature_nicegram_client.presentation.NgMenuButton;
-import com.appvillis.nicegram.AiChatBotHelper;
 import com.appvillis.core_analytics.AnalyticsHelper;
 import com.appvillis.core_analytics.AnalyticsTrackEvent;
 import com.appvillis.nicegram.NicegramForwardAsCopy;
 
 import app.nicegram.AiAnalysisHelper;
+import app.nicegram.NgNavigation;
 import app.nicegram.NicegramAnalyticsHelper;
 import app.nicegram.NicegramAttHelper;
 import app.nicegram.NicegramGroupCollectHelper;
 import app.nicegram.NicegramMetadataHelper;
-import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity;
 import com.google.zxing.common.detector.MathUtils;
 
 import org.telegram.PhoneFormat.PhoneFormat;
@@ -3452,6 +3451,9 @@ public class ChatActivity extends BaseFragment implements
     @Override
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
+        // region ng navigation
+        if (ngAiChatUseSubscription != null) ngAiChatUseSubscription.cancel();
+        // endregion
 
         AiShortcutsHelper helper = EntryPoints.get(ApplicationLoader.applicationContext, AiShortcutsEntryPoint.class).aiShortcutsUiHelper();
         helper.clean(); // ng
@@ -43005,7 +43007,9 @@ public class ChatActivity extends BaseFragment implements
 
         @Override
         public void openNgPremiumScreen() {
-            getParentActivity().startActivity(new Intent(getParentActivity(), NicegramPremiumActivity.class));
+            // region ng navigation
+            NgNavigation.openPremium(getParentActivity());
+            // endregion
         }
 
         @Override
@@ -45416,6 +45420,9 @@ public class ChatActivity extends BaseFragment implements
     }
 
     private NgMenuButton ngMenuButton;
+    // region ng navigation
+    private ResultSubscription ngAiChatUseSubscription;
+    // endregion
 
     private void addNgMenuButton(View ngMenuOverlayView) {
         if(!PrefsHelper.INSTANCE.getShowNgFloatingMenuInChat(currentAccount)) return;
@@ -45429,31 +45436,23 @@ public class ChatActivity extends BaseFragment implements
         });
         ngMenuButton.onAiBotClick(() -> {
             AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, new AnalyticsTrackEvent("chatbot_open_from_context"));
-            AiChatBotHelper.INSTANCE.launchAiBot(getParentActivity(), true);
-
-            AiChatBotHelper.INSTANCE.setUseResultListener(getContext(), new UseResultManager.UseResultLister() {
-                @Override
-                public void onTextResultUse(@NonNull String text) {
-                    chatActivityEnterView.setFieldText(text);
-                }
-
-                @Override
-                public void onImgResultUse(@NonNull String path) {
-                    ArrayList<MediaController.PhotoEntry> photos = new ArrayList<>();
-                    photos.add(new MediaController.PhotoEntry(
-                            0,
-                            0,
-                            0L,
-                            path,
-                            0,
-                            false,
-                            0,
-                            0,
-                            0L
-                    ));
-                    sendPhotosGroup(photos, true, 0, false);
-                }
+            // region ng navigation
+            ngAiChatUseSubscription = NgNavigation.openAiChatForUse(getParentActivity(), text -> chatActivityEnterView.setFieldText(text), path -> {
+                ArrayList<MediaController.PhotoEntry> photos = new ArrayList<>();
+                photos.add(new MediaController.PhotoEntry(
+                        0,
+                        0,
+                        0L,
+                        path,
+                        0,
+                        false,
+                        0,
+                        0,
+                        0L
+                ));
+                sendPhotosGroup(photos, true, 0, false);
             });
+            // endregion
         });
     }
 

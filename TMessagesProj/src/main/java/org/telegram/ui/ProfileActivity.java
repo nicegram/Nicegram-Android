@@ -135,14 +135,12 @@ import com.appvillis.core_ui.NicegramUrlConstants;
 import com.appvillis.core_ui.BuildConfig;
 import com.appvillis.feature_gods_eye.GodsEyeEntryPoint;
 import com.appvillis.feature_gods_eye.domain.usecases.GetGodsEyeConfigUseCase;
-import com.appvillis.feature_gods_eye.presentation.GodsEyeHelper;
 import com.appvillis.feature_gods_eye.presentation.ui.UserIdView;
 import com.appvillis.feature_nicegram_client.NicegramClientHelper;
 import com.appvillis.core_analytics.AnalyticsHelper;
 import com.appvillis.core_analytics.AnalyticsTrackEvent;
 import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.network.NicegramNetwork;
-import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
@@ -363,6 +361,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import app.nicegram.AiBotSettingsActivity;
+import app.nicegram.NgNavigation;
 import app.nicegram.NicegramSecondTapHelper;
 import app.nicegram.NicegramPremiumSettingsActivity;
 import app.nicegram.NicegramSettingsActivity;
@@ -4640,7 +4639,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (NicegramBillingHelper.INSTANCE.getUserHasNgPremiumSub(context)) {
                     presentFragment(new NicegramPremiumSettingsActivity());
                 } else {
-                    getParentActivity().startActivity(new Intent(getParentActivity(), NicegramPremiumActivity.class));
+                    // region ng navigation
+                    NgNavigation.openPremium(getParentActivity());
+                    // endregion
                 }
             } else if (position == privacyRow) {
                 presentFragment(new PrivacySettingsActivity().setCurrentPassword(currentPassword));
@@ -13636,7 +13637,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     userIdView.setGodsEyeClick(() -> {
                         AnalyticsHelper.INSTANCE.logEvent(ApplicationLoader.applicationContext, new AnalyticsTrackEvent("eog_click"));
 
-                        GodsEyeHelper.INSTANCE.openGodsEye(ApplicationLoader.applicationContext, userId);
+                        // region ng navigation
+                        NgNavigation.openGodsEye(getParentActivity(), userId);
+                        // endregion
                         return null;
                     });
                     break;

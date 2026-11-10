@@ -147,7 +147,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.appvillis.nicegram.NicegramBillingHelper;
 import com.appvillis.nicegram.RoundedVideoHelper;
-import com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity;
 import androidx.media3.common.C;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.common.Format;

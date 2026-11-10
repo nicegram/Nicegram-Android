@@ -1,18 +1,13 @@
 package app.nicegram
 
 import android.app.Activity
-import android.os.Bundle
-import androidx.fragment.app.FragmentActivity
-import com.appvillis.assistant_core.MainActivity
 import com.appvillis.core_analytics.AnalyticsTrackEvent
+import com.appvillis.core_navigation.AiChatAnalysisRoute
+import com.appvillis.core_navigation.args.ChatFilterArgs
+import com.appvillis.core_navigation.args.SessionPickResult
 import com.appvillis.feature_ai_chat_analysis.AiAnalysisEntryPoint
-import com.appvillis.feature_ai_chat_analysis.domain.entities.Session
 import com.appvillis.feature_ai_chat_analysis.domain.entities.SourceData
-import com.appvillis.feature_ai_chat_analysis.domain.features.AiChatAnalysisSource
-import com.appvillis.feature_ai_chat_analysis.domain.features.ChatFilter
-import com.appvillis.feature_ai_chat_analysis.presentation.AiChatAnalysisFragmentArgs
-import com.appvillis.feature_ai_chat_analysis.presentation.SessionPickBottomSheetFragment.Companion.create
-import com.appvillis.feature_ai_chat_analysis.presentation.SessionsListFragmentArgs
+import com.appvillis.feature_ai_chat_analysis.navigation.toArgs
 import com.appvillis.core_analytics.AnalyticsHelper
 import dagger.hilt.EntryPoints
 import kotlinx.coroutines.Dispatchers
@@ -39,24 +34,24 @@ object AiAnalysisHelper {
 
         val currentId: Long = currentChat?.id ?: (currentUser?.id ?: 0)
         GlobalScope.launch(Dispatchers.IO) {
-            val bundle = getAndPrepareMessages(currentAccount, isTopic, threadMessageId, messages, currentChat, currentUser)
+            val sourceData = getAndPrepareMessages(currentAccount, isTopic, threadMessageId, messages, currentChat, currentUser)
 
             withContext(Dispatchers.Main) {
                 if (hasSessionsForChatId(currentId)) {
-                    val frag = create(currentId, { session: Session? ->
-                        openSession(
-                            activity,
-                            session!!
-                        )
-                    }, {
-                        openHistory(activity, currentId)
-                    }, {
-                        openNewChat(activity, bundle)
-                    })
-
-                    frag.show((activity as FragmentActivity).supportFragmentManager, null)
+                    NgNavigation.openForResult(
+                        activity,
+                        AiChatAnalysisRoute.SessionPick(currentId),
+                        SessionPickResult::class.java,
+                        { result ->
+                            when (result) {
+                                is SessionPickResult.Session -> openSession(activity, result.sessionId)
+                                SessionPickResult.History -> openHistory(activity, currentId)
+                                SessionPickResult.NewSession -> openNewChat(activity, sourceData)
+                            }
+                        },
+                    )
                 } else {
-                    openNewChat(activity, bundle)
+                    openNewChat(activity, sourceData)
                 }
             }
         }
@@ -73,24 +68,15 @@ object AiAnalysisHelper {
     }
 
     private fun openHistory(activity: Activity, chatId: Long) {
-        MainActivity.launchRoute(
-            activity, com.appvillis.assistant_core.R.id.action_global_sessionsListFragmentPop, SessionsListFragmentArgs(
-                chatFilter = ChatFilter(setOf(chatId))
-            ).toBundle()
-        )
+        NgNavigation.open(activity, AiChatAnalysisRoute.Sessions(ChatFilterArgs(setOf(chatId))))
     }
 
-    private fun openSession(activity: Activity, session: Session) {
-        MainActivity.launchRoute(
-            activity, com.appvillis.assistant_core.R.id.action_global_aiChatAnalysisFragmentPop, AiChatAnalysisFragmentArgs(
-                chat = null,
-                session = AiChatAnalysisSource.Session(session)
-            ).toBundle()
-        )
+    private fun openSession(activity: Activity, sessionId: String) {
+        NgNavigation.open(activity, AiChatAnalysisRoute.Analysis(sessionId = sessionId))
     }
 
-    private fun openNewChat(activity: Activity, bundle: Bundle) {
-        MainActivity.launchRoute(activity, com.appvillis.assistant_core.R.id.action_global_aiChatAnalysisFragmentPop, bundle)
+    private fun openNewChat(activity: Activity, sourceData: SourceData) {
+        NgNavigation.open(activity, AiChatAnalysisRoute.Analysis(source = sourceData.toArgs()))
     }
 
     suspend fun loadMessages(currentAccount: Int, isTopic: Boolean, threadMessageId: Long, chat: Chat?, user: User?): List<Message> {
@@ -124,7 +110,7 @@ object AiAnalysisHelper {
         return messages
     }
 
-    private suspend fun getAndPrepareMessages(currentAccount: Int, isTopic: Boolean, threadMessageId: Long, messages: List<MessageObject>, chat: Chat?, user: User?): Bundle {
+    private suspend fun getAndPrepareMessages(currentAccount: Int, isTopic: Boolean, threadMessageId: Long, messages: List<MessageObject>, chat: Chat?, user: User?): SourceData {
         Timber.d("messages amount ${messages.size}")
 
         try {
@@ -139,25 +125,15 @@ object AiAnalysisHelper {
             if (chatFullName == null && user != null) chatFullName = getUserDisplayName(userFirstName, userLastName)
 
             val loadedMessages = loadMessages(currentAccount, isTopic, threadMessageId, chat, user)
-            val source = AiChatAnalysisSource.Chat(
-                sourceData = SourceData(
-                    chatId = chat?.id ?: user?.id ?: -1,
-                    chatFullname = chatFullName ?: "",
-                    chatUsername = chatUsernameName ?: "",
-                    /*
-                    messages = loadedMessages.filter { it.messageOwner != null }.sortedBy { it.messageOwner.date }.takeLast(maxMessages).mapNotNull {
-                        val messageData = it.getText(currentAccount, chat) ?: return@mapNotNull null
-                        SourceData.Message(messageData.displayName, it.messageOwner.date * 1000L, messageData.text)
-                    }
-                     */
-                    messages = loadedMessages.sortedBy { it.date }.takeLast(maxMessages).mapNotNull {
-                        val messageData = it.getText(currentAccount, chat) ?: return@mapNotNull null
-                        SourceData.Message(messageData.displayName, it.date * 1000L, messageData.text)
-                    }
-                )
+            return SourceData(
+                chatId = chat?.id ?: user?.id ?: -1,
+                chatFullname = chatFullName ?: "",
+                chatUsername = chatUsernameName ?: "",
+                messages = loadedMessages.sortedBy { it.date }.takeLast(maxMessages).mapNotNull {
+                    val messageData = it.getText(currentAccount, chat) ?: return@mapNotNull null
+                    SourceData.Message(messageData.displayName, it.date * 1000L, messageData.text)
+                }
             )
-
-            return AiChatAnalysisFragmentArgs(chat = source, session = null).toBundle()
         } catch (e: Exception) {
             Timber.e(e)
             throw e

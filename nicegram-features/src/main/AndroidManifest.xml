@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
-        <activity android:name="com.appvillis.feature_nicegram_billing.presentation.NicegramPremiumActivity"
-            android:exported="false"
-            android:theme="@style/Theme.NgOpaque"
-            android:screenOrientation="portrait"/>
-
         <activity android:name="com.appvillis.feature_nicegram_client.presentation.onboarding.NicegramOnboardingActivity"
             android:exported="false"
             android:launchMode="singleTop"

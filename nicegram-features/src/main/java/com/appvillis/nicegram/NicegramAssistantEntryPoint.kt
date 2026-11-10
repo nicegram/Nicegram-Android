@@ -2,11 +2,9 @@ package com.appvillis.nicegram
 
 import com.appvillis.core_domain.repository.user.UserRepository
 import com.appvillis.core_domain.usecase.user.AppSessionControlUseCase
-import com.appvillis.core_domain.usecase.user.FetchNicegramUserLoggedInStatusUseCase
 import com.appvillis.core_ui.domain.TgResourceProvider
 import com.appvillis.feature_ai_chat.domain.AiChatRemoteConfigRepo
 import com.appvillis.feature_ai_chat.domain.ClearDataUseCase
-import com.appvillis.feature_ai_chat.domain.UseResultManager
 import com.appvillis.feature_attention_economy.domain.usecases.ClaimAdsUseCase
 import com.appvillis.feature_attention_economy.domain.usecases.GetOngoingActionsUseCase
 import com.appvillis.feature_auth.domain.CheckIfNeedToCompleteAutoLoginUseCase
@@ -39,7 +37,6 @@ interface NicegramAssistantEntryPoint {
     fun appScope(): CoroutineScope
     fun dispatchersProvider(): DispatchersProvider
     fun tgResourceProvider(): TgResourceProvider
-    fun getUserStatusUseCase(): FetchNicegramUserLoggedInStatusUseCase
     fun nicegramSessionCounter(): NicegramSessionCounter
     fun appSessionControlUseCase(): AppSessionControlUseCase
     fun getChatPlacementsUseCase(): GetChatPlacementsUseCase
@@ -69,7 +66,6 @@ interface NicegramAssistantEntryPoint {
 
     // region ai
     fun clearDataUseCase(): ClearDataUseCase
-    fun useResultManager(): UseResultManager
     fun aiChatRemoteConfigRepo(): AiChatRemoteConfigRepo
     // end region
     fun checkIfNeedToCompleteAutoLoginUseCase(): CheckIfNeedToCompleteAutoLoginUseCase

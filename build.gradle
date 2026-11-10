@@ -14,7 +14,6 @@ buildscript {
         classpath "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:2.1.0"
 
         classpath "com.google.dagger:hilt-android-gradle-plugin:2.58"
-        classpath "androidx.navigation:navigation-safe-args-gradle-plugin:2.9.8"
         classpath "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.1.0-1.0.29"
     }
 }

@@ -105,7 +105,7 @@ import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.QueryProductDetailsParams;
-import com.appvillis.feature_account_export.ExportAccountsBottomSheetFragment;
+import com.appvillis.assistant_core.navigation.telegram.ResultSubscription;
 import com.appvillis.feature_auth.analytics.NicegramTgAuthEvents;
 import com.appvillis.core_analytics.AnalyticsHelper;
 import com.appvillis.core_analytics.AnalyticsTrackEvent;
@@ -228,8 +228,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicReference;
 
-import app.nicegram.TelegramSessionActivity;
 import app.nicegram.AccountsExportHelper;
+import app.nicegram.NgNavigation;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.NicegramReviewerLogin;
 import app.nicegram.ui.ImportAccountLoginView;
@@ -523,9 +523,16 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         return activityMode == MODE_CANCEL_ACCOUNT_DELETION;
     }
 
+    // region ng navigation
+    private ResultSubscription ngExportAccountsSubscription;
+    // endregion
+
     @Override
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
+        // region ng navigation
+        if (ngExportAccountsSubscription != null) ngExportAccountsSubscription.cancel();
+        // endregion
         for (int a = 0; a < views.length; a++) {
             if (views[a] != null) {
                 views[a].onDestroyActivity();
@@ -2095,17 +2102,18 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 BannerTelegramSessionView bannerTelegramSessionView = new BannerTelegramSessionView(context);
                 bannerTelegramSessionView.setData(Theme.isCurrentThemeDark());
                 addView(bannerTelegramSessionView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.START, 16, 16, 16, 16));
+                // region ng navigation
                 bannerTelegramSessionView.setOnClickListener(view ->
-                        presentFragment(new TelegramSessionActivity(TelegramSessionSource.TG_LOGIN)));
+                        NgNavigation.openTelegramSession(getParentActivity(), TelegramSessionSource.TG_LOGIN.getValue()));
+                // endregion
             }
 
             ImportAccountLoginView importAccountsView = new ImportAccountLoginView(context, () -> {
                 AccountsExportHelper.INSTANCE.pickFileAndImport((accounts, uri) -> {
-                    ExportAccountsBottomSheetFragment frag = ExportAccountsBottomSheetFragment.Companion.create(accounts, true, selectedAccounts -> {
-                        AccountsExportHelper.importAccountsAsync((FragmentActivity)getParentActivity(), uri, selectedAccounts, null);
-                        return null;
-                    });
-                    frag.show(((FragmentActivity)getParentActivity()).getSupportFragmentManager(),  "export_accounts");
+                    // region ng navigation
+                    ngExportAccountsSubscription = NgNavigation.openExportAccounts(getParentActivity(), accounts, true, selectedAccounts ->
+                            AccountsExportHelper.importAccountsAsync((FragmentActivity) getParentActivity(), uri, selectedAccounts, null));
+                    // endregion
                     return null;
                 });
                 return null;

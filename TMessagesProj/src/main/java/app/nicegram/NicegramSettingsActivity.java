@@ -13,8 +13,8 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appvillis.assistant_core.navigation.telegram.ResultSubscription;
 import com.appvillis.core_domain.entry.placement.PinnedChatsPlacementEntry;
-import com.appvillis.feature_account_export.ExportAccountsBottomSheetFragment;
 import com.appvillis.feature_account_export.domain.Account;
 import com.appvillis.feature_ai_shortcuts.AiShortcutsEntryPoint;
 import com.appvillis.feature_nicegram_client.HiddenChatsHelper;
@@ -51,6 +51,14 @@ import java.util.List;
 import dagger.hilt.EntryPoints;
 
 public class NicegramSettingsActivity extends BaseFragment {
+
+    private ResultSubscription exportAccountsSubscription;
+
+    @Override
+    public void onFragmentDestroy() {
+        super.onFragmentDestroy();
+        if (exportAccountsSubscription != null) exportAccountsSubscription.cancel();
+    }
 
     private RecyclerListView listView;
     private ListAdapter adapter;
@@ -259,11 +267,8 @@ public class NicegramSettingsActivity extends BaseFragment {
                 PrefsHelper.INSTANCE.enableQuickTranslateButton(currentAccount, !enabled);
             } else if (position == importAccountRow) {
                 AccountsExportHelper.INSTANCE.pickFileAndImport((accounts, uri) -> {
-                    ExportAccountsBottomSheetFragment frag = ExportAccountsBottomSheetFragment.Companion.create(accounts, true, selectedAccounts -> {
-                        AccountsExportHelper.importAccountsAsync((FragmentActivity)this.getParentActivity(), uri, selectedAccounts, null);
-                        return null;
-                    });
-                    frag.show(((FragmentActivity)this.getParentActivity()).getSupportFragmentManager(),  "export_accounts");
+                    exportAccountsSubscription = NgNavigation.openExportAccounts(getParentActivity(), accounts, true, selectedAccounts ->
+                            AccountsExportHelper.importAccountsAsync((FragmentActivity) getParentActivity(), uri, selectedAccounts, null));
                     return null;
                 });
             } else if (position == exportAccountsRow) {
@@ -286,7 +291,7 @@ public class NicegramSettingsActivity extends BaseFragment {
                         accounts.add(new Account(a, String.valueOf(id),resultName, Build.MANUFACTURER + " " + Build.MODEL + ", " + "Android " + Build.VERSION.RELEASE));
                     }
                 }
-                ExportAccountsBottomSheetFragment frag = ExportAccountsBottomSheetFragment.Companion.create(accounts, false, selectedAccounts -> {
+                exportAccountsSubscription = NgNavigation.openExportAccounts(getParentActivity(), accounts, false, selectedAccounts -> {
                     List<Integer> accountNs = new ArrayList<>(selectedAccounts.size());
 
                     for (Account account : selectedAccounts) {
@@ -296,9 +301,7 @@ public class NicegramSettingsActivity extends BaseFragment {
                     }
 
                     AccountsExportHelper.exportAccountsAsync((FragmentActivity) getParentActivity(), accountNs, null);
-                    return null;
                 });
-                frag.show(((FragmentActivity)this.getParentActivity()).getSupportFragmentManager(),  "export_accounts");
             } else if (position == maxAccountsRow) {
                 enabled = PrefsHelper.INSTANCE.getMaxAccountCount(context) == NicegramPrefs.PREF_MAX_ACCOUNTS_MAX;
                 if (!enabled) {

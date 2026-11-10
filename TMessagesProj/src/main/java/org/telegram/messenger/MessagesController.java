@@ -51,7 +51,6 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.util.Consumer;
 
-import com.appvillis.assistant_core.MainActivity;
 import com.appvillis.core_domain.entry.placement.ChatPlacementEntry;
 import com.appvillis.core_ui.Intents;
 import com.appvillis.core_ui.widgets.ToastViewHelper;
@@ -151,6 +150,7 @@ import java.util.stream.Collectors;
 
 import me.vkryl.core.BitwiseUtils;
 
+import app.nicegram.NgNavigation;
 import app.nicegram.NicegramDoubleBottom;
 import app.nicegram.PrefsHelper;
 import app.nicegram.bridge.TgBridgeEntryPoint;
@@ -22891,7 +22891,9 @@ public class MessagesController extends BaseController implements NotificationCe
                 esimBannerData = esimSplashData;
                 if (esimSplashData != null) {
                     if (esimSplashData.getCoupon() != null) {
-                        action = () -> MainActivity.Companion.launchEsimSplash(fragment.getParentActivity() , esimSplashData.getCoupon(), esimSplashData.getUrl());
+                        // region ng navigation
+                        action = () -> NgNavigation.openEsimSplash(fragment.getParentActivity(), esimSplashData.getCoupon(), esimSplashData.getUrl());
+                        // endregion
                     } else {
                         action = () -> Intents.INSTANCE.openUrlThisAppIfPossible(fragment.getParentActivity(), esimSplashData.getUrl());
                     }
